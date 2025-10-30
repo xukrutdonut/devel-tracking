@@ -1,0 +1,850 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const db = require('./database');
+
+const app = express();
+const PORT = process.env.PORT || 8001;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// ==================== RUTAS DE NIÑOS ====================
+
+// Obtener todos los niños
+app.get('/api/ninos', (req, res) => {
+  db.all('SELECT * FROM ninos ORDER BY nombre', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Crear nuevo niño
+app.post('/api/ninos', (req, res) => {
+  const { nombre, fecha_nacimiento } = req.body;
+  db.run('INSERT INTO ninos (nombre, fecha_nacimiento) VALUES (?, ?)', 
+    [nombre, fecha_nacimiento], 
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID, nombre, fecha_nacimiento });
+    }
+  );
+});
+
+// Obtener un niño específico
+app.get('/api/ninos/:id', (req, res) => {
+  db.get('SELECT * FROM ninos WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Niño no encontrado' });
+    res.json(row);
+  });
+});
+
+// Eliminar un niño (y todos sus datos relacionados)
+app.delete('/api/ninos/:id', (req, res) => {
+  const ninoId = req.params.id;
+  
+  db.serialize(() => {
+    // Eliminar registros relacionados
+    db.run('DELETE FROM hitos_conseguidos WHERE nino_id = ?', [ninoId]);
+    db.run('DELETE FROM hitos_no_alcanzados WHERE nino_id = ?', [ninoId]);
+    db.run('DELETE FROM red_flags_observadas WHERE nino_id = ?', [ninoId]);
+    
+    // Eliminar el niño
+    db.run('DELETE FROM ninos WHERE id = ?', [ninoId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, message: 'Niño eliminado correctamente' });
+    });
+  });
+});
+
+// ==================== RUTAS DE DOMINIOS ====================
+
+app.get('/api/dominios', (req, res) => {
+  db.all('SELECT * FROM dominios ORDER BY id', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// ==================== RUTAS DE FUENTES NORMATIVAS ====================
+
+app.get('/api/fuentes-normativas', (req, res) => {
+  db.all('SELECT * FROM fuentes_normativas WHERE activa = 1 ORDER BY id', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/fuentes-normativas/:id', (req, res) => {
+  db.get('SELECT * FROM fuentes_normativas WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Fuente normativa no encontrada' });
+    res.json(row);
+  });
+});
+
+// Nuevo endpoint: Información detallada de fuentes normativas con dominios cubiertos
+app.get('/api/fuentes-normativas-detalle', (req, res) => {
+  // Obtener todas las fuentes activas
+  db.all('SELECT * FROM fuentes_normativas WHERE activa = 1 ORDER BY id', (err, fuentes) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // Para cada fuente, obtener los dominios que cubre
+    const promesas = fuentes.map(fuente => {
+      return new Promise((resolve, reject) => {
+        const query = `
+          SELECT DISTINCT d.id, d.nombre, COUNT(hn.id) as num_hitos
+          FROM dominios d
+          LEFT JOIN hitos_normativos hn ON d.id = hn.dominio_id AND hn.fuente_normativa_id = ?
+          WHERE hn.id IS NOT NULL
+          GROUP BY d.id, d.nombre
+          ORDER BY d.id
+        `;
+        db.all(query, [fuente.id], (err, dominios) => {
+          if (err) reject(err);
+          else {
+            // Extraer URL de la referencia bibliográfica si existe
+            const urlMatch = fuente.referencia_bibliografica.match(/(https?:\/\/[^\s]+)/);
+            const url = urlMatch ? urlMatch[1] : null;
+            
+            // Información adicional específica de cada fuente
+            const infoAdicional = getInfoAdicionalFuente(fuente.id);
+            
+            resolve({
+              ...fuente,
+              url_original: url,
+              dominios_cubiertos: dominios,
+              total_dominios: dominios.length,
+              total_hitos: dominios.reduce((sum, d) => sum + d.num_hitos, 0),
+              ...infoAdicional
+            });
+          }
+        });
+      });
+    });
+    
+    Promise.all(promesas)
+      .then(resultados => res.json(resultados))
+      .catch(error => res.status(500).json({ error: error.message }));
+  });
+});
+
+// Función helper para información adicional de cada fuente
+function getInfoAdicionalFuente(fuenteId) {
+  const info = {
+    1: { // CDC
+      nombre_corto: 'CDC',
+      tipo: 'Guía clínica',
+      metodologia: 'Revisión sistemática y consenso de expertos',
+      fortalezas: [
+        'Actualizada recientemente (2022)',
+        'Enfoque práctico para pediatría',
+        'Criterio del 75% de niños (no 50%)',
+        'Gratuita y de acceso público'
+      ],
+      limitaciones: [
+        'Menos rigurosa estadísticamente que escalas estandarizadas',
+        'Población principalmente estadounidense',
+        'No es instrumento diagnóstico formal'
+      ],
+      mejor_para: 'Screening inicial en atención primaria',
+      cobertura_dominios: 'Amplia (todos los dominios principales)',
+      validacion: 'Consenso de expertos, no estandarización formal',
+      edad_rango: '2 meses - 5 años'
+    },
+    2: { // OMS
+      nombre_corto: 'OMS',
+      tipo: 'Estudio normativo internacional',
+      metodologia: 'Estudio multicéntrico longitudinal',
+      fortalezas: [
+        'Estándar internacional',
+        'Muestra multicultural',
+        'Seguimiento longitudinal riguroso',
+        'Ventanas de logro (no solo promedios)'
+      ],
+      limitaciones: [
+        'Enfoque principal en motor grueso',
+        'Menos hitos en otros dominios',
+        'Datos de 2006',
+        'Muestra con crianza óptima (menos variabilidad)'
+      ],
+      mejor_para: 'Comparación intercultural y seguimiento motor',
+      cobertura_dominios: 'Excelente en motor grueso, limitada en otros',
+      validacion: 'Estudio prospectivo multicéntrico (n=816)',
+      edad_rango: 'Nacimiento - 24 meses (principalmente motor)'
+    },
+    3: { // Bayley
+      nombre_corto: 'Bayley-III',
+      tipo: 'Escala estandarizada diagnóstica',
+      metodologia: 'Estandarización formal con muestra estratificada',
+      fortalezas: [
+        'Gold standard en evaluación del desarrollo',
+        'Excelente fiabilidad (α > 0.86)',
+        'Validez bien establecida',
+        'Normas actualizadas y detalladas',
+        'Cobertura completa de dominios'
+      ],
+      limitaciones: [
+        'Requiere formación especializada',
+        'Administración larga (30-90 min)',
+        'Costosa (requiere licencia)',
+        'Población principalmente USA'
+      ],
+      mejor_para: 'Evaluación diagnóstica completa y seguimiento de alto riesgo',
+      cobertura_dominios: 'Completa (5 escalas: Cognitivo, Lenguaje, Motor, Socio-emocional, Adaptativo)',
+      validacion: 'Muestra normativa n=1,700 estratificada',
+      edad_rango: '1 - 42 meses'
+    },
+    4: { // Battelle
+      nombre_corto: 'BDI-2',
+      tipo: 'Inventario completo del desarrollo',
+      metodologia: 'Estandarización con sobremuestreo de grupos especiales',
+      fortalezas: [
+        'Rango de edad amplio (0-7 años)',
+        'Múltiples métodos de evaluación',
+        'Buena para planificación de intervención',
+        'Incluye grupos especiales en normas',
+        'Subescalas detalladas'
+      ],
+      limitaciones: [
+        'Administración muy larga (1-2 horas completa)',
+        'Requiere formación',
+        'Datos de 2005',
+        'Menos sensible que Bayley en edad temprana'
+      ],
+      mejor_para: 'Evaluación integral para planificación educativa e intervención',
+      cobertura_dominios: 'Muy completa (5 dominios con 13 subescalas)',
+      validacion: 'Muestra normativa n=2,500 con grupos especiales',
+      edad_rango: 'Nacimiento - 7 años 11 meses'
+    }
+  };
+  
+  return info[fuenteId] || {};
+}
+
+// ==================== RUTAS DE HITOS NORMATIVOS ====================
+
+app.get('/api/hitos-normativos', (req, res) => {
+  const fuenteNormativaId = req.query.fuente || 1; // Por defecto usar fuente 1 (CDC)
+  
+  const query = `
+    SELECT hn.*, d.nombre as dominio_nombre
+    FROM hitos_normativos hn
+    JOIN dominios d ON hn.dominio_id = d.id
+    WHERE hn.fuente_normativa_id = ?
+    ORDER BY hn.edad_media_meses, d.id
+  `;
+  db.all(query, [fuenteNormativaId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/hitos-normativos/dominio/:dominioId', (req, res) => {
+  const query = `
+    SELECT * FROM hitos_normativos 
+    WHERE dominio_id = ?
+    ORDER BY edad_media_meses
+  `;
+  db.all(query, [req.params.dominioId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// ==================== RUTAS DE HITOS CONSEGUIDOS ====================
+
+// Obtener hitos conseguidos por un niño
+app.get('/api/hitos-conseguidos/:ninoId', (req, res) => {
+  const query = `
+    SELECT hc.*, hn.nombre as hito_nombre, hn.dominio_id, 
+           hn.edad_media_meses, hn.desviacion_estandar,
+           d.nombre as dominio_nombre
+    FROM hitos_conseguidos hc
+    JOIN hitos_normativos hn ON hc.hito_id = hn.id
+    JOIN dominios d ON hn.dominio_id = d.id
+    WHERE hc.nino_id = ?
+    ORDER BY hc.edad_conseguido_meses
+  `;
+  db.all(query, [req.params.ninoId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Registrar hito conseguido
+app.post('/api/hitos-conseguidos', (req, res) => {
+  const { nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas } = req.body;
+  
+  db.run(`INSERT INTO hitos_conseguidos 
+    (nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas) 
+    VALUES (?, ?, ?, ?, ?)`,
+    [nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+// Eliminar hito conseguido
+app.delete('/api/hitos-conseguidos/:id', (req, res) => {
+  db.run('DELETE FROM hitos_conseguidos WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// ==================== RUTAS DE HITOS NO ALCANZADOS ====================
+
+// Obtener hitos no alcanzados por un niño
+app.get('/api/hitos-no-alcanzados/:ninoId', (req, res) => {
+  const query = `
+    SELECT hna.*, hn.nombre as hito_nombre, hn.dominio_id, 
+           hn.edad_media_meses, hn.desviacion_estandar,
+           d.nombre as dominio_nombre
+    FROM hitos_no_alcanzados hna
+    JOIN hitos_normativos hn ON hna.hito_id = hn.id
+    JOIN dominios d ON hn.dominio_id = d.id
+    WHERE hna.nino_id = ?
+    ORDER BY hna.fecha_registro DESC
+  `;
+  db.all(query, [req.params.ninoId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Registrar hito no alcanzado
+app.post('/api/hitos-no-alcanzados', (req, res) => {
+  const { nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas } = req.body;
+  
+  db.run(`INSERT INTO hitos_no_alcanzados 
+    (nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas) 
+    VALUES (?, ?, ?, ?, ?)`,
+    [nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+// Eliminar hito no alcanzado
+app.delete('/api/hitos-no-alcanzados/:id', (req, res) => {
+  db.run('DELETE FROM hitos_no_alcanzados WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// ==================== RUTAS DE RED FLAGS ====================
+
+// Obtener todas las red flags
+app.get('/api/red-flags', (req, res) => {
+  db.all('SELECT * FROM red_flags ORDER BY edad_relevante_meses', (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Obtener red flags observadas en un niño
+app.get('/api/red-flags-observadas/:ninoId', (req, res) => {
+  const query = `
+    SELECT rfo.*, rf.nombre as flag_nombre, rf.descripcion as flag_descripcion
+    FROM red_flags_observadas rfo
+    JOIN red_flags rf ON rfo.red_flag_id = rf.id
+    WHERE rfo.nino_id = ?
+    ORDER BY rfo.edad_observada_meses
+  `;
+  db.all(query, [req.params.ninoId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Registrar red flag observada
+app.post('/api/red-flags-observadas', (req, res) => {
+  const { nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad } = req.body;
+  
+  db.run(`INSERT INTO red_flags_observadas 
+    (nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad) 
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad || 1],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+// Eliminar red flag observada
+app.delete('/api/red-flags-observadas/:id', (req, res) => {
+  db.run('DELETE FROM red_flags_observadas WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// ==================== ESTADÍSTICAS Y ANÁLISIS ====================
+
+// Obtener análisis completo del desarrollo de un niño
+app.get('/api/analisis/:ninoId', (req, res) => {
+  const ninoId = req.params.ninoId;
+  const fuenteNormativaId = req.query.fuente || 1; // Por defecto usar fuente 1 (CDC)
+  
+  // Primero obtener info del niño
+  db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!nino) return res.status(404).json({ error: 'Niño no encontrado' });
+    
+    // Calcular edad actual en meses
+    const fechaNac = new Date(nino.fecha_nacimiento);
+    const hoy = new Date();
+    const edadCronologica = (hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44);
+    
+    // Obtener hitos conseguidos con z-scores usando la fuente normativa seleccionada
+    // JOIN por nombre y dominio para permitir comparación con diferentes fuentes
+    const queryHitos = `
+      SELECT hc.*, 
+             hn.nombre as hito_nombre, 
+             hn.dominio_id,
+             hn.edad_media_meses, 
+             hn.desviacion_estandar,
+             d.nombre as dominio_nombre,
+             hn.fuente_normativa_id,
+             (hn.edad_media_meses - hc.edad_conseguido_meses) / hn.desviacion_estandar as z_score
+      FROM hitos_conseguidos hc
+      JOIN hitos_normativos hn_original ON hc.hito_id = hn_original.id
+      JOIN hitos_normativos hn ON (
+        hn.nombre = hn_original.nombre AND 
+        hn.dominio_id = hn_original.dominio_id AND
+        hn.fuente_normativa_id = ?
+      )
+      JOIN dominios d ON hn.dominio_id = d.id
+      WHERE hc.nino_id = ?
+      ORDER BY hc.edad_conseguido_meses
+    `;
+    
+    db.all(queryHitos, [fuenteNormativaId, ninoId], (err, hitos) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      // Calcular estadísticas por dominio con EDAD DE DESARROLLO
+      const estadisticasPorDominio = {};
+      hitos.forEach(hito => {
+        if (!estadisticasPorDominio[hito.dominio_id]) {
+          estadisticasPorDominio[hito.dominio_id] = {
+            dominio_nombre: hito.dominio_nombre,
+            dominio_id: hito.dominio_id,
+            z_scores: [],
+            edades_medias: [],
+            total_hitos: 0
+          };
+        }
+        estadisticasPorDominio[hito.dominio_id].z_scores.push(hito.z_score);
+        estadisticasPorDominio[hito.dominio_id].edades_medias.push(hito.edad_media_meses);
+        estadisticasPorDominio[hito.dominio_id].total_hitos++;
+      });
+      
+      // Calcular edad de desarrollo (promedio de edades medias de hitos conseguidos)
+      // y cociente de desarrollo por dominio
+      let sumaEdadesDesarrollo = 0;
+      let numDominios = 0;
+      
+      Object.keys(estadisticasPorDominio).forEach(dominioId => {
+        const stats = estadisticasPorDominio[dominioId];
+        const zScores = stats.z_scores;
+        const edadesMedias = stats.edades_medias;
+        
+        stats.z_score_promedio = zScores.reduce((a, b) => a + b, 0) / zScores.length;
+        stats.z_score_min = Math.min(...zScores);
+        stats.z_score_max = Math.max(...zScores);
+        
+        // EDAD DE DESARROLLO: promedio de las edades medias de los hitos conseguidos
+        stats.edad_desarrollo = edadesMedias.reduce((a, b) => a + b, 0) / edadesMedias.length;
+        
+        // COCIENTE DE DESARROLLO: (Edad Desarrollo / Edad Cronológica) * 100
+        stats.cociente_desarrollo = (stats.edad_desarrollo / edadCronologica) * 100;
+        
+        sumaEdadesDesarrollo += stats.edad_desarrollo;
+        numDominios++;
+      });
+      
+      // EDAD DE DESARROLLO GLOBAL: promedio de todas las edades de desarrollo por dominio
+      const edadDesarrolloGlobal = numDominios > 0 ? sumaEdadesDesarrollo / numDominios : 0;
+      
+      // COCIENTE DE DESARROLLO GLOBAL
+      const cocienteDesarrolloGlobal = (edadDesarrolloGlobal / edadCronologica) * 100;
+      
+      res.json({
+        nino,
+        edad_cronologica: edadCronologica,
+        edad_desarrollo_global: edadDesarrolloGlobal,
+        cociente_desarrollo_global: cocienteDesarrolloGlobal,
+        hitos_conseguidos: hitos,
+        estadisticas_por_dominio: estadisticasPorDominio,
+        total_hitos: hitos.length
+      });
+    });
+  });
+});
+
+// ==================== RUTAS DE CONFIGURACION ====================
+
+console.log('Registrando rutas de configuracion...');
+
+// Obtener configuracion del sistema
+app.get('/api/configuracion', (req, res) => {
+  console.log('GET /api/configuracion llamado');
+  db.get('SELECT valor FROM configuracion_sistema WHERE clave = ?', ['umbral_diagnostico'], (err, row) => {
+    if (err) {
+      console.error('Error en /api/configuracion:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log('Configuración encontrada:', row);
+    res.json({ umbral_diagnostico: row ? parseFloat(row.valor) : 2.0 });
+  });
+});
+
+// Actualizar umbral diagnostico
+app.put('/api/configuracion/umbral', (req, res) => {
+  const { umbral } = req.body;
+  
+  if (umbral < 0.5 || umbral > 5.0) {
+    return res.status(400).json({ error: 'El umbral debe estar entre 0.5 y 5.0' });
+  }
+  
+  db.run('UPDATE configuracion_sistema SET valor = ? WHERE clave = ?', 
+    [umbral.toString(), 'umbral_diagnostico'],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, umbral_diagnostico: umbral });
+    }
+  );
+});
+
+// ==================== RUTAS DE DIAGNÓSTICO ====================
+
+// Generar diagnósticos automáticos para un niño
+app.get('/api/diagnostico/:ninoId', (req, res) => {
+  const ninoId = req.params.ninoId;
+  const fuenteNormativaId = req.query.fuente || 1;
+  
+  // Obtener umbral de configuración
+  db.get('SELECT valor FROM configuracion_sistema WHERE clave = ?', ['umbral_diagnostico'], (err, configRow) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const umbral = configRow ? parseFloat(configRow.valor) : 2.0;
+    
+    // Obtener análisis del niño
+    db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!nino) return res.status(404).json({ error: 'Niño no encontrado' });
+      
+      // Calcular edad actual
+      const fechaNac = new Date(nino.fecha_nacimiento);
+      const hoy = new Date();
+      const edadMeses = (hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44);
+      
+      // Obtener hitos conseguidos con z-scores por dominio
+      const queryHitos = `
+        SELECT hc.*, hn.nombre as hito_nombre, hn.dominio_id,
+               hn.edad_media_meses, hn.desviacion_estandar,
+               d.nombre as dominio_nombre,
+               (hn.edad_media_meses - hc.edad_conseguido_meses) / hn.desviacion_estandar as z_score
+        FROM hitos_conseguidos hc
+        JOIN hitos_normativos hn_original ON hc.hito_id = hn_original.id
+        JOIN hitos_normativos hn ON (
+          hn.nombre = hn_original.nombre AND 
+          hn.dominio_id = hn_original.dominio_id AND
+          hn.fuente_normativa_id = ?
+        )
+        JOIN dominios d ON hn.dominio_id = d.id
+        WHERE hc.nino_id = ? AND hc.edad_conseguido_meses <= ?
+        ORDER BY hc.edad_conseguido_meses
+      `;
+      
+      db.all(queryHitos, [fuenteNormativaId, ninoId, edadMeses], (err, hitos) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Calcular z-score promedio por dominio
+        const estadisticasPorDominio = {};
+        hitos.forEach(hito => {
+          if (!estadisticasPorDominio[hito.dominio_id]) {
+            estadisticasPorDominio[hito.dominio_id] = {
+              dominio_nombre: hito.dominio_nombre,
+              dominio_id: hito.dominio_id,
+              total_hitos: 0,
+              z_scores: [],
+              z_score_promedio: 0
+            };
+          }
+          estadisticasPorDominio[hito.dominio_id].total_hitos++;
+          estadisticasPorDominio[hito.dominio_id].z_scores.push(hito.z_score);
+        });
+        
+        // Calcular promedios
+        Object.values(estadisticasPorDominio).forEach(stats => {
+          const zScores = stats.z_scores;
+          stats.z_score_promedio = zScores.reduce((a, b) => a + b, 0) / zScores.length;
+        });
+        
+        // APLICAR CRITERIOS DIAGNÓSTICOS
+        const diagnosticos = [];
+        
+        // 1. Identificar dominios con retraso (z-score < -umbral)
+        const dominiosConRetraso = Object.values(estadisticasPorDominio).filter(
+          d => d.z_score_promedio < -umbral
+        );
+        
+        // Mapeo de IDs de dominio a nombres clave
+        const dominioMotorGrueso = estadisticasPorDominio[1]; // Motor Grueso
+        const dominioMotorFino = estadisticasPorDominio[2];   // Motor Fino
+        const dominioLenguajeReceptivo = estadisticasPorDominio[3]; // Lenguaje Receptivo
+        const dominioLenguajeExpresivo = estadisticasPorDominio[4]; // Lenguaje Expresivo
+        const dominioSocialEmocional = estadisticasPorDominio[5];   // Social-Emocional
+        
+        // 2. RETRASO GLOBAL DEL DESARROLLO: 2 o más áreas con retraso
+        if (dominiosConRetraso.length >= 2) {
+          diagnosticos.push({
+            tipo: 'Retraso Global del Desarrollo',
+            severidad: 'moderada',
+            criterio: `${dominiosConRetraso.length} áreas con Z-score < -${umbral}`,
+            areas_afectadas: dominiosConRetraso.map(d => d.dominio_nombre),
+            recomendacion: 'Evaluación multidisciplinar completa. Intervención temprana en múltiples áreas del desarrollo.'
+          });
+        }
+        
+        // 3. SOSPECHA DE PCI O ENFERMEDAD NEUROMUSCULAR: Retraso motor
+        const retrasoMotor = (dominioMotorGrueso && dominioMotorGrueso.z_score_promedio < -umbral) ||
+                             (dominioMotorFino && dominioMotorFino.z_score_promedio < -umbral);
+        
+        if (retrasoMotor) {
+          const areasMotoras = [];
+          if (dominioMotorGrueso && dominioMotorGrueso.z_score_promedio < -umbral) {
+            areasMotoras.push(`Motor Grueso (Z: ${dominioMotorGrueso.z_score_promedio.toFixed(2)})`);
+          }
+          if (dominioMotorFino && dominioMotorFino.z_score_promedio < -umbral) {
+            areasMotoras.push(`Motor Fino (Z: ${dominioMotorFino.z_score_promedio.toFixed(2)})`);
+          }
+          
+          diagnosticos.push({
+            tipo: 'Sospecha de Parálisis Cerebral Infantil o Enfermedad Neuromuscular',
+            severidad: 'alta',
+            criterio: `Retraso en desarrollo motor: ${areasMotoras.join(', ')}`,
+            areas_afectadas: areasMotoras,
+            recomendacion: 'Derivación urgente a Neuropediatría. Evaluación neurológica completa. Considerar neuroimagen y estudios electrodiagnósticos.'
+          });
+        }
+        
+        // 4. RETRASO SIMPLE DEL LENGUAJE: Solo área de comunicación afectada
+        const retrasoLenguaje = (dominioLenguajeReceptivo && dominioLenguajeReceptivo.z_score_promedio < -umbral) ||
+                                (dominioLenguajeExpresivo && dominioLenguajeExpresivo.z_score_promedio < -umbral);
+        
+        const otrasAreasNormales = dominiosConRetraso.length === 0 ||
+          (dominiosConRetraso.length === 1 && retrasoLenguaje) ||
+          (dominiosConRetraso.length === 2 && 
+           dominiosConRetraso.every(d => d.dominio_id === 3 || d.dominio_id === 4));
+        
+        if (retrasoLenguaje && otrasAreasNormales) {
+          const areasLenguaje = [];
+          if (dominioLenguajeReceptivo && dominioLenguajeReceptivo.z_score_promedio < -umbral) {
+            areasLenguaje.push(`Receptivo (Z: ${dominioLenguajeReceptivo.z_score_promedio.toFixed(2)})`);
+          }
+          if (dominioLenguajeExpresivo && dominioLenguajeExpresivo.z_score_promedio < -umbral) {
+            areasLenguaje.push(`Expresivo (Z: ${dominioLenguajeExpresivo.z_score_promedio.toFixed(2)})`);
+          }
+          
+          diagnosticos.push({
+            tipo: 'Retraso Simple del Lenguaje',
+            severidad: 'moderada',
+            criterio: `Retraso exclusivo en comunicación: ${areasLenguaje.join(', ')}`,
+            areas_afectadas: areasLenguaje,
+            recomendacion: 'Evaluación por logopeda. Descartar hipoacusia. Intervención logopédica temprana. Seguimiento a 6 meses.'
+          });
+        }
+        
+        // 5. TRASTORNO DEL ESPECTRO AUTISTA: Socialización desproporcionadamente afectada
+        if (dominioSocialEmocional && dominioSocialEmocional.z_score_promedio < -umbral) {
+          // Calcular promedio de otras áreas (excluyendo socialización)
+          const otrosDominios = Object.values(estadisticasPorDominio).filter(d => d.dominio_id !== 5);
+          if (otrosDominios.length > 0) {
+            const promedioOtrasAreas = otrosDominios.reduce((sum, d) => sum + d.z_score_promedio, 0) / otrosDominios.length;
+            const diferenciaDesproporcionada = dominioSocialEmocional.z_score_promedio - promedioOtrasAreas;
+            
+            // TEA si socialización está 2 DE por debajo del promedio de otras áreas
+            if (diferenciaDesproporcionada < -2.0) {
+              diagnosticos.push({
+                tipo: 'Sospecha de Trastorno del Espectro Autista (TEA)',
+                severidad: 'alta',
+                criterio: `Socialización desproporcionadamente afectada (Z: ${dominioSocialEmocional.z_score_promedio.toFixed(2)}) vs promedio otras áreas (Z: ${promedioOtrasAreas.toFixed(2)}). Diferencia: ${Math.abs(diferenciaDesproporcionada).toFixed(2)} DE`,
+                areas_afectadas: ['Social-Emocional'],
+                recomendacion: 'Evaluación especializada inmediata. Aplicar escalas diagnósticas específicas (M-CHAT, ADOS). Derivación a Unidad de Desarrollo Infantil. Intervención intensiva precoz.'
+              });
+            }
+          }
+        }
+        
+        // Si no hay diagnósticos específicos pero hay retraso en 1 área
+        if (diagnosticos.length === 0 && dominiosConRetraso.length === 1) {
+          const area = dominiosConRetraso[0];
+          diagnosticos.push({
+            tipo: `Retraso en ${area.dominio_nombre}`,
+            severidad: 'leve',
+            criterio: `${area.dominio_nombre}: Z-score ${area.z_score_promedio.toFixed(2)} < -${umbral}`,
+            areas_afectadas: [area.dominio_nombre],
+            recomendacion: 'Seguimiento específico. Valorar intervención dirigida. Reevaluación en 3-6 meses.'
+          });
+        }
+        
+        // Respuesta
+        res.json({
+          nino_id: ninoId,
+          nino_nombre: nino.nombre,
+          edad_actual_meses: edadMeses,
+          umbral_utilizado: umbral,
+          fuente_normativa_id: fuenteNormativaId,
+          estadisticas_por_dominio: estadisticasPorDominio,
+          diagnosticos: diagnosticos,
+          interpretacion_general: diagnosticos.length === 0 
+            ? 'Desarrollo dentro de parámetros normales. No se identifican criterios diagnósticos según los umbrales establecidos.'
+            : `Se identifican ${diagnosticos.length} hallazgo(s) clínico(s) que requieren atención.`
+        });
+      });
+    });
+  });
+});
+
+// ==================== ENDPOINT DE ITINERARIO ====================
+// Itinerario de desarrollo (evolucion temporal del cociente de desarrollo)
+app.get('/api/itinerario/:ninoId', (req, res) => {
+  const ninoId = req.params.ninoId;
+  const fuenteNormativaId = req.query.fuente || 1;
+  
+  db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!nino) return res.status(404).json({ error: 'Nino no encontrado' });
+    
+    const queryHitos = `
+      SELECT hc.*, 
+             hn.nombre as hito_nombre, 
+             hn.dominio_id,
+             hn.edad_media_meses,
+             d.nombre as dominio_nombre
+      FROM hitos_conseguidos hc
+      JOIN hitos_normativos hn_original ON hc.hito_id = hn_original.id
+      JOIN hitos_normativos hn ON (
+        hn.nombre = hn_original.nombre AND 
+        hn.dominio_id = hn_original.dominio_id AND
+        hn.fuente_normativa_id = ?
+      )
+      JOIN dominios d ON hn.dominio_id = d.id
+      WHERE hc.nino_id = ?
+      ORDER BY hc.edad_conseguido_meses
+    `;
+    
+    db.all(queryHitos, [fuenteNormativaId, ninoId], (err, hitos) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const puntosItinerario = [];
+      const hitosPorEdad = {};
+      
+      hitos.forEach(hito => {
+        const edadConseguido = Math.round(hito.edad_conseguido_meses);
+        if (!hitosPorEdad[edadConseguido]) {
+          hitosPorEdad[edadConseguido] = {
+            por_dominio: {},
+            todas_edades_medias: []
+          };
+        }
+        
+        if (!hitosPorEdad[edadConseguido].por_dominio[hito.dominio_id]) {
+          hitosPorEdad[edadConseguido].por_dominio[hito.dominio_id] = {
+            dominio_nombre: hito.dominio_nombre,
+            edades_medias: []
+          };
+        }
+        
+        hitosPorEdad[edadConseguido].por_dominio[hito.dominio_id].edades_medias.push(hito.edad_media_meses);
+        hitosPorEdad[edadConseguido].todas_edades_medias.push(hito.edad_media_meses);
+      });
+      
+      const edadesOrdenadas = Object.keys(hitosPorEdad).map(Number).sort((a, b) => a - b);
+      let hitosAcumulados = [];
+      
+      edadesOrdenadas.forEach(edadCronologica => {
+        hitos.filter(h => h.edad_conseguido_meses <= edadCronologica).forEach(h => {
+          if (!hitosAcumulados.find(ha => ha.id === h.id)) {
+            hitosAcumulados.push(h);
+          }
+        });
+        
+        if (hitosAcumulados.length > 0) {
+          const edadDesarrolloGlobal = hitosAcumulados.reduce((sum, h) => sum + h.edad_media_meses, 0) / hitosAcumulados.length;
+          const cocienteDesarrollo = (edadDesarrolloGlobal / edadCronologica) * 100;
+          
+          const porDominio = {};
+          hitosAcumulados.forEach(h => {
+            if (!porDominio[h.dominio_id]) {
+              porDominio[h.dominio_id] = {
+                dominio_nombre: h.dominio_nombre,
+                edades_medias: []
+              };
+            }
+            porDominio[h.dominio_id].edades_medias.push(h.edad_media_meses);
+          });
+          
+          const cocientesPorDominio = {};
+          Object.keys(porDominio).forEach(domId => {
+            const dom = porDominio[domId];
+            const edadDes = dom.edades_medias.reduce((a, b) => a + b, 0) / dom.edades_medias.length;
+            cocientesPorDominio[domId] = {
+              dominio_nombre: dom.dominio_nombre,
+              edad_desarrollo: edadDes,
+              cociente_desarrollo: (edadDes / edadCronologica) * 100
+            };
+          });
+          
+          puntosItinerario.push({
+            edad_cronologica: edadCronologica,
+            edad_desarrollo_global: edadDesarrolloGlobal,
+            cociente_desarrollo_global: cocienteDesarrollo,
+            cocientes_por_dominio: cocientesPorDominio,
+            num_hitos_acumulados: hitosAcumulados.length
+          });
+        }
+      });
+      
+      for (let i = 1; i < puntosItinerario.length; i++) {
+        const puntoActual = puntosItinerario[i];
+        const puntoAnterior = puntosItinerario[i - 1];
+        const deltaCD = puntoActual.cociente_desarrollo_global - puntoAnterior.cociente_desarrollo_global;
+        const deltaT = puntoActual.edad_cronologica - puntoAnterior.edad_cronologica;
+        puntoActual.velocidad_desarrollo = deltaT > 0 ? deltaCD / deltaT : 0;
+      }
+      
+      if (puntosItinerario.length > 0) {
+        puntosItinerario[0].velocidad_desarrollo = 0;
+      }
+      
+      res.json({
+        nino,
+        itinerario: puntosItinerario,
+        interpretacion: {
+          cociente_100: 'Desarrollo tipico (ED = EC)',
+          cociente_mayor_100: 'Desarrollo adelantado (ED > EC)',
+          cociente_menor_100: 'Desarrollo retrasado (ED < EC)',
+          velocidad_positiva: 'Aceleracion del desarrollo',
+          velocidad_negativa: 'Desaceleracion del desarrollo',
+          velocidad_cero: 'Velocidad constante'
+        }
+      });
+    });
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log('Endpoints registrados:', app._router.stack.filter(r => r.route).map(r => Object.keys(r.route.methods)[0].toUpperCase() + ' ' + r.route.path));
+});

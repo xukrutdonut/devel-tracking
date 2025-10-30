@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: .
+    container_name: neurodesarrollo-backend
+    command: server
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./server:/app/server
+      - db-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=8001
+    restart: unless-stopped
+    networks:
+      - neurodesarrollo-network
+
+  # Frontend
+  frontend:
+    build: .
+    container_name: neurodesarrollo-frontend
+    command: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.js:/app/vite.config.js
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8001
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - neurodesarrollo-network
+
+volumes:
+  db-data:
+    driver: local
+
+networks:
+  neurodesarrollo-network:
+    driver: bridge
