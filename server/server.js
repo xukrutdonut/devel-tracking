@@ -6,8 +6,20 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 8001;
 
-app.use(cors());
+// Configuración de CORS más permisiva
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(bodyParser.json());
+
+// Middleware para logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // ==================== RUTAS DE NIÑOS ====================
 
@@ -21,13 +33,28 @@ app.get('/api/ninos', (req, res) => {
 
 // Crear nuevo niño
 app.post('/api/ninos', (req, res) => {
+  console.log('Recibida petición de crear niño:', req.body);
   const { nombre, fecha_nacimiento, semanas_gestacion } = req.body;
+  
+  // Validación
+  if (!nombre || !fecha_nacimiento) {
+    console.error('Error: Faltan campos requeridos');
+    return res.status(400).json({ error: 'Nombre y fecha de nacimiento son requeridos' });
+  }
+  
   const semanasGest = semanas_gestacion || 40; // Default 40 si no se proporciona
+  console.log('Insertando niño:', { nombre, fecha_nacimiento, semanas_gestacion: semanasGest });
+  
   db.run('INSERT INTO ninos (nombre, fecha_nacimiento, semanas_gestacion) VALUES (?, ?, ?)', 
     [nombre, fecha_nacimiento, semanasGest], 
     function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, nombre, fecha_nacimiento, semanas_gestacion: semanasGest });
+      if (err) {
+        console.error('Error en base de datos:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      const resultado = { id: this.lastID, nombre, fecha_nacimiento, semanas_gestacion: semanasGest };
+      console.log('Niño creado exitosamente:', resultado);
+      res.json(resultado);
     }
   );
 });
@@ -441,6 +468,7 @@ app.get('/api/analisis/:ninoId', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor ejecutandose en http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor ejecutándose en http://0.0.0.0:${PORT}`);
+  console.log(`Accesible también en http://localhost:${PORT}`);
 });

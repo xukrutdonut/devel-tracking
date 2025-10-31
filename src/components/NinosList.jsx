@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatearEdades } from '../utils/ageCalculations';
-
-const API_URL = 'http://localhost:8001/api';
+import { API_URL } from '../config';
 
 function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
   const eliminarNino = async (e, nino) => {

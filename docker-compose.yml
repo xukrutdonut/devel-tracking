@@ -29,10 +29,9 @@ services:
       - ./src:/app/src
       - ./public:/app/public
       - ./index.html:/app/index.html
-      - ./vite.config.js:/app/vite.config.js
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8001
+      - VITE_API_URL=http://localhost:8001/api
     depends_on:
       - backend
     restart: unless-stopped

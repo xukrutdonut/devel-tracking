@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-const API_URL = 'http://localhost:8001/api';
+import { API_URL } from '../config';
 
 function NinoForm({ onNinoCreado }) {
   const [nombre, setNombre] = useState('');
@@ -24,6 +23,22 @@ function NinoForm({ onNinoCreado }) {
         }),
       });
       
+      if (!response.ok) {
+        let errorMessage = 'Error al crear niño';
+        try {
+          const errorText = await response.text();
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+        } catch (e) {
+          errorMessage = 'Error al crear niño';
+        }
+        throw new Error(errorMessage);
+      }
+      
       const nuevoNino = await response.json();
       onNinoCreado(nuevoNino);
       setNombre('');
@@ -32,7 +47,7 @@ function NinoForm({ onNinoCreado }) {
       setMostrarForm(false);
     } catch (error) {
       console.error('Error al crear niño:', error);
-      alert('Error al crear niño');
+      alert(`Error al crear niño: ${error.message}`);
     }
   };
 

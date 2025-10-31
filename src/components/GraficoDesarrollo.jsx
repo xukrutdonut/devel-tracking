@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ScatterChart, Scatter, ZAxis, ComposedChart, Area } from 'recharts';
 import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
-
-const API_URL = 'http://localhost:8001/api';
+import { API_URL } from '../config';
 
 function GraficoDesarrollo({ ninoId }) {
   const [analisis, setAnalisis] = useState(null);

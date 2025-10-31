@@ -5,8 +5,7 @@ import NinoForm from './components/NinoForm';
 import HitosRegistro from './components/HitosRegistro';
 import GraficoDesarrollo from './components/GraficoDesarrollo';
 import RedFlagsRegistro from './components/RedFlagsRegistro';
-
-const API_URL = 'http://localhost:8001/api';
+import { API_URL } from './config';
 
 function App() {
   const [ninos, setNinos] = useState([]);

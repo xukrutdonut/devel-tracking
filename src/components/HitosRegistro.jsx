@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { calcularEdadCronologicaMeses, calcularEdadCorregidaMeses, formatearEdades } from '../utils/ageCalculations';
-
-const API_URL = 'http://localhost:8001/api';
+import { API_URL } from '../config';
+import { obtenerVideoHito } from '../utils/videosHitos';
 
 function HitosRegistro({ ninoId }) {
   const [dominios, setDominios] = useState([]);
@@ -281,6 +281,85 @@ function HitosRegistro({ ninoId }) {
               
               <p className="hito-descripcion">{hito.descripcion}</p>
               
+              {/* Enlaces a videos educativos */}
+              {(() => {
+                const video = obtenerVideoHito(hito.nombre);
+                if (video) {
+                  return (
+                    <div className="hito-videos" style={{ 
+                      display: 'flex', 
+                      gap: '10px', 
+                      marginTop: '8px',
+                      marginBottom: '8px'
+                    }}>
+                      {video.cdc && (
+                        <a 
+                          href={video.cdc} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '4px 8px',
+                            backgroundColor: '#f0f8ff',
+                            border: '1px solid #4A90E2',
+                            borderRadius: '4px',
+                            textDecoration: 'none',
+                            color: '#4A90E2',
+                            fontSize: '0.85em',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#4A90E2';
+                            e.currentTarget.style.color = 'white';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f0f8ff';
+                            e.currentTarget.style.color = '#4A90E2';
+                          }}
+                        >
+                          <span>🎥</span>
+                          <span>Video CDC</span>
+                        </a>
+                      )}
+                      {video.pathways && (
+                        <a 
+                          href={video.pathways} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '4px 8px',
+                            backgroundColor: '#f0fff4',
+                            border: '1px solid #50C878',
+                            borderRadius: '4px',
+                            textDecoration: 'none',
+                            color: '#50C878',
+                            fontSize: '0.85em',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#50C878';
+                            e.currentTarget.style.color = 'white';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f0fff4';
+                            e.currentTarget.style.color = '#50C878';
+                          }}
+                        >
+                          <span>🎥</span>
+                          <span>Video Pathways</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
               <div className="hito-info">
                 <span>Edad esperada: {hito.edad_media_meses} meses (± {hito.desviacion_estandar})</span>
                 <span>Rango: {hito.edad_minima_meses}-{hito.edad_maxima_meses} meses</span>
@@ -356,6 +435,85 @@ function HitosRegistro({ ninoId }) {
                   </div>
                   
                   <p className="hito-descripcion">{hito.descripcion}</p>
+                  
+                  {/* Enlaces a videos educativos */}
+                  {(() => {
+                    const video = obtenerVideoHito(hito.nombre);
+                    if (video) {
+                      return (
+                        <div className="hito-videos" style={{ 
+                          display: 'flex', 
+                          gap: '10px', 
+                          marginTop: '8px',
+                          marginBottom: '8px'
+                        }}>
+                          {video.cdc && (
+                            <a 
+                              href={video.cdc} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '4px 8px',
+                                backgroundColor: '#f0f8ff',
+                                border: '1px solid #4A90E2',
+                                borderRadius: '4px',
+                                textDecoration: 'none',
+                                color: '#4A90E2',
+                                fontSize: '0.85em',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#4A90E2';
+                                e.currentTarget.style.color = 'white';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f0f8ff';
+                                e.currentTarget.style.color = '#4A90E2';
+                              }}
+                            >
+                              <span>🎥</span>
+                              <span>Video CDC</span>
+                            </a>
+                          )}
+                          {video.pathways && (
+                            <a 
+                              href={video.pathways} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '4px 8px',
+                                backgroundColor: '#f0fff4',
+                                border: '1px solid #50C878',
+                                borderRadius: '4px',
+                                textDecoration: 'none',
+                                color: '#50C878',
+                                fontSize: '0.85em',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#50C878';
+                                e.currentTarget.style.color = 'white';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f0fff4';
+                                e.currentTarget.style.color = '#50C878';
+                              }}
+                            >
+                              <span>🎥</span>
+                              <span>Video Pathways</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   
                   <div className="hito-info">
                     <span>Edad esperada: {hito.edad_media_meses} meses (± {hito.desviacion_estandar})</span>
