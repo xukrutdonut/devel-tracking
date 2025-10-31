@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { calcularEdadCronologicaMeses, calcularEdadCorregidaMeses, formatearEdades } from '../utils/ageCalculations';
 import { API_URL } from '../config';
 import { obtenerVideoHito } from '../utils/videosHitos';
@@ -14,6 +14,10 @@ function HitosRegistro({ ninoId }) {
   const [ninoData, setNinoData] = useState(null);
   const [fuentesNormativas, setFuentesNormativas] = useState([]);
   const [fuenteSeleccionada, setFuenteSeleccionada] = useState(1);
+  const [modoEvaluacion, setModoEvaluacion] = useState('puntual'); // 'puntual' o 'longitudinal'
+  const [fechaEvaluacion, setFechaEvaluacion] = useState(new Date().toISOString().split('T')[0]);
+  const [edadEvaluacionMeses, setEdadEvaluacionMeses] = useState(0);
+  const [rangoEdadInferior, setRangoEdadInferior] = useState(0); // Para expandir rango en modo puntual
 
   useEffect(() => {
     cargarFuentesNormativas();
@@ -24,6 +28,18 @@ function HitosRegistro({ ninoId }) {
       cargarDatos();
     }
   }, [ninoId, fuenteSeleccionada]);
+
+  useEffect(() => {
+    if (ninoData && fechaEvaluacion) {
+      calcularEdadEvaluacion();
+      setRangoEdadInferior(0); // Resetear rango al cambiar fecha
+    }
+  }, [fechaEvaluacion, ninoData]);
+
+  useEffect(() => {
+    // Resetear rango al cambiar modo
+    setRangoEdadInferior(0);
+  }, [modoEvaluacion]);
 
   const cargarFuentesNormativas = async () => {
     try {
@@ -36,6 +52,19 @@ function HitosRegistro({ ninoId }) {
     } catch (error) {
       console.error('Error al cargar fuentes normativas:', error);
     }
+  };
+
+  const calcularEdadEvaluacion = () => {
+    if (!ninoData || !fechaEvaluacion) return;
+    
+    const fechaNac = new Date(ninoData.fecha_nacimiento);
+    const fechaEval = new Date(fechaEvaluacion);
+    
+    const diffTime = fechaEval - fechaNac;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    const edadMeses = diffDays / 30.44; // promedio de días por mes
+    
+    setEdadEvaluacionMeses(edadMeses);
   };
 
   const cargarDatos = async () => {
@@ -78,15 +107,31 @@ function HitosRegistro({ ninoId }) {
   };
 
   const registrarHito = async (hitoId, edadMeses) => {
-    // Validar que la edad no sea mayor que la edad actual
-    if (edadMeses > edadActualMeses) {
-      const confirmar = confirm(
-        `⚠️ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad actual del niño (${Math.round(edadActualMeses)} meses).\n\n` +
-        `Este hito no aparecerá en las gráficas hasta que el niño alcance esa edad.\n\n` +
-        `¿Deseas continuar de todas formas?`
-      );
-      if (!confirmar) {
-        return;
+    // En modo longitudinal, no validar que la edad sea menor que la actual
+    if (modoEvaluacion === 'puntual') {
+      // En modo puntual, validar que la edad no sea mayor que la edad de evaluación
+      const edadMaxima = edadEvaluacionMeses || edadActualMeses;
+      if (edadMeses > edadMaxima) {
+        const confirmar = confirm(
+          `⚠️ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad de evaluación (${Math.round(edadMaxima)} meses).\n\n` +
+          `Este hito no aparecerá en las gráficas hasta que el niño alcance esa edad.\n\n` +
+          `¿Deseas continuar de todas formas?`
+        );
+        if (!confirmar) {
+          return;
+        }
+      }
+    } else {
+      // En modo longitudinal, solo advertir si es mayor que la edad actual del niño
+      if (edadMeses > edadActualMeses) {
+        const confirmar = confirm(
+          `⚠️ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad actual del niño (${Math.round(edadActualMeses)} meses).\n\n` +
+          `Este hito no aparecerá en las gráficas hasta que el niño alcance esa edad.\n\n` +
+          `¿Deseas continuar de todas formas?`
+        );
+        if (!confirmar) {
+          return;
+        }
       }
     }
     
@@ -98,7 +143,7 @@ function HitosRegistro({ ninoId }) {
           nino_id: ninoId,
           hito_id: hitoId,
           edad_conseguido_meses: edadMeses,
-          fecha_registro: new Date().toISOString().split('T')[0]
+          fecha_registro: modoEvaluacion === 'puntual' ? fechaEvaluacion : new Date().toISOString().split('T')[0]
         })
       });
       cargarDatos();
@@ -120,14 +165,15 @@ function HitosRegistro({ ninoId }) {
 
   const registrarHitoNoAlcanzado = async (hitoId, notas = '') => {
     try {
+      const edadEval = modoEvaluacion === 'puntual' ? edadEvaluacionMeses : edadActualMeses;
       await fetch(`${API_URL}/hitos-no-alcanzados`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nino_id: ninoId,
           hito_id: hitoId,
-          edad_evaluacion_meses: edadActualMeses,
-          fecha_registro: new Date().toISOString(),
+          edad_evaluacion_meses: edadEval,
+          fecha_registro: modoEvaluacion === 'puntual' ? fechaEvaluacion : new Date().toISOString(),
           notas
         })
       });
@@ -156,8 +202,19 @@ function HitosRegistro({ ninoId }) {
     return hitosNoAlcanzados.find(hna => hna.hito_id === hitoId);
   };
 
-  // Filtrar hitos relevantes: usar edad corregida para niños pretérmino
-  const edadParaEvaluacion = ninoData && ninoData.semanas_gestacion < 37 ? edadCorregidaMeses : edadActualMeses;
+  // Filtrar hitos relevantes según el modo de evaluación
+  const edadParaEvaluacion = (() => {
+    if (modoEvaluacion === 'puntual') {
+      // En modo puntual, usar la edad de evaluación
+      const edadBase = edadEvaluacionMeses > 0 ? edadEvaluacionMeses : edadActualMeses;
+      return ninoData && ninoData.semanas_gestacion < 37 ? 
+        calcularEdadCorregidaMeses(ninoData.fecha_nacimiento, ninoData.semanas_gestacion, fechaEvaluacion) : 
+        edadBase;
+    } else {
+      // En modo longitudinal, usar edad actual o corregida
+      return ninoData && ninoData.semanas_gestacion < 37 ? edadCorregidaMeses : edadActualMeses;
+    }
+  })();
   
   const esHitoRelevante = (hito) => {
     // Si el hito está conseguido o no alcanzado, siempre es relevante
@@ -165,29 +222,96 @@ function HitosRegistro({ ninoId }) {
       return true;
     }
     
-    // Mostrar todos los hitos cuya edad media sea menor o igual a la edad actual del niño
-    // Estos son los hitos que ya deberían haber sido alcanzados o estar en proceso
-    return hito.edad_media_meses <= edadParaEvaluacion;
+    if (modoEvaluacion === 'puntual') {
+      // En modo puntual: mostrar hitos en el rango dinámico
+      const margen = 2;
+      const edadMinima = Math.max(0, edadParaEvaluacion - margen - rangoEdadInferior);
+      const edadMaxima = edadParaEvaluacion + margen;
+      return hito.edad_media_meses >= edadMinima && 
+             hito.edad_media_meses <= edadMaxima;
+    } else {
+      // En modo longitudinal: mostrar todos los hitos hasta la edad actual +2 meses
+      return hito.edad_media_meses <= (edadParaEvaluacion + 2);
+    }
   };
 
-  const hitosFiltrados = hitosNormativos.filter(hito => {
-    if (dominioSeleccionado && hito.dominio_id !== dominioSeleccionado) {
-      return false;
+  // Función para expandir el rango de edad en modo puntual
+  const expandirRangoEdad = () => {
+    setRangoEdadInferior(prev => prev + 2);
+  };
+
+  // Calcular hitos filtrados con useMemo - incluir toda la lógica dentro
+  const hitosFiltrados = useMemo(() => {
+    // Función helper para verificar si hito está conseguido
+    const estaConseguido = (hitoId) => {
+      return hitosConseguidos.some(hc => hc.hito_id === hitoId);
+    };
+    
+    // Función helper para verificar si hito no fue alcanzado
+    const noAlcanzado = (hitoId) => {
+      return hitosNoAlcanzados.some(hna => hna.hito_id === hitoId);
+    };
+    
+    // Calcular edad para evaluación
+    let edadEval;
+    if (modoEvaluacion === 'puntual') {
+      const edadBase = edadEvaluacionMeses > 0 ? edadEvaluacionMeses : edadActualMeses;
+      edadEval = ninoData && ninoData.semanas_gestacion < 37 ? 
+        calcularEdadCorregidaMeses(ninoData.fecha_nacimiento, ninoData.semanas_gestacion, fechaEvaluacion) : 
+        edadBase;
+    } else {
+      edadEval = ninoData && ninoData.semanas_gestacion < 37 ? edadCorregidaMeses : edadActualMeses;
     }
     
-    // Si está conseguido, no mostrarlo en la lista de pendientes
-    if (hitoConseguido(hito.id)) {
-      return false;
-    }
+    // Función para verificar si hito es relevante
+    const esRelevante = (hito) => {
+      if (estaConseguido(hito.id) || noAlcanzado(hito.id)) {
+        return true;
+      }
+      
+      if (modoEvaluacion === 'puntual') {
+        const margen = 2;
+        const edadMinima = Math.max(0, edadEval - margen - rangoEdadInferior);
+        const edadMaxima = edadEval + margen;
+        return hito.edad_media_meses >= edadMinima && hito.edad_media_meses <= edadMaxima;
+      } else {
+        return hito.edad_media_meses <= (edadEval + 2);
+      }
+    };
     
-    // No mostrar hitos ya marcados como no alcanzados en la lista principal
-    if (hitoNoAlcanzado(hito.id)) {
-      return false;
-    }
-    
-    // Aplicar filtro de relevancia por edad
-    return esHitoRelevante(hito);
-  }).sort((a, b) => a.edad_media_meses - b.edad_media_meses); // Ordenar por edad media ascendente
+    return hitosNormativos.filter(hito => {
+      if (dominioSeleccionado && hito.dominio_id !== dominioSeleccionado) {
+        return false;
+      }
+      
+      if (estaConseguido(hito.id)) {
+        return false;
+      }
+      
+      if (noAlcanzado(hito.id)) {
+        return false;
+      }
+      
+      return esRelevante(hito);
+    }).sort((a, b) => a.edad_media_meses - b.edad_media_meses);
+  }, [
+    hitosNormativos, 
+    dominioSeleccionado, 
+    hitosConseguidos, 
+    hitosNoAlcanzados, 
+    modoEvaluacion, 
+    edadEvaluacionMeses,
+    edadActualMeses,
+    edadCorregidaMeses,
+    rangoEdadInferior,
+    ninoData,
+    fechaEvaluacion
+  ]);
+
+  // Verificar si todos los hitos visibles están evaluados
+  const todosHitosEvaluados = () => {
+    return hitosFiltrados.length === 0;
+  };
 
   // Hitos marcados como no alcanzados (para mostrar al final)
   const hitosNoAlcanzadosFiltrados = hitosNormativos.filter(hito => {
@@ -201,11 +325,61 @@ function HitosRegistro({ ninoId }) {
     return new Date(regB.fecha_registro) - new Date(regA.fecha_registro);
   });
 
+  // Efecto para expandir automáticamente el rango en modo puntual
+  // Debe estar DESPUÉS de la definición de hitosFiltrados
+  useEffect(() => {
+    if (modoEvaluacion !== 'puntual') return;
+    if (!ninoData) return;
+    if (rangoEdadInferior >= 24) return; // Límite máximo de expansión
+
+    // Verificar si todos los hitos del rango actual están evaluados
+    const todosPendientesEvaluados = hitosFiltrados.length === 0;
+    
+    // Verificar si hay hitos no alcanzados (indica que hay dominios con retraso)
+    const hayHitosNoAlcanzados = hitosNoAlcanzados.length > 0;
+    
+    if (todosPendientesEvaluados && hayHitosNoAlcanzados) {
+      // Expandir automáticamente después de un breve delay
+      const timer = setTimeout(() => {
+        setRangoEdadInferior(prev => prev + 2);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [modoEvaluacion, hitosFiltrados.length, hitosNoAlcanzados.length, rangoEdadInferior, ninoData]);
+
   return (
     <div className="hitos-registro">
       <h2>Registro de Hitos del Desarrollo</h2>
       
       <div className="filtros">
+        <div className="filtro-grupo">
+          <label>Modo de evaluación:</label>
+          <select 
+            value={modoEvaluacion} 
+            onChange={(e) => setModoEvaluacion(e.target.value)}
+            style={{ fontWeight: 'bold' }}
+          >
+            <option value="puntual">Evaluación Puntual (momento específico)</option>
+            <option value="longitudinal">Evaluación Longitudinal (retrospectiva)</option>
+          </select>
+        </div>
+
+        {modoEvaluacion === 'puntual' && (
+          <div className="filtro-grupo">
+            <label>Fecha de evaluación:</label>
+            <input 
+              type="date" 
+              value={fechaEvaluacion}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setFechaEvaluacion(e.target.value)}
+            />
+            <span style={{ marginLeft: '10px', fontSize: '0.9em', color: '#666' }}>
+              Edad: {Math.round(edadEvaluacionMeses * 10) / 10} meses
+            </span>
+          </div>
+        )}
+        
         <div className="filtro-grupo">
           <label>Dominio:</label>
           <select 
@@ -230,6 +404,14 @@ function HitosRegistro({ ninoId }) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="chart-note" style={{marginBottom: '1rem', marginTop: '1rem'}}>
+        {modoEvaluacion === 'puntual' ? (
+          <p><strong>ℹ️ Modo Puntual:</strong> Se presentan hitos esperables en un rango de ±2 meses alrededor de la edad de evaluación ({Math.round(edadParaEvaluacion)} meses{ninoData && ninoData.semanas_gestacion < 37 ? ' - edad corregida' : ''}). Indica si el niño ha conseguido cada hito en ese momento específico.</p>
+        ) : (
+          <p><strong>ℹ️ Modo Longitudinal:</strong> Se presentan todos los hitos alcanzables hasta la edad actual del niño +2 meses ({Math.round(edadParaEvaluacion + 2)} meses). Registra la edad específica en que se consiguió cada hito.</p>
+        )}
       </div>
 
       <div className="estadisticas">
@@ -258,10 +440,72 @@ function HitosRegistro({ ninoId }) {
       </div>
 
       <div className="chart-note" style={{marginBottom: '1.5rem'}}>
-        <p><strong>ℹ️ Hitos pendientes de evaluación:</strong> Se muestran todos los hitos cuya edad esperada es menor o igual a la edad actual del niño ({Math.round(edadParaEvaluacion)} meses{ninoData && ninoData.semanas_gestacion < 37 ? ' - edad corregida' : ''}). Estos son los hitos que ya deberían haber sido alcanzados o estar en proceso de desarrollo.</p>
+        {modoEvaluacion === 'puntual' ? (
+          <>
+            <p><strong>📋 Hitos mostrados:</strong> Se presentan hitos esperables en el rango de {rangoEdadInferior > 0 ? `${Math.round(edadParaEvaluacion - 2 - rangoEdadInferior)} a ` : ''}{Math.round(edadParaEvaluacion - 2)} a {Math.round(edadParaEvaluacion + 2)} meses. Si el niño no ha conseguido todos los hitos esperables, puedes ver hitos de edades anteriores.</p>
+            {rangoEdadInferior > 0 && (
+              <p style={{ color: '#856404', backgroundColor: '#fff3cd', padding: '8px', borderRadius: '4px', marginTop: '8px' }}>
+                ⚠️ Se están mostrando hitos de {rangoEdadInferior} meses adicionales hacia atrás debido a hitos no alcanzados.
+              </p>
+            )}
+          </>
+        ) : (
+          <p><strong>📋 Hitos pendientes de evaluación:</strong> Se muestran todos los hitos cuya edad esperada es menor o igual a la edad actual del niño +2 meses ({Math.round(edadParaEvaluacion + 2)} meses{ninoData && ninoData.semanas_gestacion < 37 ? ' - edad corregida' : ''}). Registra la edad específica en meses en que el niño consiguió cada hito.</p>
+        )}
       </div>
 
       <h3>Hitos Pendientes de Evaluación</h3>
+      
+      {modoEvaluacion === 'puntual' && todosHitosEvaluados() && hitosNoAlcanzados.length === 0 && (
+        <div style={{ 
+          padding: '15px', 
+          backgroundColor: '#d4edda', 
+          borderLeft: '4px solid #28a745',
+          marginBottom: '20px',
+          borderRadius: '4px'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>
+            ✅ Evaluación completada. Todos los hitos del rango han sido conseguidos.
+          </p>
+        </div>
+      )}
+
+      {modoEvaluacion === 'puntual' && todosHitosEvaluados() && hitosNoAlcanzados.length > 0 && rangoEdadInferior < 24 && (
+        <div style={{ 
+          padding: '15px', 
+          backgroundColor: '#fff3cd', 
+          borderLeft: '4px solid #ffc107',
+          marginBottom: '20px',
+          borderRadius: '4px',
+          animation: 'pulse 1s ease-in-out'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold', color: '#856404' }}>
+            🔄 Expandiendo automáticamente el rango de evaluación...
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '0.9em', color: '#856404' }}>
+            Se detectaron {hitosNoAlcanzados.length} hito(s) no alcanzado(s). Mostrando hitos de edades anteriores para identificar el nivel basal de desarrollo.
+          </p>
+        </div>
+      )}
+
+      {modoEvaluacion === 'puntual' && todosHitosEvaluados() && rangoEdadInferior >= 24 && (
+        <div style={{ 
+          padding: '15px', 
+          backgroundColor: '#d4edda', 
+          borderLeft: '4px solid #28a745',
+          marginBottom: '20px',
+          borderRadius: '4px'
+        }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>
+            ✅ Evaluación completada. Se ha evaluado un rango de 24 meses hacia atrás.
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '0.9em' }}>
+            {hitosNoAlcanzados.length > 0 
+              ? `Hay ${hitosNoAlcanzados.length} hito(s) pendiente(s) que pueden requerir evaluación especializada.`
+              : 'Todos los hitos evaluados han sido conseguidos.'}
+          </p>
+        </div>
+      )}
       <div className="hitos-lista">
         {hitosFiltrados.map(hito => {
           const conseguido = hitoConseguido(hito.id);
@@ -385,9 +629,17 @@ function HitosRegistro({ ninoId }) {
                   <button 
                     className="btn-registrar"
                     onClick={() => {
-                      const edad = prompt('¿A qué edad (en meses) se consiguió este hito?', Math.round(edadActualMeses));
-                      if (edad) {
-                        registrarHito(hito.id, parseFloat(edad));
+                      if (modoEvaluacion === 'puntual') {
+                        // En modo puntual, registrar con la edad de evaluación
+                        if (confirm(`¿Ha conseguido "${hito.nombre}" el niño a los ${Math.round(edadEvaluacionMeses)} meses?`)) {
+                          registrarHito(hito.id, edadEvaluacionMeses);
+                        }
+                      } else {
+                        // En modo longitudinal, preguntar la edad específica
+                        const edad = prompt('¿A qué edad (en meses) se consiguió este hito?', Math.round(hito.edad_media_meses));
+                        if (edad) {
+                          registrarHito(hito.id, parseFloat(edad));
+                        }
                       }
                     }}
                   >
@@ -396,7 +648,10 @@ function HitosRegistro({ ninoId }) {
                   <button 
                     className="btn-no-alcanzado"
                     onClick={() => {
-                      if (confirm(`¿Marcar "${hito.nombre}" como no alcanzado aún? (Edad actual: ${Math.round(edadActualMeses)} meses)`)) {
+                      const edadMostrar = modoEvaluacion === 'puntual' ? 
+                        Math.round(edadEvaluacionMeses) : 
+                        Math.round(edadActualMeses);
+                      if (confirm(`¿Marcar "${hito.nombre}" como no alcanzado aún? (Edad ${modoEvaluacion === 'puntual' ? 'de evaluación' : 'actual'}: ${edadMostrar} meses)`)) {
                         registrarHitoNoAlcanzado(hito.id);
                       }
                     }}

@@ -5,12 +5,13 @@ import NinoForm from './components/NinoForm';
 import HitosRegistro from './components/HitosRegistro';
 import GraficoDesarrollo from './components/GraficoDesarrollo';
 import RedFlagsRegistro from './components/RedFlagsRegistro';
+import EjemplosClinicos from './components/EjemplosClinicos';
 import { API_URL } from './config';
 
 function App() {
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
-  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags
+  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos
 
   useEffect(() => {
     cargarNinos();
@@ -57,6 +58,15 @@ function App() {
         >
           👶 Niños
         </button>
+        <button 
+          className={vistaActual === 'ejemplos' ? 'active' : ''}
+          onClick={() => {
+            setVistaActual('ejemplos');
+            setNinoSeleccionado(null);
+          }}
+        >
+          📚 Ejemplos Clínicos
+        </button>
         {ninoSeleccionado && (
           <>
             <button 
@@ -82,7 +92,7 @@ function App() {
       </nav>
 
       <main className="main-content">
-        {ninoSeleccionado && (
+        {ninoSeleccionado && vistaActual !== 'ejemplos' && (
           <div className="nino-info">
             <h2>{ninoSeleccionado.nombre}</h2>
             <p>Fecha de nacimiento: {new Date(ninoSeleccionado.fecha_nacimiento).toLocaleDateString('es-ES')}</p>
@@ -99,6 +109,10 @@ function App() {
               onNinoEliminado={handleNinoEliminado}
             />
           </div>
+        )}
+
+        {vistaActual === 'ejemplos' && (
+          <EjemplosClinicos />
         )}
 
         {vistaActual === 'registro' && ninoSeleccionado && (
