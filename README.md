@@ -4,87 +4,77 @@ Sistema completo para el seguimiento y evaluación del desarrollo neurológico e
 
 ## 🎯 Características Principales
 
-### 1. **Base de Datos Normativa Múltiple** 🆕
+### 1. **Análisis Matemático Avanzado del Desarrollo** 🆕
+- **Análisis mediante derivadas** basado en conceptos de [neuropediatoolkit.org](https://neuropediatoolkit.org/evaluacion-global-del-neurodesarrollo/)
+- **Tres niveles de análisis**:
+  - **Derivada 0ª (Posición)**: ¿Dónde está el niño? (CD, Z-scores)
+  - **Derivada 1ª (Velocidad)**: ¿Hacia dónde va? (ΔCD/Δt)
+  - **Derivada 2ª (Aceleración)**: ¿Cómo cambia la trayectoria? (Δ²CD/Δt²)
+- **Detección automática de patrones**:
+  - ✅ Recuperación activa (velocidad positiva + aceleración positiva)
+  - ⚠️ Estancamiento (velocidad ≈ 0)
+  - 🚨 Regresión (velocidad negativa)
+  - 📊 Retraso estable vs progresivo
+- **Visualización gráfica dual**: Posición + Velocidad, Aceleración
+- **Interpretaciones automáticas** según criterios matemáticos
+- **Análisis por dominio** para detectar asincronías dinámicas
+
+### 2. **Clasificación de Trayectorias del Desarrollo** 🆕
+- **Basado en Thomas et al. (2009)**: Tipología de 4 tipos de trayectorias atípicas
+- **Clasificación automática** por dominio:
+  - **DELAY** (Retraso): Trayectoria paralela pero retrasada
+  - **DEVIANCE Convergente**: Recuperación activa (catching up)
+  - **DEVIANCE Divergente**: Empeoramiento progresivo
+  - **DYSMATURITY**: Inicio normal, posterior desviación (regresión)
+  - **DIFFERENCE**: Patrón cualitativamente diferente
+- **Interpretaciones clínicas específicas** para cada tipo
+- **Implicaciones pronósticas y terapéuticas** personalizadas
+- **Visualización con código de colores** e iconos
+- **Base científica rigurosa**: 9 referencias bibliográficas integradas
+
+### 3. **Base de Datos Normativa Múltiple**
 - **4 Fuentes normativas diferentes**: CDC, OMS, Bayley-III, Battelle
-- **Sistema de información integrado**: Botón ℹ️ Info en cada selector de fuente que muestra:
-  - Dominios cubiertos por cada fuente
-  - Propiedades psicométricas (fiabilidad, validez, población)
-  - Fortalezas y limitaciones específicas
-  - Mejor uso clínico para cada fuente
-  - Enlaces directos a las fuentes originales
-  - Comparación rápida con sistema de estrellas
+- **Sistema de información integrado**: Botón ℹ️ Info con propiedades psicométricas
 - **7 Dominios de desarrollo**: Motor Grueso, Motor Fino, Lenguaje Receptivo, Lenguaje Expresivo, Social-Emocional, Cognitivo y Adaptativo
-- **Más de 80 hitos del desarrollo** con edades medias y desviaciones estándar basadas en datos normativos
+- **Más de 80 hitos del desarrollo** con edades medias y desviaciones estándar
 - Selección flexible de fuente normativa según contexto clínico
 
-### 2. **Registro Intuitivo de Hitos** 🆕
+### 3. **Registro Intuitivo de Hitos**
 - Interfaz gráfica amigable para registrar cuándo cada niño alcanza cada hito
-- **Filtrado inteligente por edad**: Solo muestra hitos relevantes (edad mínima ± 2 meses de la edad actual)
-- Reduce el trabajo al no tener que revisar todos los hitos del catálogo
+- **Filtrado inteligente por edad**: Solo muestra hitos relevantes
 - Filtrado por dominio y estado (conseguidos/pendientes)
-- Cálculo automático de múltiples métricas (Z-scores, Edad de Desarrollo, Cociente de Desarrollo)
-- Visualización inmediada del estado del desarrollo
+- Cálculo automático de Z-scores, CD y métricas de desarrollo
 
-### 3. **Visualización Gráfica Avanzada**
-- **Gráfico tipo curva de crecimiento** con:
-  - Eje X: Tiempo (edad en meses)
-  - Eje Y: Puntuación Z (desviaciones estándar respecto a la normalidad)
-  - Eje Z conceptual: Red flags y variables cualitativas
-- **Curva de Gauss superpuesta** al pasar el ratón sobre puntos de datos
+### 4. **Visualización Gráfica Avanzada**
+- **Gráfico tipo curva de crecimiento** con Z-scores en el tiempo
+- **Curva de Gauss superpuesta** al pasar el ratón sobre puntos
 - Líneas de referencia para interpretar z-scores (-2 DE, -1 DE, media, +1 DE, +2 DE)
+- **Itinerario de desarrollo**: Evolución del Cociente de Desarrollo con cálculo de velocidad
 - Análisis por dominio del desarrollo
 
-### 4. **Sistema de Red Flags (Señales de Alarma)**
+### 5. **Sistema de Red Flags (Señales de Alarma)**
 - Catálogo de 20+ señales de alarma del desarrollo
-- Registro de observaciones con:
-  - Edad de aparición
-  - Nivel de severidad (Leve, Moderada, Severa)
-  - Notas clínicas
-- Visualización integrada en el gráfico de desarrollo
-- Indicadores específicos como:
-  - Regresión de habilidades
-  - Conductas estereotipadas
-  - Ausencia de hitos críticos
-  - Alteraciones sensoriales
+- Registro con edad de aparición, nivel de severidad y notas clínicas
+- Visualización integrada en gráficos
 
-### 5. **Análisis Estadístico Dual** 🆕
+### 6. **Análisis Estadístico Dual**
 #### Análisis con Z-Scores (Método Clásico)
-- **Puntuación Z** para cada hito conseguido
-- Interpretación automática del desarrollo:
-  - Z < -3: Retraso muy significativo ⚠️
-  - -3 < Z < -2: Retraso significativo ⚠️
-  - -2 < Z < -1: Ligeramente por debajo de la media ⚡
-  - -1 < Z < 1: Dentro de lo normal ✅
-  - 1 < Z < 2: Ligeramente por encima de la media 🌟
-  - 2 < Z < 3: Adelanto significativo 🌟
-  - Z > 3: Adelanto muy significativo 🌟
+- **Puntuación Z** para cada hito conseguido con interpretación automática
 - Estadísticas por dominio
 
-#### Análisis con Cociente de Desarrollo (Nuevo Método) 🆕
+#### Análisis con Cociente de Desarrollo (Método Complementario)
 - **Edad de Desarrollo (ED)**: Promedio de edades normativas de hitos conseguidos
 - **Cociente de Desarrollo (CD)**: (ED / Edad Cronológica) × 100
-  - CD = 100%: Desarrollo típico
-  - CD > 100%: Desarrollo adelantado
-  - CD < 100%: Desarrollo retrasado
 - **Itinerario de Desarrollo**: Evolución temporal del cociente
-- **Velocidad de Desarrollo**: Derivada del cociente (ΔCD/Δt)
-  - Detecta aceleraciones o desaceleraciones
-  - Identifica estancamientos en el desarrollo
+- **Velocidad de Desarrollo**: Derivada del cociente (ΔCD/Δt) para detectar aceleraciones/desaceleraciones
 - Análisis por dominio y global
 
-### 6. **Sistema de Diagnóstico Automático Criterial** 🆕
+### 7. **Sistema de Diagnóstico Automático Criterial**
 - **Criterios diagnósticos basados en evidencia** para identificar patrones del desarrollo
-- **Umbral de corte personalizable** (por defecto -2 DE, rango: 0.5 a 5.0 DE con decimales)
-- **Diagnósticos automáticos incluidos**:
-  - **Retraso Global del Desarrollo**: Cuando 2 o más dominios muestran retraso
-  - **Retraso Simple del Lenguaje**: Solo afectación del dominio de comunicación
-  - **Sospecha de PCI o Enfermedad Neuromuscular**: Retraso motor grueso exclusivo o combinado con motor fino
-  - **Sospecha de TEA**: Área social-emocional desproporcionadamente afectada (2 DE por debajo del promedio de otras áreas)
-- **Análisis por dominio** con visualización clara del estado de cada área
-- **Recomendaciones clínicas** específicas para cada diagnóstico identificado
-- **Niveles de severidad** (leve, moderada, alta) según criterios clínicos
-- **Selección de fuente normativa** para comparar con diferentes poblaciones
-- Comparación con la distribución normal
+- **Umbral de corte personalizable** (por defecto -2 DE, ajustable)
+- **Diagnósticos automáticos**: Retraso Global, Retraso Simple del Lenguaje, Sospecha PCI/Neuromuscular, Sospecha TEA
+- **Recomendaciones clínicas** específicas para cada hallazgo
+- Análisis por dominio con niveles de severidad
 
 ## 🚀 Instalación y Uso
 
@@ -181,21 +171,74 @@ devel-tracking/
    - Nivel de severidad
    - Notas adicionales
 
-### 5. Consultar Diagnósticos Automáticos 🆕
+### 5. Consultar Análisis Matemático del Desarrollo 🆕
+1. Seleccionar un niño con al menos 2 evaluaciones registradas
+2. Ir a "📐 Análisis Matemático"
+3. **Revisar las tres derivadas**:
+   - **Posición (0ª)**: Cociente de Desarrollo actual
+   - **Velocidad (1ª)**: Ritmo de cambio (ΔCD/Δt)
+   - **Aceleración (2ª)**: Cambios en el ritmo (Δ²CD/Δt²)
+4. **Interpretar patrones**:
+   - ✅ Recuperación activa: Velocidad positiva + Aceleración positiva
+   - ⚠️ Estancamiento: Velocidad ≈ 0
+   - 🚨 Regresión: Velocidad negativa
+   - 📊 Retraso estable vs progresivo
+5. Comparar velocidades entre dominios para detectar asincronías
+
+### 6. Clasificar Tipo de Trayectoria 🆕
+1. Seleccionar un niño con al menos 3 evaluaciones registradas
+2. Ir a "🎯 Tipología Trayectorias"
+3. **Ver clasificación automática** por dominio:
+   - DELAY (Retraso paralelo)
+   - DEVIANCE Convergente (Recuperación)
+   - DEVIANCE Divergente (Empeoramiento)
+   - DYSMATURITY (Regresión)
+   - DIFFERENCE (Patrón atípico)
+4. **Revisar implicaciones clínicas** específicas para cada tipo
+5. Ajustar estrategias terapéuticas según tipo identificado
+
+### 7. Consultar Diagnósticos Automáticos
 1. Seleccionar un niño con hitos registrados
 2. Ir a "🩺 Diagnósticos"
-3. **Configurar parámetros**:
-   - Ajustar el umbral de corte (por defecto -2.0 DE)
-   - Seleccionar fuente normativa si hay varias disponibles
-4. **Revisar análisis**:
-   - Estado por dominio del desarrollo con Z-scores promedio
-   - Diagnósticos identificados automáticamente
-   - Áreas afectadas y criterios cumplidos
-   - Recomendaciones clínicas específicas
-5. El sistema mostrará:
-   - ✅ Evaluación normal si no se cumplen criterios diagnósticos
-   - ⚠️ Hallazgos clínicos con nivel de severidad
-   - Información detallada sobre los criterios diagnósticos aplicados
+3. Ajustar umbral de corte si es necesario
+4. Revisar diagnósticos identificados y recomendaciones clínicas
+
+---
+
+## 📚 Base Científica
+
+Esta herramienta integra conceptos de **más de una década de investigación científica** sobre análisis de trayectorias del desarrollo:
+
+### Literatura Científica Principal:
+
+1. **Alcantud A (2024)** - Neuropediatoolkit.org  
+   *"Las matemáticas aplicadas a la evaluación del neurodesarrollo"*  
+   Base conceptual de las tres derivadas y heteroescedasticidad
+
+2. **Thomas MS et al. (2009)** - *J Speech Lang Hear Res*  
+   Tipología de 4 tipos de trayectorias atípicas (DELAY, DEVIANCE, DYSMATURITY, DIFFERENCE)
+
+3. **Thomas MSC (2016)** - *Child Dev Perspect*  
+   Distinción entre retraso (delay) y diferencia cualitativa (difference)
+
+4. **Tervo RC (2006)** - *Clinical Pediatrics*  
+   Patrones de retraso tienen valor diagnóstico específico
+
+5. **Lajiness-O'Neill et al. (2018)** - *Infant Behav Dev*  
+   PediaTrac™ - Validación de herramientas web de seguimiento longitudinal
+
+6. **Deboeck et al. (2016)** - *Appl Dev Sci*  
+   Derivadas como formas de conceptualizar teorías del cambio
+
+7. **Annaz et al. (2008)** - *Child Neuropsychology*  
+   Importancia del seguimiento longitudinal en neuropsicología infantil
+
+8. **Sices L (2007)** - *J Dev Behav Pediatr*  
+   Repensar el uso de medias en hitos del desarrollo
+
+**Ver documentación completa**: `BIBLIOGRAFIA_TRAYECTORIAS_DESARROLLO.md`
+
+---
 
 ## 📊 API Endpoints
 

@@ -6,12 +6,14 @@ import HitosRegistro from './components/HitosRegistro';
 import GraficoDesarrollo from './components/GraficoDesarrollo';
 import RedFlagsRegistro from './components/RedFlagsRegistro';
 import EjemplosClinicos from './components/EjemplosClinicos';
+import AnalisisAceleracion from './components/AnalisisAceleracion';
+import ClasificacionTrayectorias from './components/ClasificacionTrayectorias';
 import { API_URL } from './config';
 
 function App() {
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
-  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos
+  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion
 
   useEffect(() => {
     cargarNinos();
@@ -87,6 +89,18 @@ function App() {
             >
               📈 Gráficas
             </button>
+            <button 
+              className={vistaActual === 'aceleracion' ? 'active' : ''}
+              onClick={() => setVistaActual('aceleracion')}
+            >
+              📐 Análisis Matemático
+            </button>
+            <button 
+              className={vistaActual === 'clasificacion' ? 'active' : ''}
+              onClick={() => setVistaActual('clasificacion')}
+            >
+              🎯 Tipología Trayectorias
+            </button>
           </>
         )}
       </nav>
@@ -125,6 +139,14 @@ function App() {
 
         {vistaActual === 'redflags' && ninoSeleccionado && (
           <RedFlagsRegistro ninoId={ninoSeleccionado.id} />
+        )}
+
+        {vistaActual === 'aceleracion' && ninoSeleccionado && (
+          <AnalisisAceleracion ninoId={ninoSeleccionado.id} />
+        )}
+
+        {vistaActual === 'clasificacion' && ninoSeleccionado && (
+          <ClasificacionTrayectorias ninoId={ninoSeleccionado.id} />
         )}
       </main>
     </div>
