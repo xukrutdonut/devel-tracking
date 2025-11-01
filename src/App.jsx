@@ -8,12 +8,13 @@ import RedFlagsRegistro from './components/RedFlagsRegistro';
 import EjemplosClinicos from './components/EjemplosClinicos';
 import AnalisisAceleracion from './components/AnalisisAceleracion';
 import ClasificacionTrayectorias from './components/ClasificacionTrayectorias';
+import Bibliografia from './components/Bibliografia';
 import { API_URL } from './config';
 
 function App() {
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
-  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion
+  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion, bibliografia
 
   useEffect(() => {
     cargarNinos();
@@ -68,6 +69,15 @@ function App() {
           }}
         >
           📚 Ejemplos Clínicos
+        </button>
+        <button 
+          className={vistaActual === 'bibliografia' ? 'active' : ''}
+          onClick={() => {
+            setVistaActual('bibliografia');
+            setNinoSeleccionado(null);
+          }}
+        >
+          📖 Fundamentos Científicos
         </button>
         {ninoSeleccionado && (
           <>
@@ -147,6 +157,10 @@ function App() {
 
         {vistaActual === 'clasificacion' && ninoSeleccionado && (
           <ClasificacionTrayectorias ninoId={ninoSeleccionado.id} />
+        )}
+
+        {vistaActual === 'bibliografia' && (
+          <Bibliografia />
         )}
       </main>
     </div>

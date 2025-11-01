@@ -2,6 +2,21 @@
 
 Sistema completo para el seguimiento y evaluación del desarrollo neurológico en niños de 0 a 6 años, con base de datos normativa, registro de hitos, visualización gráfica con puntuación Z y detección de señales de alarma.
 
+## 📚 Base Científica
+
+**Esta herramienta integra más de una década de investigación científica sobre análisis de trayectorias del desarrollo infantil**. Cada funcionalidad está fundamentada en literatura científica revisada por pares.
+
+👉 **Ver [Fundamentos Científicos](BIBLIOGRAFIA_TRAYECTORIAS_DESARROLLO.md)** para documentación completa de referencias.
+
+**Referencias principales**:
+- Thomas et al. (2009) - Trayectorias del desarrollo
+- Deboeck et al. (2016) - Uso de derivadas  
+- Tervo (2006) - Patrones diagnósticos
+- Sices (2007) - Variabilidad normal
+- Lajiness-O'Neill et al. (2018) - Validación PediaTrac
+
+La aplicación incluye una **sección interactiva de Fundamentos Científicos** (📖 en el menú) que documenta cómo cada funcionalidad se basa en investigación científica específica.
+
 ## 🎯 Características Principales
 
 ### 1. **Análisis Matemático Avanzado del Desarrollo** 🆕

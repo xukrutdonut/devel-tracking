@@ -3,6 +3,22 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
 import { API_URL } from '../config';
 
+/**
+ * Componente de Gráfico del Desarrollo
+ * 
+ * REFERENCIAS CIENTÍFICAS:
+ * - Thomas et al. (2009). J Speech Lang Hear Res, 52(2):336-58.
+ *   Visualización de trayectorias longitudinales del desarrollo
+ * 
+ * - Tervo (2006). Clinical Pediatrics, 45(6):509-17.
+ *   Patrones diagnósticos basados en asincronías entre dominios
+ * 
+ * - Sices (2007). J Dev Behav Pediatr, 28(1):47-52.
+ *   Uso de Z-scores y bandas de confianza en lugar de medias simples
+ * 
+ * - Lajiness-O'Neill et al. (2018). Infant Behav Dev, 50:224-37.
+ *   Sistema de vigilancia continua tipo PediaTrac con múltiples fuentes normativas
+ */
 function GraficoDesarrollo({ ninoId }) {
   const [analisis, setAnalisis] = useState(null);
   const [redFlags, setRedFlags] = useState([]);

@@ -4,16 +4,24 @@ import { construirPuntosEvaluacion, interpretarTrayectoria, determinarTipoDatos 
 
 /**
  * Componente para análisis de aceleración del desarrollo (derivada 2ª)
- * Basado en conceptos matemáticos de neuropediatoolkit.org
+ * 
+ * REFERENCIAS CIENTÍFICAS:
+ * - Deboeck et al. (2016). Applied Developmental Science, 19(4):217-31.
+ *   "Using derivatives to articulate change theories"
+ *   Implementa análisis de las 3 derivadas como herramientas conceptuales del cambio
+ * 
+ * - Thomas et al. (2009). J Speech Lang Hear Res, 52(2):336-58.
+ *   "Using developmental trajectories to understand developmental disorders"
+ *   Base teórica para interpretación de trayectorias
  * 
  * SOPORTA DOS TIPOS DE DATOS:
  * 1. LONGITUDINAL RETROSPECTIVO: Múltiples hitos con edades de logro
  * 2. PROSPECTIVO: Múltiples evaluaciones puntuales en el tiempo
  * 
  * Implementa análisis de:
- * - Posición (Derivada 0): Cociente de Desarrollo
- * - Velocidad (Derivada 1ª): ΔCD/Δt
- * - Aceleración (Derivada 2ª): Δ²CD/Δt²
+ * - Posición (Derivada 0): Cociente de Desarrollo - "¿Dónde está?"
+ * - Velocidad (Derivada 1ª): ΔCD/Δt - "¿Cómo cambia?"
+ * - Aceleración (Derivada 2ª): Δ²CD/Δt² - "¿Cómo cambia el cambio?"
  */
 export default function AnalisisAceleracion({ ninoId }) {
   const [datos, setDatos] = useState(null);
