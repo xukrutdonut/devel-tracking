@@ -36,14 +36,33 @@ function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
         <div className="ninos-grid">
           {ninos.map(nino => {
             const edades = formatearEdades(nino.fecha_nacimiento, nino.semanas_gestacion);
+            const esEjemplo = nino.nombre.includes('Ejemplo');
             return (
               <div 
                 key={nino.id} 
                 className="nino-card"
                 onClick={() => onNinoSeleccionado(nino)}
+                style={esEjemplo ? { 
+                  borderLeft: '4px solid #2196F3',
+                  backgroundColor: '#f0f7ff'
+                } : {}}
               >
                 <div className="nino-card-header">
-                  <h3>{nino.nombre}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                    {esEjemplo && (
+                      <span style={{
+                        backgroundColor: '#2196F3',
+                        color: 'white',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.75em',
+                        fontWeight: 'bold'
+                      }}>
+                        EJEMPLO
+                      </span>
+                    )}
+                    <h3 style={{ margin: 0 }}>{nino.nombre}</h3>
+                  </div>
                   <button 
                     className="btn-eliminar-nino"
                     onClick={(e) => eliminarNino(e, nino)}

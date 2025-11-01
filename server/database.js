@@ -76,6 +76,21 @@ db.serialize(() => {
     FOREIGN KEY (nino_id) REFERENCES ninos(id),
     FOREIGN KEY (hito_id) REFERENCES hitos_normativos(id)
   )`);
+  
+  // Migración: agregar columnas para regresión si no existen
+  db.run(`ALTER TABLE hitos_conseguidos ADD COLUMN edad_perdido_meses REAL`, (err) => {
+    // Ignorar error si la columna ya existe
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding edad_perdido_meses column:', err);
+    }
+  });
+  
+  db.run(`ALTER TABLE hitos_conseguidos ADD COLUMN fecha_perdido DATE`, (err) => {
+    // Ignorar error si la columna ya existe
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding fecha_perdido column:', err);
+    }
+  });
 
   // Tabla de hitos no alcanzados (para seguimiento)
   db.run(`CREATE TABLE IF NOT EXISTS hitos_no_alcanzados (

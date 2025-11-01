@@ -294,15 +294,30 @@ app.get('/api/hitos-conseguidos/:ninoId', (req, res) => {
 });
 
 app.post('/api/hitos-conseguidos', (req, res) => {
-  const { nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas } = req.body;
+  const { nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses, fecha_perdido } = req.body;
   
   db.run(`INSERT INTO hitos_conseguidos 
-    (nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas) 
-    VALUES (?, ?, ?, ?, ?)`,
-    [nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas],
+    (nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses, fecha_perdido) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses || null, fecha_perdido || null],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID });
+    }
+  );
+});
+
+// Nuevo endpoint para registrar pérdida de hito (regresión)
+app.put('/api/hitos-conseguidos/:id/registrar-perdida', (req, res) => {
+  const { edad_perdido_meses, fecha_perdido } = req.body;
+  
+  db.run(`UPDATE hitos_conseguidos 
+    SET edad_perdido_meses = ?, fecha_perdido = ?
+    WHERE id = ?`,
+    [edad_perdido_meses, fecha_perdido, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, changes: this.changes });
     }
   );
 });

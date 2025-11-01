@@ -112,7 +112,7 @@ function App() {
         )}
 
         {vistaActual === 'ejemplos' && (
-          <EjemplosClinicos />
+          <EjemplosClinicos onEjemploCreado={cargarNinos} />
         )}
 
         {vistaActual === 'registro' && ninoSeleccionado && (

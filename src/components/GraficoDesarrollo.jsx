@@ -231,6 +231,30 @@ function GraficoDesarrollo({ ninoId }) {
     return lineaTendencia;
   };
 
+  // Función para renderizar puntos personalizados (marca pérdidas)
+  const renderizarPuntoPersonalizado = (props) => {
+    const { cx, cy, payload, fill } = props;
+    if (!payload) return null;
+    
+    // Si el punto tiene pérdida, usar un símbolo diferente (cruz o X)
+    if (payload.tiene_perdida) {
+      return (
+        <g>
+          {/* Círculo rojo para pérdida */}
+          <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
+          {/* X blanca dentro */}
+          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
+                fill="#fff" fontSize="12" fontWeight="bold">
+            ×
+          </text>
+        </g>
+      );
+    }
+    
+    // Punto normal de adquisición - usar color con mejor contraste
+    const colorPunto = fill === '#fff' || !fill ? '#2c3e50' : fill;
+    return <circle cx={cx} cy={cy} r={6} fill={colorPunto} stroke="#fff" strokeWidth={2} />;
+  };
 
 
   const edadActualMeses = analisis.edad_actual_meses;
@@ -248,59 +272,138 @@ function GraficoDesarrollo({ ninoId }) {
     .map(hito => ({
       ...hito,
       edad_desarrollo: hito.edad_media_meses, // Edad esperada del hito
-      edad_cronologica: hito.edad_conseguido_meses // Edad cuando lo logró
+      edad_cronologica: hito.edad_conseguido_meses, // Edad cuando lo logró
+      edad_perdido: hito.edad_perdido_meses // Edad cuando se perdió (si aplica)
     }));
-
-  // Agrupar hitos por edad cronológica para calcular edad de desarrollo promedio en cada momento
-  const hitosPorEdadCronologica = {};
+  
+  // Crear puntos para la gráfica: adquisiciones Y pérdidas
+  const puntosParaGrafica = [];
   
   hitosConEdadDesarrollo.forEach(hito => {
-    const edad = Math.round(hito.edad_cronologica * 10) / 10;
+    // Punto de adquisición: (edad_conseguido, edad_media_normativa)
+    puntosParaGrafica.push({
+      edad_cronologica: hito.edad_cronologica,
+      edad_desarrollo: hito.edad_desarrollo,
+      tipo: 'adquisicion',
+      hito_id: hito.id,
+      dominio_id: hito.dominio_id,
+      dominio_nombre: hito.dominio_nombre,
+      hito_nombre: hito.hito_nombre,
+      tiene_perdida: false
+    });
+    
+    // Si el hito se perdió, agregar punto de pérdida: (edad_perdido, edad_media_normativa)
+    // Esto crea visualmente la "caída" en la gráfica
+    if (hito.edad_perdido && hito.edad_perdido <= edadActualMeses) {
+      puntosParaGrafica.push({
+        edad_cronologica: hito.edad_perdido,
+        edad_desarrollo: hito.edad_desarrollo, // MISMO valor Y que la adquisición
+        tipo: 'perdida',
+        hito_id: hito.id,
+        dominio_id: hito.dominio_id,
+        dominio_nombre: hito.dominio_nombre,
+        hito_nombre: hito.hito_nombre,
+        tiene_perdida: true
+      });
+    }
+  });
+  
+  // Ordenar por edad cronológica
+  puntosParaGrafica.sort((a, b) => a.edad_cronologica - b.edad_cronologica);
+
+  // Filtrar puntos biológicamente plausibles:
+  // Una vez que ocurre la primera pérdida, no se incluyen adquisiciones posteriores
+  // (no es biológicamente plausible adquirir nuevos hitos durante regresión)
+  const primeraEdadPerdida = puntosParaGrafica.find(p => p.tipo === 'perdida')?.edad_cronologica;
+  const puntosPlausibles = primeraEdadPerdida
+    ? puntosParaGrafica.filter(p => {
+        // Incluir todas las adquisiciones antes de la primera pérdida
+        if (p.tipo === 'adquisicion' && p.edad_cronologica < primeraEdadPerdida) return true;
+        // Incluir todas las pérdidas
+        if (p.tipo === 'perdida') return true;
+        // Excluir adquisiciones posteriores a la primera pérdida
+        return false;
+      })
+    : puntosParaGrafica; // Si no hay pérdidas, usar todos los puntos
+
+  // Para la gráfica global y cálculos, usar solo puntos biológicamente plausibles
+  const datosGraficoGlobal = puntosPlausibles;
+  const datosParaTendencia = puntosPlausibles;
+  
+  // Agrupar puntos por edad cronológica para calcular promedios por dominio
+  // (necesario para la vista por dominios)
+  // USAR SOLO PUNTOS BIOLÓGICAMENTE PLAUSIBLES
+  const hitosPorEdadCronologica = {};
+  
+  puntosPlausibles.forEach(punto => {
+    const edad = punto.edad_cronologica;
     if (!hitosPorEdadCronologica[edad]) {
       hitosPorEdadCronologica[edad] = {
         edad_cronologica: edad,
-        hitos_por_dominio: {}
+        puntos_por_dominio: {},
+        tiene_perdida: false
       };
     }
     
-    if (!hitosPorEdadCronologica[edad].hitos_por_dominio[hito.dominio_id]) {
-      hitosPorEdadCronologica[edad].hitos_por_dominio[hito.dominio_id] = [];
+    if (!hitosPorEdadCronologica[edad].puntos_por_dominio[punto.dominio_id]) {
+      hitosPorEdadCronologica[edad].puntos_por_dominio[punto.dominio_id] = [];
     }
     
-    hitosPorEdadCronologica[edad].hitos_por_dominio[hito.dominio_id].push(hito);
+    hitosPorEdadCronologica[edad].puntos_por_dominio[punto.dominio_id].push(punto);
+    
+    if (punto.tiene_perdida) {
+      hitosPorEdadCronologica[edad].tiene_perdida = true;
+    }
   });
+  
+  // Agregar punto inicial en (0, 0) si no existe
+  if (!hitosPorEdadCronologica[0] && Object.keys(hitosPorEdadCronologica).length > 0) {
+    hitosPorEdadCronologica[0] = {
+      edad_cronologica: 0,
+      puntos_por_dominio: {},
+      tiene_perdida: false,
+      edad_desarrollo_global: 0
+    };
+    dominios.forEach(d => {
+      hitosPorEdadCronologica[0].puntos_por_dominio[d.id] = [];
+      hitosPorEdadCronologica[0][`dominio_${d.id}`] = 0;
+    });
+  }
 
-  // Calcular edad de desarrollo global y por dominio para cada punto temporal
-  const datosGrafico = Object.values(hitosPorEdadCronologica).map(punto => {
+  // Calcular edad de desarrollo promedio para cada edad cronológica (para vistas por dominio)
+  const datosGrafico = Object.values(hitosPorEdadCronologica).map(grupo => {
     const resultado = {
-      edad_cronologica: punto.edad_cronologica,
+      edad_cronologica: grupo.edad_cronologica,
+      tiene_perdida: grupo.tiene_perdida,
       hitos_detalle: []
     };
     
     let sumaEdadesDesarrollo = 0;
-    let totalHitos = 0;
+    let totalPuntos = 0;
     
     // Calcular edad de desarrollo por dominio
-    Object.entries(punto.hitos_por_dominio).forEach(([dominioId, hitos]) => {
-      const edadesDesarrollo = hitos.map(h => h.edad_desarrollo);
-      const promedioEdadDesarrollo = edadesDesarrollo.reduce((a, b) => a + b, 0) / edadesDesarrollo.length;
-      
-      resultado[`dominio_${dominioId}`] = promedioEdadDesarrollo;
-      resultado[`dominio_${dominioId}_hitos`] = hitos;
-      
-      sumaEdadesDesarrollo += edadesDesarrollo.reduce((a, b) => a + b, 0);
-      totalHitos += edadesDesarrollo.length;
-      
-      resultado.hitos_detalle.push({
-        dominio_id: dominioId,
-        dominio_nombre: hitos[0].dominio_nombre,
-        edad_desarrollo: promedioEdadDesarrollo,
-        cantidad: hitos.length
-      });
+    Object.entries(grupo.puntos_por_dominio).forEach(([dominioId, puntos]) => {
+      if (puntos.length > 0) {
+        const edadesDesarrollo = puntos.map(p => p.edad_desarrollo);
+        const promedioEdadDesarrollo = edadesDesarrollo.reduce((a, b) => a + b, 0) / edadesDesarrollo.length;
+        
+        resultado[`dominio_${dominioId}`] = promedioEdadDesarrollo;
+        resultado[`dominio_${dominioId}_puntos`] = puntos;
+        
+        sumaEdadesDesarrollo += edadesDesarrollo.reduce((a, b) => a + b, 0);
+        totalPuntos += edadesDesarrollo.length;
+        
+        resultado.hitos_detalle.push({
+          dominio_id: dominioId,
+          dominio_nombre: puntos[0].dominio_nombre,
+          edad_desarrollo: promedioEdadDesarrollo,
+          cantidad: puntos.length
+        });
+      }
     });
     
-    // Edad de desarrollo global (promedio de todos los hitos en este punto)
-    resultado.edad_desarrollo_global = totalHitos > 0 ? sumaEdadesDesarrollo / totalHitos : null;
+    // Edad de desarrollo global (promedio de todos los puntos en este momento)
+    resultado.edad_desarrollo_global = totalPuntos > 0 ? sumaEdadesDesarrollo / totalPuntos : null;
     
     return resultado;
   }).sort((a, b) => a.edad_cronologica - b.edad_cronologica);
@@ -352,36 +455,39 @@ function GraficoDesarrollo({ ninoId }) {
 
   // Calcular puntuaciones Z
   // Z-score = (edad de desarrollo - edad cronológica) / desviación estándar estimada
+  // IMPORTANTE: Solo usar puntos de ADQUISICIÓN, no de pérdida (no hay datos normativos para pérdidas)
   // Usaremos una desviación estándar estimada del 15% de la edad cronológica
-  const datosZScore = datosGrafico.map(punto => {
-    const sd = Math.max(punto.edad_cronologica * 0.15, 2);
-    
-    const resultado = {
-      edad_cronologica: punto.edad_cronologica,
-      zscore: null,
-      diferencia_meses: null
-    };
+  const datosZScore = datosGrafico
+    .filter(punto => !punto.tiene_perdida) // Excluir puntos de pérdida
+    .map(punto => {
+      const sd = Math.max(punto.edad_cronologica * 0.15, 2);
+      
+      const resultado = {
+        edad_cronologica: punto.edad_cronologica,
+        zscore: null,
+        diferencia_meses: null
+      };
 
-    // Z-score global
-    if (punto.edad_desarrollo_global) {
-      const diferencia = punto.edad_desarrollo_global - punto.edad_cronologica;
-      resultado.zscore = diferencia / sd;
-      resultado.diferencia_meses = diferencia;
-    }
-
-    // Z-score por dominio
-    dominios.forEach(d => {
-      const dominioKey = `dominio_${d.id}`;
-      if (punto[dominioKey] != null) {
-        const diferenciaDominio = punto[dominioKey] - punto.edad_cronologica;
-        resultado[`zscore_dominio_${d.id}`] = diferenciaDominio / sd;
-      } else {
-        resultado[`zscore_dominio_${d.id}`] = null;
+      // Z-score global
+      if (punto.edad_desarrollo_global) {
+        const diferencia = punto.edad_desarrollo_global - punto.edad_cronologica;
+        resultado.zscore = diferencia / sd;
+        resultado.diferencia_meses = diferencia;
       }
-    });
 
-    return resultado;
-  });
+      // Z-score por dominio
+      dominios.forEach(d => {
+        const dominioKey = `dominio_${d.id}`;
+        if (punto[dominioKey] != null) {
+          const diferenciaDominio = punto[dominioKey] - punto.edad_cronologica;
+          resultado[`zscore_dominio_${d.id}`] = diferenciaDominio / sd;
+        } else {
+          resultado[`zscore_dominio_${d.id}`] = null;
+        }
+      });
+
+      return resultado;
+    });
 
   // Datos para la línea de 45 grados (desarrollo típico)
   const maxEdad = Math.max(
@@ -395,9 +501,13 @@ function GraficoDesarrollo({ ninoId }) {
   ];
 
   // Calcular regresiones lineales para todas las gráficas
-  const regresionDesarrollo = calcularRegresionPolinomial(datosGrafico, 'edad_cronologica', 'edad_desarrollo_global');
+  // Para la tendencia global, usar datosParaTendencia que:
+  // - Incluye todas las adquisiciones ANTES de la primera pérdida
+  // - Incluye todas las pérdidas
+  // - EXCLUYE adquisiciones después de pérdidas (no biológicamente plausible)
+  const regresionDesarrollo = calcularRegresionPolinomial(datosParaTendencia, 'edad_cronologica', 'edad_desarrollo');
   const lineaTendenciaDesarrollo = regresionDesarrollo 
-    ? generarLineaTendenciaSuave(datosGrafico, 'edad_cronologica', 'edad_desarrollo_global', regresionDesarrollo)
+    ? generarLineaTendenciaSuave(datosParaTendencia, 'edad_cronologica', 'edad_desarrollo', regresionDesarrollo)
     : [];
 
   // Calcular velocidad desde la línea de tendencia de desarrollo (derivada)
@@ -411,7 +521,7 @@ function GraficoDesarrollo({ ninoId }) {
     }
     
     const puntoAnterior = lineaTendenciaDesarrollo[idx - 1];
-    const deltaDesarrollo = punto.edad_desarrollo_global - puntoAnterior.edad_desarrollo_global;
+    const deltaDesarrollo = punto.edad_desarrollo - puntoAnterior.edad_desarrollo;
     const deltaEdadCronologica = punto.edad_cronologica - puntoAnterior.edad_cronologica;
     const velocidad = deltaEdadCronologica !== 0 ? deltaDesarrollo / deltaEdadCronologica : null;
     
@@ -937,13 +1047,13 @@ function GraficoDesarrollo({ ninoId }) {
             {/* Puntos + línea de tendencia de edad de desarrollo global */}
             {dominioSeleccionado === 'global' && (
               <>
-                {/* Línea con puntos para datos reales */}
+                {/* Línea con puntos para datos reales - USA datosGraficoGlobal para mostrar pérdidas */}
                 <Line
-                  data={datosGrafico}
+                  data={datosGraficoGlobal}
                   type="monotone"
-                  dataKey="edad_desarrollo_global"
+                  dataKey="edad_desarrollo"
                   stroke="none"
-                  dot={{ fill: '#2c3e50', r: 6, strokeWidth: 2, stroke: '#fff' }}
+                  dot={renderizarPuntoPersonalizado}
                   name="Desarrollo Global (datos)"
                   connectNulls={false}
                   isAnimationActive={false}
@@ -953,7 +1063,7 @@ function GraficoDesarrollo({ ninoId }) {
                   <Line 
                     data={lineaTendenciaDesarrollo}
                     type="natural" 
-                    dataKey="edad_desarrollo_global"
+                    dataKey="edad_desarrollo"
                     stroke="#e74c3c"
                     strokeWidth={2.5}
                     dot={false}
@@ -1010,10 +1120,27 @@ function GraficoDesarrollo({ ninoId }) {
         
         <div className="chart-note" style={{ marginTop: '1rem', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
           <p style={{ margin: 0, fontSize: '0.9em', color: '#666' }}>
-            💡 <strong>Interpretación:</strong> Los puntos representan hitos evaluados. La línea de tendencia (punteada roja) muestra la dirección general del desarrollo. 
+            💡 <strong>Interpretación:</strong> Los puntos representan hitos evaluados. La línea de tendencia (roja) muestra la dirección general del desarrollo. 
             Si los puntos/tendencia están <strong>sobre</strong> la línea diagonal (45°), el desarrollo es más avanzado que la edad cronológica. 
             Si están <strong>debajo</strong>, indica un desarrollo más lento.
           </p>
+          {datosGraficoGlobal.some(d => d.tiene_perdida) && (
+            <>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9em', color: '#e74c3c', fontWeight: 'bold' }}>
+                ⚠️ <strong>Regresión detectada:</strong> Los puntos rojos con × indican momentos donde se perdieron hitos previamente adquiridos. 
+                La línea de tendencia refleja la trayectoria descendente del desarrollo.
+              </p>
+              {primeraEdadPerdida && puntosParaGrafica.some(p => p.tipo === 'adquisicion' && p.edad_cronologica >= primeraEdadPerdida) && (
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85em', color: '#f39c12', fontStyle: 'italic' }}>
+                  ℹ️ <strong>Nota clínica:</strong> Se detectaron {puntosParaGrafica.filter(p => p.tipo === 'adquisicion' && p.edad_cronologica >= primeraEdadPerdida).length} hito(s) 
+                  registrado(s) después de la primera pérdida (edad {primeraEdadPerdida.toFixed(1)} meses). 
+                  Estos puntos NO se muestran en la gráfica ni en los cálculos, ya que no es biológicamente plausible 
+                  adquirir nuevos hitos durante una regresión activa del desarrollo. Si representan recuperación posterior, considere 
+                  registrarlos en un período de seguimiento separado.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 

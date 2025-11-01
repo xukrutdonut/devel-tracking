@@ -163,6 +163,57 @@ function HitosRegistro({ ninoId }) {
     }
   };
 
+  const registrarHitoConPerdida = async (hitoId, edadConseguido, edadPerdido) => {
+    try {
+      await fetch(`${API_URL}/hitos-conseguidos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nino_id: ninoId,
+          hito_id: hitoId,
+          edad_conseguido_meses: edadConseguido,
+          fecha_registro: modoEvaluacion === 'puntual' ? fechaEvaluacion : new Date().toISOString().split('T')[0],
+          edad_perdido_meses: edadPerdido,
+          fecha_perdido: new Date().toISOString().split('T')[0]
+        })
+      });
+      cargarDatos();
+    } catch (error) {
+      console.error('Error al registrar hito con pérdida:', error);
+      alert('Error al registrar el hito con pérdida');
+    }
+  };
+
+  const marcarHitoPerdido = async (hitoConseguidoId, hitoNombre) => {
+    const edadPerdido = prompt(
+      `¿A qué edad (en meses) se perdió el hito "${hitoNombre}"?`,
+      Math.round(edadActualMeses)
+    );
+    
+    if (edadPerdido === null) return; // Usuario canceló
+    
+    const edadPerdidoFloat = parseFloat(edadPerdido);
+    if (isNaN(edadPerdidoFloat) || edadPerdidoFloat <= 0) {
+      alert('Por favor ingresa una edad válida en meses.');
+      return;
+    }
+    
+    try {
+      await fetch(`${API_URL}/hitos-conseguidos/${hitoConseguidoId}/registrar-perdida`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          edad_perdido_meses: edadPerdidoFloat,
+          fecha_perdido: new Date().toISOString().split('T')[0]
+        })
+      });
+      cargarDatos();
+    } catch (error) {
+      console.error('Error al registrar pérdida del hito:', error);
+      alert('Error al registrar la pérdida del hito');
+    }
+  };
+
   const registrarHitoNoAlcanzado = async (hitoId, notas = '') => {
     try {
       const edadEval = modoEvaluacion === 'puntual' ? edadEvaluacionMeses : edadActualMeses;
@@ -613,19 +664,44 @@ function HitosRegistro({ ninoId }) {
                 <div className="hito-conseguido-info">
                   <div className="conseguido-detalles">
                     <span>✓ Conseguido a los {conseguido.edad_conseguido_meses} meses</span>
+                    {conseguido.edad_perdido_meses && (
+                      <span style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+                        ✗ Perdido a los {conseguido.edad_perdido_meses} meses
+                      </span>
+                    )}
                     <span className={`z-score ${zScore < -2 ? 'retraso' : zScore > 2 ? 'adelanto' : 'normal'}`}>
                       Z-score: {zScore.toFixed(2)}
                     </span>
                   </div>
-                  <button 
-                    className="btn-eliminar"
-                    onClick={() => eliminarHito(conseguido.id)}
-                  >
-                    Eliminar
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {!conseguido.edad_perdido_meses && (
+                      <button 
+                        className="btn-perdida"
+                        onClick={() => marcarHitoPerdido(conseguido.id, hito.nombre)}
+                        title="Marcar como perdido (regresión)"
+                        style={{
+                          backgroundColor: '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.9em'
+                        }}
+                      >
+                        ✗ Pérdida
+                      </button>
+                    )}
+                    <button 
+                      className="btn-eliminar"
+                      onClick={() => eliminarHito(conseguido.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="hito-acciones">
+                <div className="hito-acciones" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button 
                     className="btn-registrar"
                     onClick={() => {
@@ -645,6 +721,58 @@ function HitosRegistro({ ninoId }) {
                   >
                     ✓ Conseguido
                   </button>
+                  
+                  <button 
+                    className="btn-perdida"
+                    onClick={() => {
+                      const edadConseguido = prompt(
+                        `¿A qué edad (en meses) se consiguió "${hito.nombre}"?`,
+                        Math.round(hito.edad_media_meses)
+                      );
+                      
+                      if (edadConseguido === null) return; // Usuario canceló
+                      
+                      const edadConseguidoFloat = parseFloat(edadConseguido);
+                      if (isNaN(edadConseguidoFloat)) {
+                        alert('Por favor ingresa una edad válida.');
+                        return;
+                      }
+                      
+                      const edadPerdido = prompt(
+                        `¿A qué edad (en meses) se perdió "${hito.nombre}"?`,
+                        Math.round(edadActualMeses)
+                      );
+                      
+                      if (edadPerdido === null) return; // Usuario canceló
+                      
+                      const edadPerdidoFloat = parseFloat(edadPerdido);
+                      if (isNaN(edadPerdidoFloat)) {
+                        alert('Por favor ingresa una edad válida.');
+                        return;
+                      }
+                      
+                      if (edadPerdidoFloat <= edadConseguidoFloat) {
+                        alert('La edad de pérdida debe ser posterior a la edad de consecución.');
+                        return;
+                      }
+                      
+                      // Registrar hito con pérdida inmediata
+                      registrarHitoConPerdida(hito.id, edadConseguidoFloat, edadPerdidoFloat);
+                    }}
+                    title="Marcar como perdido (regresión)"
+                    style={{
+                      backgroundColor: '#e74c3c',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.9em'
+                    }}
+                  >
+                    ✗ Pérdida
+                  </button>
+                  
                   <button 
                     className="btn-no-alcanzado"
                     onClick={() => {
@@ -657,6 +785,27 @@ function HitosRegistro({ ninoId }) {
                     }}
                   >
                     ✗ No alcanzado
+                  </button>
+                  
+                  <button 
+                    className="btn-no-se"
+                    onClick={() => {
+                      // Simplemente no hace nada, omite el hito del análisis
+                      // Podrías agregar feedback visual si lo deseas
+                      console.log(`Hito "${hito.nombre}" omitido - No lo sé`);
+                    }}
+                    title="Omitir este hito del análisis"
+                    style={{
+                      backgroundColor: '#95a5a6',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.9em'
+                    }}
+                  >
+                    ? No lo sé
                   </button>
                 </div>
               )}
