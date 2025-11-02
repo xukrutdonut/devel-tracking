@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ScatterChart, Scatter, ZAxis, ComposedChart, Area } from 'recharts';
 import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
 import { API_URL } from '../config';
-import { fetchConAuth } from '../utils/authService';
+import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GeneradorInforme from './GeneradorInforme';
 
 /**
@@ -57,6 +57,36 @@ function GraficoDesarrollo({ ninoId }) {
 
   const cargarDatos = async () => {
     try {
+      // En modo invitado, verificar si hay datos en sessionStorage
+      if (esModoInvitado() && ninoId.startsWith('invitado_')) {
+        const hitosKey = `invitado_hitos_${ninoId}`;
+        const hitosGuardados = sessionStorage.getItem(hitosKey);
+        
+        if (hitosGuardados) {
+          const hitos = JSON.parse(hitosGuardados);
+          
+          // Obtener datos del niño
+          const ninosGuardados = sessionStorage.getItem('invitado_ninos');
+          const ninos = ninosGuardados ? JSON.parse(ninosGuardados) : [];
+          const ninoData = ninos.find(n => n.id === ninoId);
+          
+          if (ninoData) {
+            // Cargar hitos normativos para calcular análisis
+            const hitosNormativosRes = await fetch(`${API_URL}/hitos-normativos?fuente=${fuenteSeleccionada || 1}`);
+            const hitosNormativos = await hitosNormativosRes.json();
+            
+            // Construir objeto de análisis similar al del servidor
+            const analisisData = construirAnalisisLocal(ninoData, hitos, hitosNormativos);
+            
+            setAnalisis(analisisData);
+            setRedFlags([]);
+            setNinoData(ninoData);
+            return;
+          }
+        }
+      }
+      
+      // Usuario autenticado o invitado sin datos: cargar desde API
       const fuenteParam = fuenteSeleccionada ? `?fuente=${fuenteSeleccionada}` : '';
       const [analisisRes, redFlagsRes, ninoRes] = await Promise.all([
         fetch(`${API_URL}/analisis/${ninoId}${fuenteParam}`),
@@ -74,6 +104,31 @@ function GraficoDesarrollo({ ninoId }) {
     } catch (error) {
       console.error('Error al cargar análisis:', error);
     }
+  };
+  
+  // Función auxiliar para construir análisis desde datos locales
+  const construirAnalisisLocal = (nino, hitos, hitosNormativos) => {
+    const edadActualMeses = calcularEdadCorregidaMeses(
+      nino.fecha_nacimiento,
+      nino.semanas_gestacion || 40
+    );
+    
+    // Agrupar hitos por dominio
+    const hitosPorDominio = {};
+    hitos.forEach(hito => {
+      if (!hitosPorDominio[hito.dominio_id]) {
+        hitosPorDominio[hito.dominio_id] = [];
+      }
+      hitosPorDominio[hito.dominio_id].push(hito);
+    });
+    
+    return {
+      nino,
+      edad_actual_meses: edadActualMeses,
+      hitos_conseguidos: hitos,
+      estadisticas_por_dominio: hitosPorDominio,
+      total_hitos: hitos.length
+    };
   };
 
   if (!analisis) {

@@ -47,6 +47,23 @@ function App() {
     setVistaActual('lista');
   };
 
+  const handleEjemploCreado = (ninoData, hitosData) => {
+    // Si recibe datos del niño y hitos, es modo invitado
+    if (ninoData && hitosData && esModoInvitado()) {
+      // Agregar el niño a la lista
+      const ninosActuales = [...ninos, ninoData];
+      setNinos(ninosActuales);
+      sessionStorage.setItem('invitado_ninos', JSON.stringify(ninosActuales));
+      
+      // Guardar los hitos del ejemplo en sessionStorage
+      const hitosKey = `invitado_hitos_${ninoData.id}`;
+      sessionStorage.setItem(hitosKey, JSON.stringify(hitosData));
+    } else {
+      // Usuario autenticado: recargar desde DB
+      cargarNinos();
+    }
+  };
+
   const cargarNinos = async () => {
     // Si es modo invitado, cargar desde sessionStorage
     if (esModoInvitado()) {
@@ -213,7 +230,7 @@ function App() {
         )}
 
         {vistaActual === 'ejemplos' && (
-          <EjemplosClinicos onEjemploCreado={cargarNinos} />
+          <EjemplosClinicos onEjemploCreado={handleEjemploCreado} />
         )}
 
         {vistaActual === 'registro' && ninoSeleccionado && (
