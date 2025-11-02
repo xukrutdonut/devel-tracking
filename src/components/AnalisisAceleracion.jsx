@@ -513,36 +513,47 @@ export default function AnalisisAceleracion({ ninoId }) {
 
       {/* 1. Gráfico de Trayectoria del Desarrollo (Posición - Derivada 0ª) */}
       <div style={{ marginBottom: '30px' }}>
-        <h3>📊 Trayectoria del Desarrollo (Posición - Derivada 0ª)</h3>
+        <h3>📊 Trayectoria del Desarrollo (Edad de Desarrollo vs Edad Cronológica)</h3>
         <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
-          Cociente de Desarrollo (CD) a lo largo del tiempo. Muestra "dónde está" el niño en su desarrollo.
+          Relación entre edad cronológica y edad de desarrollo. La línea diagonal representa desarrollo típico (ED = EC).
         </p>
         <ResponsiveContainer width="100%" height={350}>
-          <ComposedChart data={datos.datosAceleracion}>
+          <ComposedChart data={datos.datosAceleracion.map(d => ({
+            ...d,
+            edad_desarrollo: (d.cd / 100) * d.edad_meses,
+            edad_tipica: d.edad_meses
+          }))}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="edad_meses" 
-              label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5 }}
+              label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
+              domain={[0, 'auto']}
             />
             <YAxis 
-              label={{ value: 'Cociente de Desarrollo (%)', angle: -90, position: 'insideLeft' }}
+              label={{ value: 'Edad de Desarrollo (meses)', angle: -90, position: 'insideLeft' }}
               domain={[0, 'auto']}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             
-            {/* Líneas de referencia */}
-            <ReferenceLine y={100} stroke="#666" strokeDasharray="3 3" label="Desarrollo Típico (100%)" />
-            <ReferenceLine y={85} stroke="#FF9800" strokeDasharray="2 2" label="Zona de Alerta (85%)" />
-            <ReferenceLine y={70} stroke="#F44336" strokeDasharray="2 2" label="Retraso Significativo (70%)" />
-            
-            {/* Posición (CD) */}
+            {/* Línea diagonal de referencia (desarrollo típico) */}
             <Line 
               type="monotone" 
-              dataKey="cd" 
+              dataKey="edad_tipica" 
+              stroke="#999" 
+              strokeWidth={2}
+              strokeDasharray="5 5"
+              name="Desarrollo Típico (ED=EC)" 
+              dot={false}
+            />
+            
+            {/* Trayectoria real del niño */}
+            <Line 
+              type="monotone" 
+              dataKey="edad_desarrollo" 
               stroke="#2196F3" 
               strokeWidth={3}
-              name="Cociente de Desarrollo" 
+              name="Edad de Desarrollo del Niño" 
               dot={{ r: 6 }}
             />
           </ComposedChart>
