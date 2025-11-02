@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart, Scatter, ScatterChart, ZAxis } from 'recharts';
 import { construirPuntosEvaluacion, clasificarTipoTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
 import { fetchConAuth } from '../utils/authService';
+import { API_URL } from '../config';
 import { 
   ajustarModeloPolinomial, 
   analizarPrePostIntervencion,
@@ -62,7 +63,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarFuentes = async () => {
     try {
-      const response = await fetchConAuth('http://localhost:3001/api/fuentes-normativas');
+      const response = await fetchConAuth(`${API_URL}/fuentes-normativas');
       const data = await response.json();
       setFuentes(data);
     } catch (error) {
@@ -72,7 +73,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarDominios = async () => {
     try {
-      const response = await fetchConAuth('http://localhost:3001/api/dominios');
+      const response = await fetchConAuth(`${API_URL}/dominios');
       const data = await response.json();
       setDominios(data);
     } catch (error) {
@@ -84,13 +85,13 @@ export default function ClasificacionTrayectorias({ ninoId }) {
     setLoading(true);
     try {
       // Cargar datos del niño PRIMERO
-      const ninoResponse = await fetchConAuth(`http://localhost:3001/api/ninos/${ninoId}`);
+      const ninoResponse = await fetchConAuth(`${API_URL}/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
       const itinerarioResponse = await fetchConAuth(
-        `http://localhost:3001/api/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
+        `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
       );
       const itinerario = await itinerarioResponse.json();
 
@@ -122,7 +123,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       console.log('🔍 Construyendo datos retrospectivos para clasificación...');
       
       // Cargar hitos conseguidos
-      const hitosResponse = await fetchConAuth(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
+      const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
       console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
@@ -133,7 +134,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       }
 
       // Cargar hitos normativos
-      const normativosResponse = await fetchConAuth('http://localhost:3001/api/hitos-normativos');
+      const normativosResponse = await fetchConAuth(`${API_URL}/hitos-normativos');
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
@@ -144,7 +145,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
         console.log('⚠️ Dominios no cargados, cargando ahora...');
-        const dominiosResponse = await fetchConAuth('http://localhost:3001/api/dominios');
+        const dominiosResponse = await fetchConAuth(`${API_URL}/dominios');
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }
