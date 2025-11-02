@@ -511,10 +511,13 @@ export default function AnalisisAceleracion({ ninoId }) {
         </div>
       </div>
 
-      {/* Gráfico Principal: Las Tres Derivadas */}
+      {/* 1. Gráfico de Trayectoria del Desarrollo (Posición - Derivada 0ª) */}
       <div style={{ marginBottom: '30px' }}>
-        <h3>📊 Trayectoria del Desarrollo (Tres Derivadas)</h3>
-        <ResponsiveContainer width="100%" height={400}>
+        <h3>📊 Trayectoria del Desarrollo (Posición - Derivada 0ª)</h3>
+        <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
+          Cociente de Desarrollo (CD) a lo largo del tiempo. Muestra "dónde está" el niño en su desarrollo.
+        </p>
+        <ResponsiveContainer width="100%" height={350}>
           <ComposedChart data={datos.datosAceleracion}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -522,53 +525,75 @@ export default function AnalisisAceleracion({ ninoId }) {
               label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5 }}
             />
             <YAxis 
-              yAxisId="left"
               label={{ value: 'Cociente de Desarrollo (%)', angle: -90, position: 'insideLeft' }}
-            />
-            <YAxis 
-              yAxisId="right"
-              orientation="right"
-              label={{ value: 'Velocidad (puntos/mes)', angle: 90, position: 'insideRight' }}
+              domain={[0, 'auto']}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             
-            {/* Líneas de referencia CD */}
-            <ReferenceLine yAxisId="left" y={100} stroke="#666" strokeDasharray="3 3" label="CD=100" />
-            <ReferenceLine yAxisId="left" y={85} stroke="#FF9800" strokeDasharray="2 2" label="CD=85" />
-            <ReferenceLine yAxisId="left" y={70} stroke="#F44336" strokeDasharray="2 2" label="CD=70" />
+            {/* Líneas de referencia */}
+            <ReferenceLine y={100} stroke="#666" strokeDasharray="3 3" label="Desarrollo Típico (100%)" />
+            <ReferenceLine y={85} stroke="#FF9800" strokeDasharray="2 2" label="Zona de Alerta (85%)" />
+            <ReferenceLine y={70} stroke="#F44336" strokeDasharray="2 2" label="Retraso Significativo (70%)" />
             
-            {/* Posición (0ª): Cociente de Desarrollo */}
+            {/* Posición (CD) */}
             <Line 
-              yAxisId="left"
               type="monotone" 
               dataKey="cd" 
               stroke="#2196F3" 
               strokeWidth={3}
-              name="Posición (CD)" 
+              name="Cociente de Desarrollo" 
               dot={{ r: 6 }}
-            />
-            
-            {/* Velocidad (1ª) */}
-            <Line 
-              yAxisId="right"
-              type="monotone" 
-              dataKey="velocidad" 
-              stroke="#4CAF50" 
-              strokeWidth={2}
-              name="Velocidad (1ª)" 
-              dot={{ r: 4 }}
-              strokeDasharray="5 5"
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Gráfico de Aceleración */}
+      {/* 2. Gráfico de Velocidad del Desarrollo (Derivada 1ª) */}
+      {datos.datosAceleracion.some(d => d.velocidad !== null) && (
+        <div style={{ marginBottom: '30px' }}>
+          <h3>🚀 Velocidad del Desarrollo (Derivada 1ª)</h3>
+          <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
+            Tasa de cambio del desarrollo. Indica "cómo cambia" el ritmo: valores positivos = progreso, negativos = regresión.
+          </p>
+          <ResponsiveContainer width="100%" height={350}>
+            <ComposedChart data={datos.datosAceleracion}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="edad_meses" 
+                label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5 }}
+              />
+              <YAxis 
+                label={{ value: 'Velocidad (puntos CD/mes)', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              
+              {/* Línea de referencia en 0 */}
+              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Sin cambio (0)" />
+              
+              {/* Velocidad */}
+              <Line 
+                type="monotone" 
+                dataKey="velocidad" 
+                stroke="#4CAF50" 
+                strokeWidth={3}
+                name="Velocidad de Desarrollo" 
+                dot={{ r: 5 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* 3. Gráfico de Aceleración del Desarrollo (Derivada 2ª) */}
       {datos.datosAceleracion.some(d => d.aceleracion !== null) && (
         <div style={{ marginBottom: '30px' }}>
           <h3>⚡ Aceleración del Desarrollo (Derivada 2ª)</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
+            Cambio en la velocidad. Indica "cómo cambia el cambio": valores positivos = acelerando, negativos = desacelerando.
+          </p>
+          <ResponsiveContainer width="100%" height={350}>
             <ComposedChart data={datos.datosAceleracion}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
