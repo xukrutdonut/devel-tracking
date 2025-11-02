@@ -199,11 +199,11 @@ export default function AnalisisAceleracion({ ninoId }) {
     
     // Log de ejemplo del primer punto para ver estructura
     if (puntosEvaluacion.length > 0) {
-      console.log(`🔧 Estructura del primer punto:`, {
+      console.log(`🔧 Estructura del primer punto:`, JSON.stringify({
         edad: puntosEvaluacion[0].edad_meses,
         dominios: puntosEvaluacion[0].dominios,
         cd_global: puntosEvaluacion[0].cd_global
-      });
+      }, null, 2));
     }
     
     for (let i = 0; i < puntosEvaluacion.length; i++) {

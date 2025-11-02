@@ -3,7 +3,7 @@ import { API_URL } from '../config';
 import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GraficoDesarrollo from './GraficoDesarrollo';
 
-function EjemplosClinicos({ onEjemploCreado }) {
+function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
   const [ejemplos, setEjemplos] = useState([]);
   const [ejemploSeleccionado, setEjemploSeleccionado] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -214,10 +214,14 @@ function EjemplosClinicos({ onEjemploCreado }) {
           onEjemploCreado(nino, hitosAGenerar);
         }
         
+        // Mostrar mensaje brevemente y luego abrir el gráfico
         setTimeout(() => {
-          setEjemploSeleccionado(nino.id);
           setMensaje('');
-        }, 1500);
+          // Seleccionar el niño y abrir vista de gráfico
+          if (onSeleccionarNino) {
+            onSeleccionarNino(nino);
+          }
+        }, 800);
       } else {
         // 4. Registrar hitos en base de datos para usuarios autenticados
         for (const hito of hitosAGenerar) {
@@ -249,9 +253,14 @@ function EjemplosClinicos({ onEjemploCreado }) {
           onEjemploCreado();
         }
         
+        // Mostrar mensaje brevemente y luego abrir el gráfico
         setTimeout(() => {
-          setEjemploSeleccionado(nino.id);
           setMensaje('');
+          // Seleccionar el niño y abrir vista de gráfico
+          if (onSeleccionarNino) {
+            onSeleccionarNino(nino);
+          }
+        }, 800);
         }, 1500);
       }
 

@@ -230,7 +230,13 @@ function App() {
         )}
 
         {vistaActual === 'ejemplos' && (
-          <EjemplosClinicos onEjemploCreado={handleEjemploCreado} />
+          <EjemplosClinicos 
+            onEjemploCreado={handleEjemploCreado}
+            onSeleccionarNino={(nino) => {
+              setNinoSeleccionado(nino);
+              setVistaActual('grafico');
+            }}
+          />
         )}
 
         {vistaActual === 'registro' && ninoSeleccionado && (
