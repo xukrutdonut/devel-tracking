@@ -194,6 +194,9 @@ export default function AnalisisAceleracion({ ninoId }) {
   const calcularAceleracionesDesdePuntos = (puntosEvaluacion) => {
     const datos = [];
     
+    console.log(`🔧 Calculando para dominio: ${dominioSeleccionado}`);
+    console.log(`🔧 Puntos disponibles: ${puntosEvaluacion.length}`);
+    
     for (let i = 0; i < puntosEvaluacion.length; i++) {
       const punto_actual = puntosEvaluacion[i];
       let cd_actual;
@@ -203,9 +206,15 @@ export default function AnalisisAceleracion({ ninoId }) {
       } else {
         const dominio = punto_actual.dominios?.find(d => d.dominio_id === parseInt(dominioSeleccionado));
         cd_actual = dominio?.cd;
+        if (!dominio) {
+          console.log(`⚠️ No se encontró dominio ${dominioSeleccionado} en punto edad ${punto_actual.edad_meses}`);
+        }
       }
       
-      if (cd_actual === null || cd_actual === undefined) continue;
+      if (cd_actual === null || cd_actual === undefined) {
+        console.log(`⚠️ CD null/undefined para edad ${punto_actual.edad_meses}`);
+        continue;
+      }
 
       const punto = {
         edad_meses: punto_actual.edad_meses,
