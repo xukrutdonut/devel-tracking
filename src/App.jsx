@@ -191,7 +191,7 @@ function App() {
               className={vistaActual === 'grafico' ? 'active' : ''}
               onClick={() => setVistaActual('grafico')}
             >
-              📈 Gráficas
+              📈 Gráficas de Trayectoria
             </button>
             <button 
               className={vistaActual === 'aceleracion' ? 'active' : ''}
