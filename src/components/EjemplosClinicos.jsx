@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../config';
-import { fetchConAuth } from '../utils/authService';
+import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GraficoDesarrollo from './GraficoDesarrollo';
 
 function EjemplosClinicos({ onEjemploCreado }) {
@@ -467,6 +467,12 @@ function EjemplosClinicos({ onEjemploCreado }) {
   };
 
   const cargarEjemplos = async () => {
+    // En modo invitado no cargamos ejemplos de la base de datos
+    if (esModoInvitado()) {
+      setEjemplos([]);
+      return;
+    }
+    
     try {
       const response = await fetchConAuth(`${API_URL}/ninos`);
       const todosLosNinos = await response.json();
