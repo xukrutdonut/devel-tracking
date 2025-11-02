@@ -179,54 +179,81 @@ function EjemplosClinicos({ onEjemploCreado }) {
     try {
       // 1. Crear el niño con datos aleatorios
       const ninoData = perfil.generarNinoData();
-      const ninoResponse = await fetchConAuth(`${API_URL}/ninos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ninoData)
-      });
-      const nino = await ninoResponse.json();
+      
+      let nino;
+      if (esModoInvitado()) {
+        // En modo invitado, crear ejemplo temporal en memoria
+        nino = {
+          ...ninoData,
+          id: `invitado_ejemplo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        };
+      } else {
+        // Guardar en base de datos para usuarios autenticados
+        const ninoResponse = await fetchConAuth(`${API_URL}/ninos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ninoData)
+        });
+        nino = await ninoResponse.json();
+      }
 
-      // 2. Obtener hitos normativos
-      const hitosResponse = await fetchConAuth(`${API_URL}/hitos-normativos?fuente=1`);
+      // 2. Obtener hitos normativos (no requiere autenticación)
+      const hitosResponse = await fetch(`${API_URL}/hitos-normativos?fuente=1`);
       const hitosNormativos = await hitosResponse.json();
 
       // 3. Generar hitos según el perfil (con semilla aleatoria basada en el ID del niño)
       const hitosAGenerar = generarHitosPorPerfil(hitosNormativos, perfil, nino);
 
-      // 4. Registrar hitos
-      for (const hito of hitosAGenerar) {
-        const hitoData = {
-          nino_id: nino.id,
-          hito_id: hito.hito_id,
-          edad_conseguido_meses: hito.edad_conseguido,
-          fecha_registro: new Date().toISOString().split('T')[0]
-        };
+      if (esModoInvitado()) {
+        // En modo invitado, agregar ejemplo a la lista local y notificar al padre
+        setEjemplos(prev => [...prev, nino]);
+        setMensaje(`✅ Ejemplo temporal creado: ${ninoData.nombre}`);
         
-        // Si el hito tiene información de pérdida (regresión)
-        if (hito.edad_perdido !== undefined && hito.edad_perdido !== null) {
-          hitoData.edad_perdido_meses = hito.edad_perdido;
-          hitoData.fecha_perdido = new Date().toISOString().split('T')[0];
+        // Notificar al componente padre con el niño y sus hitos
+        if (onEjemploCreado) {
+          onEjemploCreado(nino, hitosAGenerar);
         }
         
-        await fetchConAuth(`${API_URL}/hitos-conseguidos`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(hitoData)
-        });
-      }
+        setTimeout(() => {
+          setEjemploSeleccionado(nino.id);
+          setMensaje('');
+        }, 1500);
+      } else {
+        // 4. Registrar hitos en base de datos para usuarios autenticados
+        for (const hito of hitosAGenerar) {
+          const hitoData = {
+            nino_id: nino.id,
+            hito_id: hito.hito_id,
+            edad_conseguido_meses: hito.edad_conseguido,
+            fecha_registro: new Date().toISOString().split('T')[0]
+          };
+          
+          // Si el hito tiene información de pérdida (regresión)
+          if (hito.edad_perdido !== undefined && hito.edad_perdido !== null) {
+            hitoData.edad_perdido_meses = hito.edad_perdido;
+            hitoData.fecha_perdido = new Date().toISOString().split('T')[0];
+          }
+          
+          await fetchConAuth(`${API_URL}/hitos-conseguidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(hitoData)
+          });
+        }
 
-      setMensaje(`✅ Ejemplo creado: ${ninoData.nombre}`);
-      cargarEjemplos();
-      
-      // Notificar al componente padre para recargar la lista principal
-      if (onEjemploCreado) {
-        onEjemploCreado();
+        setMensaje(`✅ Ejemplo creado: ${ninoData.nombre}`);
+        cargarEjemplos();
+        
+        // Notificar al componente padre para recargar la lista principal
+        if (onEjemploCreado) {
+          onEjemploCreado();
+        }
+        
+        setTimeout(() => {
+          setEjemploSeleccionado(nino.id);
+          setMensaje('');
+        }, 1500);
       }
-      
-      setTimeout(() => {
-        setEjemploSeleccionado(nino.id);
-        setMensaje('');
-      }, 1500);
 
     } catch (error) {
       console.error('Error al crear ejemplo:', error);
@@ -496,21 +523,32 @@ function EjemplosClinicos({ onEjemploCreado }) {
     if (!confirm('¿Eliminar este caso de ejemplo?')) return;
 
     try {
-      await fetchConAuth(`${API_URL}/ninos/${ninoId}`, {
-        method: 'DELETE'
-      });
-      setMensaje('✅ Ejemplo eliminado');
-      cargarEjemplos();
-      if (ejemploSeleccionado === ninoId) {
-        setEjemploSeleccionado(null);
+      if (esModoInvitado()) {
+        // En modo invitado, solo eliminar de la lista local
+        setEjemplos(prev => prev.filter(e => e.id !== ninoId));
+        setMensaje('✅ Ejemplo eliminado');
+        if (ejemploSeleccionado === ninoId) {
+          setEjemploSeleccionado(null);
+        }
+        setTimeout(() => setMensaje(''), 2000);
+      } else {
+        // Usuario autenticado: eliminar de la base de datos
+        await fetchConAuth(`${API_URL}/ninos/${ninoId}`, {
+          method: 'DELETE'
+        });
+        setMensaje('✅ Ejemplo eliminado');
+        cargarEjemplos();
+        if (ejemploSeleccionado === ninoId) {
+          setEjemploSeleccionado(null);
+        }
+        
+        // Notificar al componente padre
+        if (onEjemploCreado) {
+          onEjemploCreado();
+        }
+        
+        setTimeout(() => setMensaje(''), 2000);
       }
-      
-      // Notificar al componente padre
-      if (onEjemploCreado) {
-        onEjemploCreado();
-      }
-      
-      setTimeout(() => setMensaje(''), 2000);
     } catch (error) {
       console.error('Error al eliminar ejemplo:', error);
       setMensaje('❌ Error al eliminar ejemplo');
@@ -524,18 +562,27 @@ function EjemplosClinicos({ onEjemploCreado }) {
     setMensaje('Eliminando todos los ejemplos...');
 
     try {
-      for (const ejemplo of ejemplos) {
-        await fetchConAuth(`${API_URL}/ninos/${ejemplo.id}`, {
-          method: 'DELETE'
-        });
+      if (esModoInvitado()) {
+        // En modo invitado, limpiar lista local
+        setEjemplos([]);
+        setEjemploSeleccionado(null);
+        setMensaje('✅ Todos los ejemplos eliminados');
+      } else {
+        // Usuario autenticado: eliminar de base de datos
+        for (const ejemplo of ejemplos) {
+          await fetchConAuth(`${API_URL}/ninos/${ejemplo.id}`, {
+            method: 'DELETE'
+          });
+        }
+        setMensaje('✅ Todos los ejemplos eliminados');
+        setEjemplos([]);
+        setEjemploSeleccionado(null);
+        
+        // Notificar al componente padre
+        if (onEjemploCreado) {
+          onEjemploCreado();
+        }
       }
-      setMensaje('✅ Todos los ejemplos eliminados');
-      setEjemplos([]);
-      setEjemploSeleccionado(null);
-      
-      // Notificar al componente padre
-      if (onEjemploCreado) {
-        onEjemploCreado();
       }
       
       setTimeout(() => setMensaje(''), 2000);
