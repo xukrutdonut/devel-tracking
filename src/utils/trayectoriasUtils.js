@@ -109,7 +109,7 @@ export function construirPuntosEvaluacion(hitosConseguidos, hitosNormativos, dom
     const cdGlobal = countGlobal > 0 ? (edGlobal / countGlobal / edadLogro) * 100 : null;
     
     puntosEvaluacion.push({
-      edad_meses: edadLogro,
+      edad_meses: Math.round(edadLogro * 100) / 100, // Redondear a 2 decimales
       dominios: Object.values(metricasPorDominio),
       cd_global: cdGlobal,
       n_hitos_total: hitosHastaEdad.length,

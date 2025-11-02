@@ -197,6 +197,15 @@ export default function AnalisisAceleracion({ ninoId }) {
     console.log(`🔧 Calculando para dominio: ${dominioSeleccionado}`);
     console.log(`🔧 Puntos disponibles: ${puntosEvaluacion.length}`);
     
+    // Log de ejemplo del primer punto para ver estructura
+    if (puntosEvaluacion.length > 0) {
+      console.log(`🔧 Estructura del primer punto:`, {
+        edad: puntosEvaluacion[0].edad_meses,
+        dominios: puntosEvaluacion[0].dominios,
+        cd_global: puntosEvaluacion[0].cd_global
+      });
+    }
+    
     for (let i = 0; i < puntosEvaluacion.length; i++) {
       const punto_actual = puntosEvaluacion[i];
       let cd_actual;
@@ -206,13 +215,13 @@ export default function AnalisisAceleracion({ ninoId }) {
       } else {
         const dominio = punto_actual.dominios?.find(d => d.dominio_id === parseInt(dominioSeleccionado));
         cd_actual = dominio?.cd;
-        if (!dominio) {
+        if (!dominio && i === 0) {
           console.log(`⚠️ No se encontró dominio ${dominioSeleccionado} en punto edad ${punto_actual.edad_meses}`);
+          console.log(`⚠️ Dominios disponibles en este punto:`, punto_actual.dominios?.map(d => d.dominio_id));
         }
       }
       
       if (cd_actual === null || cd_actual === undefined) {
-        console.log(`⚠️ CD null/undefined para edad ${punto_actual.edad_meses}`);
         continue;
       }
 
