@@ -261,7 +261,6 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
             onSeleccionarNino(nino);
           }
         }, 800);
-        }, 1500);
       }
 
     } catch (error) {
