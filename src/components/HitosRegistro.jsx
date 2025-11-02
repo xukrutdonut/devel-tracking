@@ -74,9 +74,9 @@ function HitosRegistro({ ninoId }) {
       const [domRes, hitosNormRes, hitosConsRes, hitosNoAlcRes, ninoRes] = await Promise.all([
         fetch(`${API_URL}/dominios`),
         fetch(`${API_URL}/hitos-normativos${fuenteParam}`),
-        fetch(`${API_URL}/hitos-conseguidos/${ninoId}`),
-        fetch(`${API_URL}/hitos-no-alcanzados/${ninoId}`),
-        fetch(`${API_URL}/ninos/${ninoId}`)
+        fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`),
+        fetchConAuth(`${API_URL}/hitos-no-alcanzados/${ninoId}`),
+        fetchConAuth(`${API_URL}/ninos/${ninoId}`)
       ]);
 
       const domData = await domRes.json();
@@ -87,8 +87,8 @@ function HitosRegistro({ ninoId }) {
 
       setDominios(domData);
       setHitosNormativos(hitosNormData);
-      setHitosConseguidos(hitosConsData);
-      setHitosNoAlcanzados(hitosNoAlcData);
+      setHitosConseguidos(Array.isArray(hitosConsData) ? hitosConsData : []);
+      setHitosNoAlcanzados(Array.isArray(hitosNoAlcData) ? hitosNoAlcData : []);
       setNinoData(ninoData);
 
       // Calcular edad cronológica y corregida
