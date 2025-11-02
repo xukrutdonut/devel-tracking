@@ -471,11 +471,18 @@ function EjemplosClinicos({ onEjemploCreado }) {
       const response = await fetchConAuth(`${API_URL}/ninos`);
       const todosLosNinos = await response.json();
       
-      // Filtrar solo los ejemplos (nombres que contienen "Ejemplo")
-      const ejemplosFiltrados = todosLosNinos.filter(n => n.nombre.includes('Ejemplo'));
-      setEjemplos(ejemplosFiltrados);
+      // Verificar que sea un array antes de filtrar
+      if (Array.isArray(todosLosNinos)) {
+        // Filtrar solo los ejemplos (nombres que contienen "Ejemplo")
+        const ejemplosFiltrados = todosLosNinos.filter(n => n.nombre.includes('Ejemplo'));
+        setEjemplos(ejemplosFiltrados);
+      } else {
+        // Si hay un error o no es array, usar array vacío
+        setEjemplos([]);
+      }
     } catch (error) {
       console.error('Error al cargar ejemplos:', error);
+      setEjemplos([]);
     }
   };
 
