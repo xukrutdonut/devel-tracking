@@ -63,7 +63,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarFuentes = async () => {
     try {
-      const response = await fetchConAuth(`${API_URL}/fuentes-normativas');
+      const response = await fetchConAuth(`${API_URL}/fuentes-normativas`);
       const data = await response.json();
       setFuentes(data);
     } catch (error) {
@@ -73,7 +73,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarDominios = async () => {
     try {
-      const response = await fetchConAuth(`${API_URL}/dominios');
+      const response = await fetchConAuth(`${API_URL}/dominios`);
       const data = await response.json();
       setDominios(data);
     } catch (error) {
@@ -134,7 +134,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       }
 
       // Cargar hitos normativos
-      const normativosResponse = await fetchConAuth(`${API_URL}/hitos-normativos');
+      const normativosResponse = await fetchConAuth(`${API_URL}/hitos-normativos`);
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
@@ -145,7 +145,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
         console.log('⚠️ Dominios no cargados, cargando ahora...');
-        const dominiosResponse = await fetchConAuth(`${API_URL}/dominios');
+        const dominiosResponse = await fetchConAuth(`${API_URL}/dominios`);
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }
