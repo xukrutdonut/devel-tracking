@@ -583,7 +583,6 @@ function EjemplosClinicos({ onEjemploCreado }) {
           onEjemploCreado();
         }
       }
-      }
       
       setTimeout(() => setMensaje(''), 2000);
     } catch (error) {
