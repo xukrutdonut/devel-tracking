@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart, Scatter, ScatterChart, ZAxis } from 'recharts';
 import { construirPuntosEvaluacion, clasificarTipoTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
+import { fetchConAuth } from '../utils/authService';
+import { 
+  ajustarModeloPolinomial, 
+  analizarPrePostIntervencion,
+  clasificarTrayectoriaAutomatica 
+} from '../utils/modelosEstadisticos';
 
 /**
  * Componente para clasificación de trayectorias del desarrollo
  * Basado en Thomas et al. (2009) - Using developmental trajectories to understand developmental disorders
+ * 
+ * ACTUALIZADO CON MODELOS ESTADÍSTICOS AVANZADOS:
+ * - Modelos polinomiales para detectar oleadas de desarrollo (Thomas, 2016)
+ * - Análisis pre/post intervención (Deboeck et al., 2016)
+ * - Clasificación automática mejorada con alertas específicas
+ * - Detección de puntos de inflexión y aceleraciones
  * 
  * SOPORTA DOS TIPOS DE DATOS:
  * 1. LONGITUDINAL RETROSPECTIVO: Múltiples hitos con edades de logro
@@ -18,7 +30,8 @@ import { construirPuntosEvaluacion, clasificarTipoTrayectoria, determinarTipoDat
  * 
  * Referencias:
  * - Thomas MS, et al. (2009). J Speech Lang Hear Res. 52(2):336-58.
- * - Thomas MSC. (2016). Child Dev Perspect. 10(2):73-80.
+ * - Thomas MSC. (2016). Statistical approaches with SPSS
+ * - Deboeck et al. (2016). Integrating developmental theory and methodology
  */
 export default function ClasificacionTrayectorias({ ninoId }) {
   const [datos, setDatos] = useState(null);
@@ -29,6 +42,12 @@ export default function ClasificacionTrayectorias({ ninoId }) {
   const [clasificaciones, setClasificaciones] = useState([]);
   const [tipoDatos, setTipoDatos] = useState('desconocido');
   const [nino, setNino] = useState(null);
+  
+  // Estados para análisis estadísticos avanzados
+  const [modelosPolinomiales, setModelosPolinomiales] = useState({});
+  const [analisisIntervencion, setAnalisisIntervencion] = useState(null);
+  const [clasificacionAutomatica, setClasificacionAutomatica] = useState(null);
+  const [mostrarAnalisisAvanzado, setMostrarAnalisisAvanzado] = useState(false);
 
   useEffect(() => {
     cargarFuentes();
@@ -43,7 +62,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarFuentes = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/fuentes-normativas');
+      const response = await fetchConAuth('http://localhost:3001/api/fuentes-normativas');
       const data = await response.json();
       setFuentes(data);
     } catch (error) {
@@ -53,7 +72,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const cargarDominios = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/dominios');
+      const response = await fetchConAuth('http://localhost:3001/api/dominios');
       const data = await response.json();
       setDominios(data);
     } catch (error) {
@@ -65,12 +84,12 @@ export default function ClasificacionTrayectorias({ ninoId }) {
     setLoading(true);
     try {
       // Cargar datos del niño PRIMERO
-      const ninoResponse = await fetch(`http://localhost:3001/api/ninos/${ninoId}`);
+      const ninoResponse = await fetchConAuth(`http://localhost:3001/api/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
-      const itinerarioResponse = await fetch(
+      const itinerarioResponse = await fetchConAuth(
         `http://localhost:3001/api/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
       );
       const itinerario = await itinerarioResponse.json();
@@ -103,7 +122,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       console.log('🔍 Construyendo datos retrospectivos para clasificación...');
       
       // Cargar hitos conseguidos
-      const hitosResponse = await fetch(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
+      const hitosResponse = await fetchConAuth(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
       console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
@@ -114,7 +133,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       }
 
       // Cargar hitos normativos
-      const normativosResponse = await fetch('http://localhost:3001/api/hitos-normativos');
+      const normativosResponse = await fetchConAuth('http://localhost:3001/api/hitos-normativos');
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
@@ -125,7 +144,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
         console.log('⚠️ Dominios no cargados, cargando ahora...');
-        const dominiosResponse = await fetch('http://localhost:3001/api/dominios');
+        const dominiosResponse = await fetchConAuth('http://localhost:3001/api/dominios');
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }

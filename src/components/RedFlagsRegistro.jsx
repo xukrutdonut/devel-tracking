@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
+import { fetchConAuth } from '../utils/authService';
 function RedFlagsRegistro({ ninoId }) {
   const [redFlags, setRedFlags] = useState([]);
   const [redFlagsObservadas, setRedFlagsObservadas] = useState([]);
@@ -39,7 +40,7 @@ function RedFlagsRegistro({ ninoId }) {
 
   const registrarRedFlag = async (redFlagId, edadMeses, severidad, notas) => {
     try {
-      await fetch(`${API_URL}/red-flags-observadas`, {
+      await fetchConAuth(`${API_URL}/red-flags-observadas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ function RedFlagsRegistro({ ninoId }) {
   const eliminarRedFlag = async (redFlagObservadaId) => {
     if (window.confirm('¿Está seguro de eliminar esta señal de alarma?')) {
       try {
-        await fetch(`${API_URL}/red-flags-observadas/${redFlagObservadaId}`, {
+        await fetchConAuth(`${API_URL}/red-flags-observadas/${redFlagObservadaId}`, {
           method: 'DELETE'
         });
         cargarDatos();

@@ -1,0 +1,129 @@
+/* Estilos para RecursoExterno.jsx */
+
+.recurso-externo-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.recurso-externo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #3b82f6;
+}
+
+.recurso-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.recurso-fuente-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.recurso-fuente {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recurso-duracion,
+.recurso-formato {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.recurso-icono {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.recurso-content {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.recurso-titulo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.recurso-descripcion {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
+}
+
+.recurso-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.recurso-tag {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.recurso-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.recurso-tipo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recurso-external-icon {
+  color: #9ca3af;
+  transition: color 0.2s ease;
+}
+
+.recurso-externo-card:hover .recurso-external-icon {
+  color: #3b82f6;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .recurso-externo-card {
+    padding: 1rem;
+  }
+  
+  .recurso-titulo {
+    font-size: 0.9rem;
+  }
+  
+  .recurso-descripcion {
+    font-size: 0.8rem;
+  }
+}

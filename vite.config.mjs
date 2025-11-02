@@ -12,6 +12,23 @@ export default defineConfig({
       'localhost',
       '.neuropedialab.org', // Permite todos los subdominios
     ],
+    proxy: {
+      '/api': {
+        // Usar el servicio backend de Docker Compose
+        target: 'http://neurodesarrollo-backend:8001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('→ Proxy:', req.method, req.url);
+          });
+        }
+      }
+    }
   },
 })
 

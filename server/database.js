@@ -14,13 +14,27 @@ db.serialize(() => {
     valor TEXT NOT NULL
   )`);
 
+  // Tabla de usuarios
+  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    nombre TEXT NOT NULL,
+    rol TEXT NOT NULL DEFAULT 'usuario',
+    activo INTEGER DEFAULT 1,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ultimo_acceso DATETIME
+  )`);
+
   // Tabla de niños
   db.run(`CREATE TABLE IF NOT EXISTS ninos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     fecha_nacimiento DATE NOT NULL,
     semanas_gestacion INTEGER DEFAULT 40,
-    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    usuario_id INTEGER NOT NULL,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
   )`);
   
   // Migración: agregar columna semanas_gestacion si no existe
@@ -28,6 +42,34 @@ db.serialize(() => {
     // Ignorar error si la columna ya existe
     if (err && !err.message.includes('duplicate column name')) {
       console.error('Error adding semanas_gestacion column:', err);
+    }
+  });
+
+  // Migración: agregar columna usuario_id si no existe
+  db.run(`ALTER TABLE ninos ADD COLUMN usuario_id INTEGER`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding usuario_id column:', err);
+    }
+  });
+
+  // Crear usuario admin por defecto si no existe
+  db.get('SELECT id FROM usuarios WHERE email = ?', ['admin@neuropedialab.org'], (err, row) => {
+    if (err) {
+      console.error('Error checking admin user:', err);
+      return;
+    }
+    if (!row) {
+      const adminPassword = bcrypt.hashSync('admin123', 10);
+      db.run(`INSERT INTO usuarios (email, password_hash, nombre, rol) VALUES (?, ?, ?, ?)`,
+        ['admin@neuropedialab.org', adminPassword, 'Administrador', 'admin'],
+        (err) => {
+          if (err) {
+            console.error('Error creating admin user:', err);
+          } else {
+            console.log('✅ Usuario admin creado: admin@neuropedialab.org / admin123');
+          }
+        }
+      );
     }
   });
 

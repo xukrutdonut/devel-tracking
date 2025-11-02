@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../config';
+import { fetchConAuth, esModoInvitado } from '../utils/authService';
 
 function NinoForm({ onNinoCreado }) {
   const [nombre, setNombre] = useState('');
@@ -10,12 +11,28 @@ function NinoForm({ onNinoCreado }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Modo invitado: crear niño localmente
+    if (esModoInvitado()) {
+      const nuevoNino = {
+        id: `invitado_${Date.now()}`,
+        nombre,
+        fecha_nacimiento: fechaNacimiento,
+        semanas_gestacion: parseInt(semanasGestacion),
+        creado_en: new Date().toISOString()
+      };
+      
+      onNinoCreado(nuevoNino);
+      setNombre('');
+      setFechaNacimiento('');
+      setSemanasGestacion(40);
+      setMostrarForm(false);
+      return;
+    }
+    
+    // Modo normal: crear en servidor
     try {
-      const response = await fetch(`${API_URL}/ninos`, {
+      const response = await fetchConAuth(`${API_URL}/ninos`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ 
           nombre, 
           fecha_nacimiento: fechaNacimiento,

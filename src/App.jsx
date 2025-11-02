@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import Login from './components/Login';
 import NinosList from './components/NinosList';
 import NinoForm from './components/NinoForm';
 import HitosRegistro from './components/HitosRegistro';
@@ -10,19 +11,55 @@ import AnalisisAceleracion from './components/AnalisisAceleracion';
 import ClasificacionTrayectorias from './components/ClasificacionTrayectorias';
 import Bibliografia from './components/Bibliografia';
 import { API_URL } from './config';
+import { 
+  estaAutenticado, 
+  getUsuario, 
+  cerrarSesion, 
+  fetchConAuth,
+  esAdmin,
+  esModoInvitado
+} from './utils/authService';
 
 function App() {
+  const [autenticado, setAutenticado] = useState(estaAutenticado());
+  const [usuario, setUsuario] = useState(getUsuario());
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
   const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion, bibliografia
 
   useEffect(() => {
-    cargarNinos();
-  }, []);
+    if (autenticado) {
+      cargarNinos();
+    }
+  }, [autenticado]);
+
+  const handleLoginSuccess = (usuarioData) => {
+    setAutenticado(true);
+    setUsuario(usuarioData);
+  };
+
+  const handleLogout = () => {
+    cerrarSesion();
+    setAutenticado(false);
+    setUsuario(null);
+    setNinos([]);
+    setNinoSeleccionado(null);
+    setVistaActual('lista');
+  };
 
   const cargarNinos = async () => {
+    // Si es modo invitado, cargar desde sessionStorage
+    if (esModoInvitado()) {
+      const ninosGuardados = sessionStorage.getItem('invitado_ninos');
+      if (ninosGuardados) {
+        setNinos(JSON.parse(ninosGuardados));
+      }
+      return;
+    }
+
+    // Si no, cargar desde API
     try {
-      const response = await fetch(`${API_URL}/ninos`);
+      const response = await fetchConAuth(`${API_URL}/ninos`);
       const data = await response.json();
       setNinos(data);
     } catch (error) {
@@ -31,7 +68,14 @@ function App() {
   };
 
   const handleNinoCreado = (nuevoNino) => {
-    cargarNinos();
+    // En modo invitado, guardar en sessionStorage
+    if (esModoInvitado()) {
+      const ninosActuales = [...ninos, nuevoNino];
+      setNinos(ninosActuales);
+      sessionStorage.setItem('invitado_ninos', JSON.stringify(ninosActuales));
+    } else {
+      cargarNinos();
+    }
     setNinoSeleccionado(nuevoNino);
     setVistaActual('registro');
   };
@@ -47,11 +91,44 @@ function App() {
     setVistaActual('lista');
   };
 
+  // Si no está autenticado, mostrar login
+  if (!autenticado) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="App">
+      {/* Banner de advertencia para modo invitado */}
+      {esModoInvitado() && (
+        <div className="banner-invitado">
+          <div className="banner-content">
+            <span className="banner-icon">⚠️</span>
+            <div className="banner-text">
+              <strong>Modo Invitado:</strong> Los datos NO se guardan permanentemente. 
+              Al cerrar el navegador se perderán todos los datos. 
+              <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+                Registrarse gratis
+              </a> para guardar permanentemente.
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="App-header">
-        <h1>📊 Seguimiento del Neurodesarrollo Infantil</h1>
-        <p className="subtitle">Sistema de evaluación del desarrollo 0-6 años</p>
+        <div className="header-content">
+          <div>
+            <h1>📊 Seguimiento del Neurodesarrollo Infantil</h1>
+            <p className="subtitle">Sistema de evaluación del desarrollo 0-6 años</p>
+          </div>
+          <div className="user-info">
+            <span className="user-name">👤 {usuario.nombre}</span>
+            {esAdmin() && <span className="admin-badge">ADMIN</span>}
+            {esModoInvitado() && <span className="invitado-badge">INVITADO</span>}
+            <button className="btn-logout" onClick={handleLogout}>
+              {esModoInvitado() ? 'Salir / Registrarse' : 'Cerrar Sesión'}
+            </button>
+          </div>
+        </div>
       </header>
 
       <nav className="navigation">

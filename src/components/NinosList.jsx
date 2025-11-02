@@ -1,8 +1,12 @@
 import React from 'react';
 import { formatearEdades } from '../utils/ageCalculations';
 import { API_URL } from '../config';
+import { fetchConAuth, esAdmin, getUsuario } from '../utils/authService';
 
 function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
+  const usuario = getUsuario();
+  const isAdmin = esAdmin();
+
   const eliminarNino = async (e, nino) => {
     e.stopPropagation(); // Evitar que se active onNinoSeleccionado
     
@@ -11,7 +15,7 @@ function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/ninos/${nino.id}`, {
+      const response = await fetchConAuth(`${API_URL}/ninos/${nino.id}`, {
         method: 'DELETE'
       });
 
@@ -19,7 +23,8 @@ function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
         alert('Niño eliminado correctamente');
         onNinoEliminado();
       } else {
-        alert('Error al eliminar el niño');
+        const data = await response.json();
+        alert(data.error || 'Error al eliminar el niño');
       }
     } catch (error) {
       console.error('Error al eliminar niño:', error);
@@ -76,6 +81,11 @@ function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
                   <p className="gestacion-info">Semanas de gestación: {nino.semanas_gestacion}</p>
                 )}
                 <p className="edad">{edades.textoEdad}</p>
+                {isAdmin && nino.email_usuario && (
+                  <p className="usuario-info" style={{ fontSize: '0.85em', color: '#666', marginTop: '8px' }}>
+                    👤 Usuario: {nino.email_usuario}
+                  </p>
+                )}
               </div>
             );
           })}

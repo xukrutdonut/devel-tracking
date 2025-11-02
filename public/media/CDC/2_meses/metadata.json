@@ -1,0 +1,68 @@
+{
+  "edad": "2_meses",
+  "fuente": "CDC - Aprenda los Signos. Reaccione Pronto",
+  "url_original": "https://www.cdc.gov/ncbddd/Spanish/actearly/milestones/milestones-2mo.html",
+  "licencia": "Dominio público - CDC",
+  "fecha_descarga": "2024-11-02",
+  "contenido": {
+    "fotos": [
+      {
+        "archivo": "1_2-meses_Se-calma-cuando-le-hablan-o-la-alzan-1.jpg",
+        "hito": "Social/Emocional",
+        "descripcion": "Se calma cuando le hablan o la alzan (ejemplo 1)",
+        "categoria": "social_emocional"
+      },
+      {
+        "archivo": "1_2-meses_Se-calma-cuando-le-hablan-o-la-alzan-2.jpg",
+        "hito": "Social/Emocional",
+        "descripcion": "Se calma cuando le hablan o la alzan (ejemplo 2)",
+        "categoria": "social_emocional"
+      },
+      {
+        "archivo": "2_2-meses_Mantiene.jpg",
+        "hito": "Movimiento/Desarrollo Físico",
+        "descripcion": "Mantiene la cabeza en alto cuando está boca abajo",
+        "categoria": "motor_fisico"
+      },
+      {
+        "archivo": "3_2-meses_Fija-la-vista-en-un-juguete-por-varios-segundos.jpg",
+        "hito": "Cognitivo",
+        "descripcion": "Fija la vista en un juguete por varios segundos",
+        "categoria": "cognitivo"
+      },
+      {
+        "archivo": "4_2-meses_La-mira-a-la-cara.jpg",
+        "hito": "Social/Emocional",
+        "descripcion": "La mira a la cara",
+        "categoria": "social_emocional"
+      },
+      {
+        "archivo": "5_2-meses_Parece-estar-feliz-cuando-usted-se-le-acerca.jpg",
+        "hito": "Social/Emocional",
+        "descripcion": "Parece estar feliz cuando usted se le acerca",
+        "categoria": "social_emocional"
+      }
+    ],
+    "videos": [
+      {
+        "archivo": "2m_hace_sonidos.mp4",
+        "hito": "Comunicación/Lenguaje",
+        "descripcion": "Hace sonidos además de llorar",
+        "categoria": "lenguaje_comunicacion",
+        "duracion_aprox": "15 segundos"
+      },
+      {
+        "archivo": "2m_reacciona_sonidos.mp4",
+        "hito": "Cognitivo",
+        "descripcion": "Reacciona a sonidos fuertes",
+        "categoria": "cognitivo",
+        "duracion_aprox": "10 segundos"
+      }
+    ]
+  },
+  "estadisticas": {
+    "total_fotos": 6,
+    "total_videos": 2,
+    "tamano_total_mb": 2.0
+  }
+}

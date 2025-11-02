@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ScatterChart, Scatter, ZAxis, ComposedChart, Area } from 'recharts';
 import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
 import { API_URL } from '../config';
+import { fetchConAuth } from '../utils/authService';
+import GeneradorInforme from './GeneradorInforme';
 
 /**
  * Componente de Gráfico del Desarrollo
@@ -26,6 +28,8 @@ function GraficoDesarrollo({ ninoId }) {
   const [fuentesNormativas, setFuentesNormativas] = useState([]);
   const [fuenteSeleccionada, setFuenteSeleccionada] = useState(null);
   const [mostrarLinea45, setMostrarLinea45] = useState(true);
+  const [mostrarGeneradorInforme, setMostrarGeneradorInforme] = useState(false);
+  const [ninoData, setNinoData] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -40,7 +44,7 @@ function GraficoDesarrollo({ ninoId }) {
 
   const cargarFuentesNormativas = async () => {
     try {
-      const response = await fetch(`${API_URL}/fuentes-normativas`);
+      const response = await fetchConAuth(`${API_URL}/fuentes-normativas`);
       const data = await response.json();
       setFuentesNormativas(data);
       if (data.length > 0 && !fuenteSeleccionada) {
@@ -54,16 +58,19 @@ function GraficoDesarrollo({ ninoId }) {
   const cargarDatos = async () => {
     try {
       const fuenteParam = fuenteSeleccionada ? `?fuente=${fuenteSeleccionada}` : '';
-      const [analisisRes, redFlagsRes] = await Promise.all([
+      const [analisisRes, redFlagsRes, ninoRes] = await Promise.all([
         fetch(`${API_URL}/analisis/${ninoId}${fuenteParam}`),
-        fetch(`${API_URL}/red-flags-observadas/${ninoId}`)
+        fetch(`${API_URL}/red-flags-observadas/${ninoId}`),
+        fetchConAuth(`${API_URL}/ninos/${ninoId}`)
       ]);
 
       const analisisData = await analisisRes.json();
       const redFlagsData = await redFlagsRes.json();
+      const ninoData = await ninoRes.json();
 
       setAnalisis(analisisData);
       setRedFlags(redFlagsData);
+      setNinoData(ninoData);
     } catch (error) {
       console.error('Error al cargar análisis:', error);
     }
@@ -844,7 +851,16 @@ function GraficoDesarrollo({ ninoId }) {
 
   return (
     <div className="grafico-desarrollo">
-      <h2>Gráfico de Edad de Desarrollo</h2>
+      <div className="header-con-boton">
+        <h2>Gráfico de Edad de Desarrollo</h2>
+        <button 
+          className="btn-generar-informe"
+          onClick={() => setMostrarGeneradorInforme(true)}
+          title="Generar informe para imprimir o copiar a historia clínica"
+        >
+          📄 Generar Informe
+        </button>
+      </div>
 
       <div className="filtros">
         <div className="filtro-grupo">
@@ -1543,6 +1559,17 @@ function GraficoDesarrollo({ ninoId }) {
         </div>
       )}
       </>
+      )}
+
+      {/* Modal de Generador de Informe */}
+      {mostrarGeneradorInforme && ninoData && (
+        <GeneradorInforme
+          ninoId={ninoId}
+          ninoData={ninoData}
+          analisisData={analisis}
+          redFlags={redFlags}
+          onClose={() => setMostrarGeneradorInforme(false)}
+        />
       )}
     </div>
   );

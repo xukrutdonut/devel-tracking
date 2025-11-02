@@ -1,10 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
 const db = require('./database');
+const { verificarToken, verificarAdmin, generarToken } = require('./authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 8001;
+
+// Función helper para verificar acceso a un niño
+function verificarAccesoNino(ninoId, usuarioId, rol, callback) {
+  if (rol === 'admin') {
+    // Admin tiene acceso a todos
+    callback(null, true);
+  } else {
+    // Usuario normal solo puede acceder a sus propios niños
+    db.get('SELECT id FROM ninos WHERE id = ? AND usuario_id = ?', [ninoId, usuarioId], (err, row) => {
+      if (err) return callback(err, false);
+      callback(null, !!row);
+    });
+  }
+}
 
 // Configuración de CORS más permisiva
 app.use(cors({
@@ -21,18 +37,235 @@ app.use((req, res, next) => {
   next();
 });
 
+// ==================== RUTAS DE AUTENTICACIÓN ====================
+
+// Registro de nuevo usuario
+app.post('/api/auth/registro', async (req, res) => {
+  const { email, password, nombre } = req.body;
+
+  // Validación
+  if (!email || !password || !nombre) {
+    return res.status(400).json({ error: 'Email, contraseña y nombre son requeridos' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+  }
+
+  // Verificar si el email ya existe
+  db.get('SELECT id FROM usuarios WHERE email = ?', [email], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (row) return res.status(400).json({ error: 'El email ya está registrado' });
+
+    // Hash de la contraseña
+    const passwordHash = bcrypt.hashSync(password, 10);
+
+    // Insertar nuevo usuario
+    db.run(
+      'INSERT INTO usuarios (email, password_hash, nombre, rol) VALUES (?, ?, ?, ?)',
+      [email, passwordHash, nombre, 'usuario'],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const nuevoUsuario = {
+          id: this.lastID,
+          email,
+          nombre,
+          rol: 'usuario'
+        };
+
+        const token = generarToken(nuevoUsuario);
+        
+        res.status(201).json({
+          mensaje: 'Usuario registrado exitosamente',
+          token,
+          usuario: nuevoUsuario
+        });
+      }
+    );
+  });
+});
+
+// Login de usuario
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  // Validación
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+  }
+
+  // Buscar usuario
+  db.get('SELECT * FROM usuarios WHERE email = ?', [email], (err, usuario) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!usuario) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+    // Verificar contraseña
+    const passwordValida = bcrypt.compareSync(password, usuario.password_hash);
+    if (!passwordValida) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    // Verificar si está activo
+    if (!usuario.activo) {
+      return res.status(403).json({ error: 'Usuario desactivado' });
+    }
+
+    // Actualizar último acceso
+    db.run('UPDATE usuarios SET ultimo_acceso = CURRENT_TIMESTAMP WHERE id = ?', [usuario.id]);
+
+    // Generar token
+    const token = generarToken(usuario);
+
+    res.json({
+      mensaje: 'Login exitoso',
+      token,
+      usuario: {
+        id: usuario.id,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        rol: usuario.rol
+      }
+    });
+  });
+});
+
+// Verificar token (para mantener sesión)
+app.get('/api/auth/verificar', verificarToken, (req, res) => {
+  res.json({
+    valido: true,
+    usuario: req.usuario
+  });
+});
+
+// Obtener perfil del usuario actual
+app.get('/api/auth/perfil', verificarToken, (req, res) => {
+  db.get(
+    'SELECT id, email, nombre, rol, creado_en, ultimo_acceso FROM usuarios WHERE id = ?',
+    [req.usuario.id],
+    (err, usuario) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+      res.json(usuario);
+    }
+  );
+});
+
+// Cambiar contraseña
+app.post('/api/auth/cambiar-password', verificarToken, (req, res) => {
+  const { passwordActual, passwordNueva } = req.body;
+
+  if (!passwordActual || !passwordNueva) {
+    return res.status(400).json({ error: 'Contraseña actual y nueva son requeridas' });
+  }
+
+  if (passwordNueva.length < 6) {
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+  }
+
+  // Obtener usuario actual
+  db.get('SELECT password_hash FROM usuarios WHERE id = ?', [req.usuario.id], (err, usuario) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    // Verificar contraseña actual
+    const passwordValida = bcrypt.compareSync(passwordActual, usuario.password_hash);
+    if (!passwordValida) {
+      return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    }
+
+    // Hash de nueva contraseña
+    const nuevoHash = bcrypt.hashSync(passwordNueva, 10);
+
+    // Actualizar contraseña
+    db.run('UPDATE usuarios SET password_hash = ? WHERE id = ?', [nuevoHash, req.usuario.id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+    });
+  });
+});
+
+// ==================== RUTAS DE ADMINISTRACIÓN (solo admin) ====================
+
+// Listar todos los usuarios (solo admin)
+app.get('/api/admin/usuarios', verificarToken, verificarAdmin, (req, res) => {
+  db.all(
+    'SELECT id, email, nombre, rol, activo, creado_en, ultimo_acceso FROM usuarios ORDER BY creado_en DESC',
+    (err, usuarios) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(usuarios);
+    }
+  );
+});
+
+// Activar/Desactivar usuario (solo admin)
+app.put('/api/admin/usuarios/:id/toggle-activo', verificarToken, verificarAdmin, (req, res) => {
+  const { id } = req.params;
+
+  db.get('SELECT activo FROM usuarios WHERE id = ?', [id], (err, usuario) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const nuevoEstado = usuario.activo ? 0 : 1;
+
+    db.run('UPDATE usuarios SET activo = ? WHERE id = ?', [nuevoEstado, id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ 
+        mensaje: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`,
+        activo: nuevoEstado
+      });
+    });
+  });
+});
+
+// Cambiar rol de usuario (solo admin)
+app.put('/api/admin/usuarios/:id/cambiar-rol', verificarToken, verificarAdmin, (req, res) => {
+  const { id } = req.params;
+  const { rol } = req.body;
+
+  if (!['usuario', 'admin'].includes(rol)) {
+    return res.status(400).json({ error: 'Rol inválido. Debe ser "usuario" o "admin"' });
+  }
+
+  db.run('UPDATE usuarios SET rol = ? WHERE id = ?', [rol, id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ mensaje: 'Rol actualizado exitosamente', rol });
+  });
+});
+
+// Ver todos los niños de todos los usuarios (solo admin)
+app.get('/api/admin/ninos', verificarToken, verificarAdmin, (req, res) => {
+  db.all(
+    `SELECT n.*, u.nombre as nombre_usuario, u.email as email_usuario 
+     FROM ninos n 
+     LEFT JOIN usuarios u ON n.usuario_id = u.id 
+     ORDER BY n.creado_en DESC`,
+    (err, ninos) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(ninos);
+    }
+  );
+});
+
 // ==================== RUTAS DE NIÑOS ====================
 
-// Obtener todos los niños
-app.get('/api/ninos', (req, res) => {
-  db.all('SELECT * FROM ninos ORDER BY nombre', (err, rows) => {
+// Obtener todos los niños del usuario actual
+app.get('/api/ninos', verificarToken, (req, res) => {
+  // Si es admin, puede ver todos; si no, solo los suyos
+  const query = req.usuario.rol === 'admin' 
+    ? 'SELECT n.*, u.nombre as nombre_usuario, u.email as email_usuario FROM ninos n LEFT JOIN usuarios u ON n.usuario_id = u.id ORDER BY n.nombre'
+    : 'SELECT * FROM ninos WHERE usuario_id = ? ORDER BY nombre';
+  
+  const params = req.usuario.rol === 'admin' ? [] : [req.usuario.id];
+
+  db.all(query, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
 // Crear nuevo niño
-app.post('/api/ninos', (req, res) => {
+app.post('/api/ninos', verificarToken, (req, res) => {
   console.log('Recibida petición de crear niño:', req.body);
   const { nombre, fecha_nacimiento, semanas_gestacion } = req.body;
   
@@ -43,16 +276,22 @@ app.post('/api/ninos', (req, res) => {
   }
   
   const semanasGest = semanas_gestacion || 40; // Default 40 si no se proporciona
-  console.log('Insertando niño:', { nombre, fecha_nacimiento, semanas_gestacion: semanasGest });
+  console.log('Insertando niño:', { nombre, fecha_nacimiento, semanas_gestacion: semanasGest, usuario_id: req.usuario.id });
   
-  db.run('INSERT INTO ninos (nombre, fecha_nacimiento, semanas_gestacion) VALUES (?, ?, ?)', 
-    [nombre, fecha_nacimiento, semanasGest], 
+  db.run('INSERT INTO ninos (nombre, fecha_nacimiento, semanas_gestacion, usuario_id) VALUES (?, ?, ?, ?)', 
+    [nombre, fecha_nacimiento, semanasGest, req.usuario.id], 
     function(err) {
       if (err) {
         console.error('Error en base de datos:', err.message);
         return res.status(500).json({ error: err.message });
       }
-      const resultado = { id: this.lastID, nombre, fecha_nacimiento, semanas_gestacion: semanasGest };
+      const resultado = { 
+        id: this.lastID, 
+        nombre, 
+        fecha_nacimiento, 
+        semanas_gestacion: semanasGest,
+        usuario_id: req.usuario.id
+      };
       console.log('Niño creado exitosamente:', resultado);
       res.json(resultado);
     }
@@ -60,26 +299,45 @@ app.post('/api/ninos', (req, res) => {
 });
 
 // Obtener un niño específico
-app.get('/api/ninos/:id', (req, res) => {
-  db.get('SELECT * FROM ninos WHERE id = ?', [req.params.id], (err, row) => {
+app.get('/api/ninos/:id', verificarToken, (req, res) => {
+  // Verificar que el niño pertenece al usuario (o que el usuario es admin)
+  const query = req.usuario.rol === 'admin'
+    ? 'SELECT n.*, u.nombre as nombre_usuario, u.email as email_usuario FROM ninos n LEFT JOIN usuarios u ON n.usuario_id = u.id WHERE n.id = ?'
+    : 'SELECT * FROM ninos WHERE id = ? AND usuario_id = ?';
+  
+  const params = req.usuario.rol === 'admin' ? [req.params.id] : [req.params.id, req.usuario.id];
+
+  db.get(query, params, (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Niño no encontrado' });
+    if (!row) return res.status(404).json({ error: 'Niño no encontrado o no tienes acceso' });
     res.json(row);
   });
 });
 
 // Eliminar un niño (y todos sus datos relacionados)
-app.delete('/api/ninos/:id', (req, res) => {
+app.delete('/api/ninos/:id', verificarToken, (req, res) => {
   const ninoId = req.params.id;
   
-  db.serialize(() => {
-    db.run('DELETE FROM hitos_conseguidos WHERE nino_id = ?', [ninoId]);
-    db.run('DELETE FROM hitos_no_alcanzados WHERE nino_id = ?', [ninoId]);
-    db.run('DELETE FROM red_flags_observadas WHERE nino_id = ?', [ninoId]);
-    
-    db.run('DELETE FROM ninos WHERE id = ?', [ninoId], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, message: 'Niño eliminado correctamente' });
+  // Verificar que el niño pertenece al usuario (o que el usuario es admin)
+  const verificarQuery = req.usuario.rol === 'admin'
+    ? 'SELECT id FROM ninos WHERE id = ?'
+    : 'SELECT id FROM ninos WHERE id = ? AND usuario_id = ?';
+  
+  const verificarParams = req.usuario.rol === 'admin' ? [ninoId] : [ninoId, req.usuario.id];
+
+  db.get(verificarQuery, verificarParams, (err, nino) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!nino) return res.status(404).json({ error: 'Niño no encontrado o no tienes acceso' });
+
+    db.serialize(() => {
+      db.run('DELETE FROM hitos_conseguidos WHERE nino_id = ?', [ninoId]);
+      db.run('DELETE FROM hitos_no_alcanzados WHERE nino_id = ?', [ninoId]);
+      db.run('DELETE FROM red_flags_observadas WHERE nino_id = ?', [ninoId]);
+      
+      db.run('DELETE FROM ninos WHERE id = ?', [ninoId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: 'Niño eliminado correctamente' });
+      });
     });
   });
 });
@@ -276,96 +534,152 @@ app.get('/api/hitos-normativos/dominio/:dominioId', (req, res) => {
 
 // ==================== RUTAS DE HITOS CONSEGUIDOS ====================
 
-app.get('/api/hitos-conseguidos/:ninoId', (req, res) => {
-  const query = `
-    SELECT hc.*, hn.nombre as hito_nombre, hn.dominio_id, 
-           hn.edad_media_meses, hn.desviacion_estandar,
-           d.nombre as dominio_nombre
-    FROM hitos_conseguidos hc
-    JOIN hitos_normativos hn ON hc.hito_id = hn.id
-    JOIN dominios d ON hn.dominio_id = d.id
-    WHERE hc.nino_id = ?
-    ORDER BY hc.edad_conseguido_meses
-  `;
-  db.all(query, [req.params.ninoId], (err, rows) => {
+app.get('/api/hitos-conseguidos/:ninoId', verificarToken, (req, res) => {
+  const ninoId = req.params.ninoId;
+  
+  verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    const query = `
+      SELECT hc.*, hn.nombre as hito_nombre, hn.dominio_id, 
+             hn.edad_media_meses, hn.desviacion_estandar,
+             d.nombre as dominio_nombre
+      FROM hitos_conseguidos hc
+      JOIN hitos_normativos hn ON hc.hito_id = hn.id
+      JOIN dominios d ON hn.dominio_id = d.id
+      WHERE hc.nino_id = ?
+      ORDER BY hc.edad_conseguido_meses
+    `;
+    db.all(query, [ninoId], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
   });
 });
 
-app.post('/api/hitos-conseguidos', (req, res) => {
+app.post('/api/hitos-conseguidos', verificarToken, (req, res) => {
   const { nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses, fecha_perdido } = req.body;
   
-  db.run(`INSERT INTO hitos_conseguidos 
-    (nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses, fecha_perdido) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses || null, fecha_perdido || null],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID });
-    }
-  );
+  verificarAccesoNino(nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    db.run(`INSERT INTO hitos_conseguidos 
+      (nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses, fecha_perdido) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [nino_id, hito_id, edad_conseguido_meses, fecha_registro, notas, edad_perdido_meses || null, fecha_perdido || null],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID });
+      }
+    );
+  });
 });
 
 // Nuevo endpoint para registrar pérdida de hito (regresión)
-app.put('/api/hitos-conseguidos/:id/registrar-perdida', (req, res) => {
+app.put('/api/hitos-conseguidos/:id/registrar-perdida', verificarToken, (req, res) => {
   const { edad_perdido_meses, fecha_perdido } = req.body;
   
-  db.run(`UPDATE hitos_conseguidos 
-    SET edad_perdido_meses = ?, fecha_perdido = ?
-    WHERE id = ?`,
-    [edad_perdido_meses, fecha_perdido, req.params.id],
-    function(err) {
+  // Primero verificar que el hito conseguido pertenece a un niño del usuario
+  db.get('SELECT nino_id FROM hitos_conseguidos WHERE id = ?', [req.params.id], (err, hito) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!hito) return res.status(404).json({ error: 'Hito no encontrado' });
+
+    verificarAccesoNino(hito.nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, changes: this.changes });
-    }
-  );
+      if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+      db.run(`UPDATE hitos_conseguidos 
+        SET edad_perdido_meses = ?, fecha_perdido = ?
+        WHERE id = ?`,
+        [edad_perdido_meses, fecha_perdido, req.params.id],
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, changes: this.changes });
+        }
+      );
+    });
+  });
 });
 
-app.delete('/api/hitos-conseguidos/:id', (req, res) => {
-  db.run('DELETE FROM hitos_conseguidos WHERE id = ?', [req.params.id], (err) => {
+app.delete('/api/hitos-conseguidos/:id', verificarToken, (req, res) => {
+  // Primero verificar que el hito conseguido pertenece a un niño del usuario
+  db.get('SELECT nino_id FROM hitos_conseguidos WHERE id = ?', [req.params.id], (err, hito) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
+    if (!hito) return res.status(404).json({ error: 'Hito no encontrado' });
+
+    verificarAccesoNino(hito.nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+      db.run('DELETE FROM hitos_conseguidos WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+      });
+    });
   });
 });
 
 // ==================== RUTAS DE HITOS NO ALCANZADOS ====================
 
-app.get('/api/hitos-no-alcanzados/:ninoId', (req, res) => {
-  const query = `
-    SELECT hna.*, hn.nombre as hito_nombre, hn.dominio_id, 
-           hn.edad_media_meses, hn.desviacion_estandar,
-           d.nombre as dominio_nombre
-    FROM hitos_no_alcanzados hna
-    JOIN hitos_normativos hn ON hna.hito_id = hn.id
-    JOIN dominios d ON hn.dominio_id = d.id
-    WHERE hna.nino_id = ?
-    ORDER BY hna.fecha_registro DESC
-  `;
-  db.all(query, [req.params.ninoId], (err, rows) => {
+app.get('/api/hitos-no-alcanzados/:ninoId', verificarToken, (req, res) => {
+  const ninoId = req.params.ninoId;
+  
+  verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    const query = `
+      SELECT hna.*, hn.nombre as hito_nombre, hn.dominio_id, 
+             hn.edad_media_meses, hn.desviacion_estandar,
+             d.nombre as dominio_nombre
+      FROM hitos_no_alcanzados hna
+      JOIN hitos_normativos hn ON hna.hito_id = hn.id
+      JOIN dominios d ON hn.dominio_id = d.id
+      WHERE hna.nino_id = ?
+      ORDER BY hna.fecha_registro DESC
+    `;
+    db.all(query, [ninoId], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
   });
 });
 
-app.post('/api/hitos-no-alcanzados', (req, res) => {
+app.post('/api/hitos-no-alcanzados', verificarToken, (req, res) => {
   const { nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas } = req.body;
   
-  db.run(`INSERT INTO hitos_no_alcanzados 
-    (nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas) 
-    VALUES (?, ?, ?, ?, ?)`,
-    [nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID });
-    }
-  );
+  verificarAccesoNino(nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    db.run(`INSERT INTO hitos_no_alcanzados 
+      (nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas) 
+      VALUES (?, ?, ?, ?, ?)`,
+      [nino_id, hito_id, edad_evaluacion_meses, fecha_registro, notas],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID });
+      }
+    );
+  });
 });
 
-app.delete('/api/hitos-no-alcanzados/:id', (req, res) => {
-  db.run('DELETE FROM hitos_no_alcanzados WHERE id = ?', [req.params.id], (err) => {
+app.delete('/api/hitos-no-alcanzados/:id', verificarToken, (req, res) => {
+  db.get('SELECT nino_id FROM hitos_no_alcanzados WHERE id = ?', [req.params.id], (err, hito) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
+    if (!hito) return res.status(404).json({ error: 'Hito no encontrado' });
+
+    verificarAccesoNino(hito.nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+      db.run('DELETE FROM hitos_no_alcanzados WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+      });
+    });
   });
 });
 
@@ -378,59 +692,85 @@ app.get('/api/red-flags', (req, res) => {
   });
 });
 
-app.get('/api/red-flags-observadas/:ninoId', (req, res) => {
-  const query = `
-    SELECT rfo.*, rf.nombre as flag_nombre, rf.descripcion as flag_descripcion
-    FROM red_flags_observadas rfo
-    JOIN red_flags rf ON rfo.red_flag_id = rf.id
-    WHERE rfo.nino_id = ?
-    ORDER BY rfo.edad_observada_meses
-  `;
-  db.all(query, [req.params.ninoId], (err, rows) => {
+app.get('/api/red-flags-observadas/:ninoId', verificarToken, (req, res) => {
+  const ninoId = req.params.ninoId;
+  
+  verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    const query = `
+      SELECT rfo.*, rf.nombre as flag_nombre, rf.descripcion as flag_descripcion
+      FROM red_flags_observadas rfo
+      JOIN red_flags rf ON rfo.red_flag_id = rf.id
+      WHERE rfo.nino_id = ?
+      ORDER BY rfo.edad_observada_meses
+    `;
+    db.all(query, [ninoId], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
   });
 });
 
-app.post('/api/red-flags-observadas', (req, res) => {
+app.post('/api/red-flags-observadas', verificarToken, (req, res) => {
   const { nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad } = req.body;
   
-  db.run(`INSERT INTO red_flags_observadas 
-    (nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad) 
-    VALUES (?, ?, ?, ?, ?, ?)`,
-    [nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad || 1],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID });
-    }
-  );
+  verificarAccesoNino(nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    db.run(`INSERT INTO red_flags_observadas 
+      (nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad) 
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [nino_id, red_flag_id, edad_observada_meses, fecha_registro, notas, severidad || 1],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID });
+      }
+    );
+  });
 });
 
-app.delete('/api/red-flags-observadas/:id', (req, res) => {
-  db.run('DELETE FROM red_flags_observadas WHERE id = ?', [req.params.id], (err) => {
+app.delete('/api/red-flags-observadas/:id', verificarToken, (req, res) => {
+  db.get('SELECT nino_id FROM red_flags_observadas WHERE id = ?', [req.params.id], (err, flag) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
+    if (!flag) return res.status(404).json({ error: 'Red flag no encontrada' });
+
+    verificarAccesoNino(flag.nino_id, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+      db.run('DELETE FROM red_flags_observadas WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+      });
+    });
   });
 });
 
 // ==================== ESTADISTICAS Y ANALISIS ====================
 
-app.get('/api/analisis/:ninoId', (req, res) => {
+app.get('/api/analisis/:ninoId', verificarToken, (req, res) => {
   const ninoId = req.params.ninoId;
   const fuenteNormativaId = req.query.fuente || 1;
   
-  db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+  verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!nino) return res.status(404).json({ error: 'Niño no encontrado' });
-    
-    const fechaNac = new Date(nino.fecha_nacimiento);
-    const hoy = new Date();
-    const edadMeses = (hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44);
-    
-    const queryHitos = `
-      SELECT hc.*, 
-             hn.nombre as hito_nombre, 
-             hn.dominio_id,
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+
+    db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!nino) return res.status(404).json({ error: 'Niño no encontrado' });
+      
+      const fechaNac = new Date(nino.fecha_nacimiento);
+      const hoy = new Date();
+      const edadMeses = (hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44);
+      
+      const queryHitos = `
+        SELECT hc.*, 
+               hn.nombre as hito_nombre, 
+               hn.dominio_id,
              hn.edad_media_meses, 
              hn.desviacion_estandar,
              d.nombre as dominio_nombre,
@@ -480,7 +820,8 @@ app.get('/api/analisis/:ninoId', (req, res) => {
         total_hitos: hitos.length
       });
     });
-  });
+  }); // Cierre de db.get nino
+  }); // Cierre de verificarAccesoNino
 });
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_URL } from '../config';
+import { fetchConAuth } from '../utils/authService';
 import GraficoDesarrollo from './GraficoDesarrollo';
 
 function EjemplosClinicos({ onEjemploCreado }) {
@@ -178,7 +179,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
     try {
       // 1. Crear el niño con datos aleatorios
       const ninoData = perfil.generarNinoData();
-      const ninoResponse = await fetch(`${API_URL}/ninos`, {
+      const ninoResponse = await fetchConAuth(`${API_URL}/ninos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ninoData)
@@ -186,7 +187,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
       const nino = await ninoResponse.json();
 
       // 2. Obtener hitos normativos
-      const hitosResponse = await fetch(`${API_URL}/hitos-normativos?fuente=1`);
+      const hitosResponse = await fetchConAuth(`${API_URL}/hitos-normativos?fuente=1`);
       const hitosNormativos = await hitosResponse.json();
 
       // 3. Generar hitos según el perfil (con semilla aleatoria basada en el ID del niño)
@@ -207,7 +208,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
           hitoData.fecha_perdido = new Date().toISOString().split('T')[0];
         }
         
-        await fetch(`${API_URL}/hitos-conseguidos`, {
+        await fetchConAuth(`${API_URL}/hitos-conseguidos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(hitoData)
@@ -467,7 +468,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
 
   const cargarEjemplos = async () => {
     try {
-      const response = await fetch(`${API_URL}/ninos`);
+      const response = await fetchConAuth(`${API_URL}/ninos`);
       const todosLosNinos = await response.json();
       
       // Filtrar solo los ejemplos (nombres que contienen "Ejemplo")
@@ -482,7 +483,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
     if (!confirm('¿Eliminar este caso de ejemplo?')) return;
 
     try {
-      await fetch(`${API_URL}/ninos/${ninoId}`, {
+      await fetchConAuth(`${API_URL}/ninos/${ninoId}`, {
         method: 'DELETE'
       });
       setMensaje('✅ Ejemplo eliminado');
@@ -511,7 +512,7 @@ function EjemplosClinicos({ onEjemploCreado }) {
 
     try {
       for (const ejemplo of ejemplos) {
-        await fetch(`${API_URL}/ninos/${ejemplo.id}`, {
+        await fetchConAuth(`${API_URL}/ninos/${ejemplo.id}`, {
           method: 'DELETE'
         });
       }

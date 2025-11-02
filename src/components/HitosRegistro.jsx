@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { calcularEdadCronologicaMeses, calcularEdadCorregidaMeses, formatearEdades } from '../utils/ageCalculations';
 import { API_URL } from '../config';
+import { fetchConAuth } from '../utils/authService';
 import { obtenerVideoHito } from '../utils/videosHitos';
 
 function HitosRegistro({ ninoId }) {
@@ -43,7 +44,7 @@ function HitosRegistro({ ninoId }) {
 
   const cargarFuentesNormativas = async () => {
     try {
-      const response = await fetch(`${API_URL}/fuentes-normativas`);
+      const response = await fetchConAuth(`${API_URL}/fuentes-normativas`);
       const data = await response.json();
       setFuentesNormativas(data);
       if (data.length > 0) {
@@ -136,7 +137,7 @@ function HitosRegistro({ ninoId }) {
     }
     
     try {
-      await fetch(`${API_URL}/hitos-conseguidos`, {
+      await fetchConAuth(`${API_URL}/hitos-conseguidos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -154,7 +155,7 @@ function HitosRegistro({ ninoId }) {
 
   const eliminarHito = async (hitoConseguidoId) => {
     try {
-      await fetch(`${API_URL}/hitos-conseguidos/${hitoConseguidoId}`, {
+      await fetchConAuth(`${API_URL}/hitos-conseguidos/${hitoConseguidoId}`, {
         method: 'DELETE'
       });
       cargarDatos();
@@ -165,7 +166,7 @@ function HitosRegistro({ ninoId }) {
 
   const registrarHitoConPerdida = async (hitoId, edadConseguido, edadPerdido) => {
     try {
-      await fetch(`${API_URL}/hitos-conseguidos`, {
+      await fetchConAuth(`${API_URL}/hitos-conseguidos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,7 +200,7 @@ function HitosRegistro({ ninoId }) {
     }
     
     try {
-      await fetch(`${API_URL}/hitos-conseguidos/${hitoConseguidoId}/registrar-perdida`, {
+      await fetchConAuth(`${API_URL}/hitos-conseguidos/${hitoConseguidoId}/registrar-perdida`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -217,7 +218,7 @@ function HitosRegistro({ ninoId }) {
   const registrarHitoNoAlcanzado = async (hitoId, notas = '') => {
     try {
       const edadEval = modoEvaluacion === 'puntual' ? edadEvaluacionMeses : edadActualMeses;
-      await fetch(`${API_URL}/hitos-no-alcanzados`, {
+      await fetchConAuth(`${API_URL}/hitos-no-alcanzados`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -236,7 +237,7 @@ function HitosRegistro({ ninoId }) {
 
   const eliminarHitoNoAlcanzado = async (hitoNoAlcanzadoId) => {
     try {
-      await fetch(`${API_URL}/hitos-no-alcanzados/${hitoNoAlcanzadoId}`, {
+      await fetchConAuth(`${API_URL}/hitos-no-alcanzados/${hitoNoAlcanzadoId}`, {
         method: 'DELETE'
       });
       cargarDatos();

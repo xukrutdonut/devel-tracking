@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
+import { fetchConAuth } from '../utils/authService';
 import { construirPuntosEvaluacion, interpretarTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
 
 /**
@@ -46,7 +47,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
   const cargarFuentes = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/fuentes-normativas');
+      const response = await fetchConAuth('http://localhost:3001/api/fuentes-normativas');
       const data = await response.json();
       setFuentes(data);
     } catch (error) {
@@ -56,7 +57,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
   const cargarDominios = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/dominios');
+      const response = await fetchConAuth('http://localhost:3001/api/dominios');
       const data = await response.json();
       setDominios(data);
     } catch (error) {
@@ -68,12 +69,12 @@ export default function AnalisisAceleracion({ ninoId }) {
     setLoading(true);
     try {
       // Cargar datos del niño PRIMERO
-      const ninoResponse = await fetch(`http://localhost:3001/api/ninos/${ninoId}`);
+      const ninoResponse = await fetchConAuth(`http://localhost:3001/api/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
-      const itinerarioResponse = await fetch(
+      const itinerarioResponse = await fetchConAuth(
         `http://localhost:3001/api/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
       );
       const itinerario = await itinerarioResponse.json();
@@ -109,7 +110,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       console.log('🔍 Construyendo datos retrospectivos para análisis de aceleración...');
       
       // Cargar hitos conseguidos
-      const hitosResponse = await fetch(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
+      const hitosResponse = await fetchConAuth(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
       console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
@@ -120,7 +121,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       }
 
       // Cargar hitos normativos
-      const normativosResponse = await fetch('http://localhost:3001/api/hitos-normativos');
+      const normativosResponse = await fetchConAuth('http://localhost:3001/api/hitos-normativos');
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
@@ -131,7 +132,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
         console.log('⚠️ Dominios no cargados, cargando ahora...');
-        const dominiosResponse = await fetch('http://localhost:3001/api/dominios');
+        const dominiosResponse = await fetchConAuth('http://localhost:3001/api/dominios');
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }
