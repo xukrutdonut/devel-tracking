@@ -536,9 +536,9 @@ export default function AnalisisAceleracion({ ninoId }) {
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             
-            {/* Línea diagonal de referencia (desarrollo típico) */}
+            {/* Línea diagonal de referencia (desarrollo típico) - debe ser perfectamente recta */}
             <Line 
-              type="monotone" 
+              type="linear" 
               dataKey="edad_tipica" 
               stroke="#999" 
               strokeWidth={2}
@@ -547,14 +547,14 @@ export default function AnalisisAceleracion({ ninoId }) {
               dot={false}
             />
             
-            {/* Trayectoria real del niño */}
+            {/* Trayectoria real del niño - conectar puntos sin suavizado */}
             <Line 
-              type="monotone" 
+              type="linear" 
               dataKey="edad_desarrollo" 
               stroke="#2196F3" 
               strokeWidth={3}
               name="Edad de Desarrollo del Niño" 
-              dot={{ r: 6 }}
+              dot={{ r: 6, fill: '#2196F3' }}
             />
           </ComposedChart>
         </ResponsiveContainer>
