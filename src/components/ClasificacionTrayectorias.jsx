@@ -148,7 +148,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
-      const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_id === fuenteSeleccionada);
+      const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_normativa_id === fuenteSeleccionada);
       console.log(`📚 Hitos normativos fuente ${fuenteSeleccionada}: ${hitosNormativosFuente.length}`);
       
       // Cargar dominios si no están cargados aún
