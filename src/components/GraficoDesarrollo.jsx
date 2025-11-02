@@ -89,8 +89,8 @@ function GraficoDesarrollo({ ninoId }) {
       // Usuario autenticado o invitado sin datos: cargar desde API
       const fuenteParam = fuenteSeleccionada ? `?fuente=${fuenteSeleccionada}` : '';
       const [analisisRes, redFlagsRes, ninoRes] = await Promise.all([
-        fetch(`${API_URL}/analisis/${ninoId}${fuenteParam}`),
-        fetch(`${API_URL}/red-flags-observadas/${ninoId}`),
+        fetchConAuth(`${API_URL}/analisis/${ninoId}${fuenteParam}`),
+        fetchConAuth(`${API_URL}/red-flags-observadas/${ninoId}`),
         fetchConAuth(`${API_URL}/ninos/${ninoId}`)
       ]);
 
@@ -131,7 +131,7 @@ function GraficoDesarrollo({ ninoId }) {
     };
   };
 
-  if (!analisis) {
+  if (!analisis || !analisis.hitos_conseguidos) {
     return <div className="loading">Cargando análisis...</div>;
   }
 
