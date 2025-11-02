@@ -13,6 +13,10 @@ function verificarAccesoNino(ninoId, usuarioId, rol, callback) {
   if (rol === 'admin') {
     // Admin tiene acceso a todos
     callback(null, true);
+  } else if (rol === 'invitado') {
+    // Invitados solo pueden acceder a sus propios datos temporales
+    // El ninoId para invitados es el mismo que el usuarioId
+    callback(null, ninoId === usuarioId);
   } else {
     // Usuario normal solo puede acceder a sus propios niños
     db.get('SELECT id FROM ninos WHERE id = ? AND usuario_id = ?', [ninoId, usuarioId], (err, row) => {
@@ -251,6 +255,11 @@ app.get('/api/admin/ninos', verificarToken, verificarAdmin, (req, res) => {
 
 // Obtener todos los niños del usuario actual
 app.get('/api/ninos', verificarToken, (req, res) => {
+  // Para usuarios invitados, devolver array vacío
+  if (req.usuario.rol === 'invitado') {
+    return res.json([]);
+  }
+  
   // Si es admin, puede ver todos; si no, solo los suyos
   const query = req.usuario.rol === 'admin' 
     ? 'SELECT n.*, u.nombre as nombre_usuario, u.email as email_usuario FROM ninos n LEFT JOIN usuarios u ON n.usuario_id = u.id ORDER BY n.nombre'
@@ -300,6 +309,17 @@ app.post('/api/ninos', verificarToken, (req, res) => {
 
 // Obtener un niño específico
 app.get('/api/ninos/:id', verificarToken, (req, res) => {
+  // Para usuarios invitados, devolver datos mock
+  if (req.usuario.rol === 'invitado') {
+    return res.json({
+      id: req.params.id,
+      nombre: 'Niño de Ejemplo',
+      fecha_nacimiento: new Date().toISOString().split('T')[0],
+      semanas_gestacion: 40,
+      usuario_id: req.usuario.id
+    });
+  }
+  
   // Verificar que el niño pertenece al usuario (o que el usuario es admin)
   const query = req.usuario.rol === 'admin'
     ? 'SELECT n.*, u.nombre as nombre_usuario, u.email as email_usuario FROM ninos n LEFT JOIN usuarios u ON n.usuario_id = u.id WHERE n.id = ?'
@@ -537,6 +557,11 @@ app.get('/api/hitos-normativos/dominio/:dominioId', (req, res) => {
 app.get('/api/hitos-conseguidos/:ninoId', verificarToken, (req, res) => {
   const ninoId = req.params.ninoId;
   
+  // Para usuarios invitados, devolver array vacío (datos en memoria del cliente)
+  if (req.usuario.rol === 'invitado') {
+    return res.json([]);
+  }
+  
   verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
@@ -626,6 +651,11 @@ app.delete('/api/hitos-conseguidos/:id', verificarToken, (req, res) => {
 app.get('/api/hitos-no-alcanzados/:ninoId', verificarToken, (req, res) => {
   const ninoId = req.params.ninoId;
   
+  // Para usuarios invitados, devolver array vacío (datos en memoria del cliente)
+  if (req.usuario.rol === 'invitado') {
+    return res.json([]);
+  }
+  
   verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
@@ -695,6 +725,11 @@ app.get('/api/red-flags', (req, res) => {
 app.get('/api/red-flags-observadas/:ninoId', verificarToken, (req, res) => {
   const ninoId = req.params.ninoId;
   
+  // Para usuarios invitados, devolver array vacío
+  if (req.usuario.rol === 'invitado') {
+    return res.json([]);
+  }
+  
   verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
@@ -754,6 +789,23 @@ app.delete('/api/red-flags-observadas/:id', verificarToken, (req, res) => {
 app.get('/api/analisis/:ninoId', verificarToken, (req, res) => {
   const ninoId = req.params.ninoId;
   const fuenteNormativaId = req.query.fuente || 1;
+  
+  // Para usuarios invitados, devolver datos mock vacíos
+  if (req.usuario.rol === 'invitado') {
+    return res.json({
+      nino: {
+        id: ninoId,
+        nombre: 'Niño de Ejemplo',
+        fecha_nacimiento: new Date().toISOString().split('T')[0],
+        semanas_gestacion: 40,
+        usuario_id: req.usuario.id
+      },
+      edad_actual_meses: 12,
+      hitos_conseguidos: [],
+      estadisticas_por_dominio: {},
+      total_hitos: 0
+    });
+  }
   
   verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
     if (err) return res.status(500).json({ error: err.message });

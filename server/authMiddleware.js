@@ -7,7 +7,34 @@ const JWT_SECRET = process.env.JWT_SECRET || 'neurodesarrollo_secret_key_change_
 function verificarToken(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1]; // Bearer TOKEN
 
+  // Permitir acceso sin token para usuarios invitados
   if (!token) {
+    // Verificar si es una operación de invitado basándose en los parámetros
+    // Buscar en params, body, query cualquier ID que comience con 'invitado_'
+    const checkInvitado = (obj) => {
+      if (!obj) return null;
+      for (const key in obj) {
+        const value = obj[key];
+        if (typeof value === 'string' && value.startsWith('invitado_')) {
+          return value;
+        }
+      }
+      return null;
+    };
+    
+    const usuarioId = checkInvitado(req.params) || 
+                     checkInvitado(req.body) || 
+                     checkInvitado(req.query);
+    
+    if (usuarioId) {
+      req.usuario = {
+        id: usuarioId,
+        email: 'invitado@guest.local',
+        rol: 'invitado',
+        nombre: 'Invitado'
+      };
+      return next();
+    }
     return res.status(401).json({ error: 'Token no proporcionado' });
   }
 
