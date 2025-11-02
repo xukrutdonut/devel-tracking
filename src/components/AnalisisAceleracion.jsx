@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
 import { fetchConAuth } from '../utils/authService';
 import { construirPuntosEvaluacion, interpretarTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
+import { API_URL } from '../config';
 
 /**
  * Componente para análisis de aceleración del desarrollo (derivada 2ª)
@@ -47,7 +48,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
   const cargarFuentes = async () => {
     try {
-      const response = await fetchConAuth('http://localhost:3001/api/fuentes-normativas');
+      const response = await fetchConAuth(`${API_URL}/fuentes-normativas`);
       const data = await response.json();
       setFuentes(data);
     } catch (error) {
@@ -57,7 +58,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
   const cargarDominios = async () => {
     try {
-      const response = await fetchConAuth('http://localhost:3001/api/dominios');
+      const response = await fetchConAuth(`${API_URL}/dominios`);
       const data = await response.json();
       setDominios(data);
     } catch (error) {
@@ -69,15 +70,25 @@ export default function AnalisisAceleracion({ ninoId }) {
     setLoading(true);
     try {
       // Cargar datos del niño PRIMERO
-      const ninoResponse = await fetchConAuth(`http://localhost:3001/api/ninos/${ninoId}`);
+      const ninoResponse = await fetchConAuth(`${API_URL}/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
-      const itinerarioResponse = await fetchConAuth(
-        `http://localhost:3001/api/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
-      );
-      const itinerario = await itinerarioResponse.json();
+      let itinerario = null;
+      try {
+        const itinerarioResponse = await fetchConAuth(
+          `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
+        );
+        
+        // Solo parsear como JSON si la respuesta es exitosa
+        if (itinerarioResponse.ok) {
+          itinerario = await itinerarioResponse.json();
+        }
+      } catch (itinerarioError) {
+        // Endpoint no existe o error, continuar con datos retrospectivos
+        console.log('ℹ️ No hay datos prospectivos, usando datos retrospectivos');
+      }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
       if (itinerario && itinerario.evaluaciones && itinerario.evaluaciones.length >= 2) {
@@ -110,7 +121,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       console.log('🔍 Construyendo datos retrospectivos para análisis de aceleración...');
       
       // Cargar hitos conseguidos
-      const hitosResponse = await fetchConAuth(`http://localhost:3001/api/hitos-conseguidos/${ninoId}`);
+      const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
       console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
@@ -121,7 +132,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       }
 
       // Cargar hitos normativos
-      const normativosResponse = await fetchConAuth('http://localhost:3001/api/hitos-normativos');
+      const normativosResponse = await fetchConAuth(`${API_URL}/hitos-normativos`);
       const hitosNormativos = await normativosResponse.json();
       
       // Filtrar por fuente
@@ -132,7 +143,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
         console.log('⚠️ Dominios no cargados, cargando ahora...');
-        const dominiosResponse = await fetchConAuth('http://localhost:3001/api/dominios');
+        const dominiosResponse = await fetchConAuth(`${API_URL}/dominios`);
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }

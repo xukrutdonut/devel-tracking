@@ -90,10 +90,20 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
-      const itinerarioResponse = await fetchConAuth(
-        `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
-      );
-      const itinerario = await itinerarioResponse.json();
+      let itinerario = null;
+      try {
+        const itinerarioResponse = await fetchConAuth(
+          `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
+        );
+        
+        // Solo parsear como JSON si la respuesta es exitosa
+        if (itinerarioResponse.ok) {
+          itinerario = await itinerarioResponse.json();
+        }
+      } catch (itinerarioError) {
+        // Endpoint no existe o error, continuar con datos retrospectivos
+        console.log('ℹ️ No hay datos prospectivos, usando datos retrospectivos');
+      }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
       if (itinerario && itinerario.evaluaciones && itinerario.evaluaciones.length >= 3) {
