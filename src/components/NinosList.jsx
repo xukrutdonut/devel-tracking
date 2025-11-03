@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatearEdades } from '../utils/ageCalculations';
 import { API_URL } from '../config';
-import { fetchConAuth, esAdmin, getUsuario } from '../utils/authService';
+import { fetchConAuth, esAdmin, getUsuario, esModoInvitado } from '../utils/authService';
 
 function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
   const usuario = getUsuario();
@@ -15,6 +15,26 @@ function NinosList({ ninos, onNinoSeleccionado, onNinoEliminado }) {
     }
 
     try {
+      // En modo invitado, eliminar de sessionStorage
+      if (esModoInvitado()) {
+        // Eliminar niño de la lista
+        const ninosGuardados = sessionStorage.getItem('invitado_ninos');
+        if (ninosGuardados) {
+          const ninosArray = JSON.parse(ninosGuardados);
+          const ninosFiltrados = ninosArray.filter(n => n.id !== nino.id);
+          sessionStorage.setItem('invitado_ninos', JSON.stringify(ninosFiltrados));
+        }
+        
+        // Eliminar hitos del niño
+        const hitosKey = `invitado_hitos_${nino.id}`;
+        sessionStorage.removeItem(hitosKey);
+        
+        alert('Niño eliminado correctamente');
+        onNinoEliminado();
+        return;
+      }
+      
+      // Usuario autenticado: eliminar de la base de datos
       const response = await fetchConAuth(`${API_URL}/ninos/${nino.id}`, {
         method: 'DELETE'
       });

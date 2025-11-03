@@ -65,8 +65,6 @@ db.serialize(() => {
         (err) => {
           if (err) {
             console.error('Error creating admin user:', err);
-          } else {
-            console.log('✅ Usuario admin creado: admin@neuropedialab.org / admin123');
           }
         }
       );

@@ -23,8 +23,8 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
     return `${nombre} #${id} - ${perfil}`;
   };
 
-  // Definición de perfiles clínicos de ejemplo
-  const perfilesEjemplo = [
+  // Definición de perfiles clínicos de ejemplo - MULTIDOMINIO HOMOGÉNEO
+  const perfilesMultidominioHomogeneo = [
     {
       id: 'desarrollo-tipico',
       nombre: 'Desarrollo Típico',
@@ -40,60 +40,32 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       cd: 0 // Coeficiente de desarrollo normal
     },
     {
-      id: 'retraso-global-moderado',
-      nombre: 'Retraso Global Moderado',
-      descripcion: 'Retraso del desarrollo en todos los dominios con CD 50 (alcanza hitos al 50% de la edad esperada)',
+      id: 'trayectoria-retraso',
+      nombre: 'Trayectoria con Retraso',
+      descripcion: 'Decalaje en el inicio del desarrollo pero con misma velocidad de progresión (pendiente paralela a lo típico)',
+      icono: '📐',
+      color: '#9c27b0',
+      generarNinoData: () => ({
+        nombre: generarNombreAleatorio('Trayectoria con Retraso'),
+        fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
+        semanas_gestacion: 40
+      }),
+      perfil: 'trayectoria-retraso',
+      decalajeInicial: 6 // Decalaje de 6 meses en el inicio
+    },
+    {
+      id: 'desviacion-desarrollo',
+      nombre: 'Desviación del Desarrollo',
+      descripcion: 'Desviación del desarrollo en todos los dominios con CD 50 (alcanza hitos al 50% de la edad esperada)',
       icono: '🔵',
       color: '#ffc107',
       generarNinoData: () => ({
-        nombre: generarNombreAleatorio('Retraso Global CD50'),
+        nombre: generarNombreAleatorio('Desviación Desarrollo CD50'),
         fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
         semanas_gestacion: 40
       }),
       perfil: 'retraso-global',
       cd: 50 // 50% de retraso en todos los dominios
-    },
-    {
-      id: 'retraso-motor-grueso',
-      nombre: 'Retraso Motor Grueso',
-      descripcion: 'Desarrollo típico excepto en motricidad gruesa, sugiere hipotonía o problema motor específico',
-      icono: '🏃',
-      color: '#17a2b8',
-      generarNinoData: () => ({
-        nombre: generarNombreAleatorio('Retraso Motor'),
-        fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
-        semanas_gestacion: 40
-      }),
-      perfil: 'retraso-motor',
-      dominioAfectado: 1 // ID del dominio motor grueso
-    },
-    {
-      id: 'retraso-lenguaje',
-      nombre: 'Retraso del Lenguaje',
-      descripcion: 'Desarrollo típico excepto en comunicación/lenguaje, sugiere trastorno específico del lenguaje',
-      icono: '💬',
-      color: '#dc3545',
-      generarNinoData: () => ({
-        nombre: generarNombreAleatorio('Retraso Lenguaje'),
-        fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
-        semanas_gestacion: 40
-      }),
-      perfil: 'retraso-lenguaje',
-      dominioAfectado: 3 // ID del dominio de comunicación
-    },
-    {
-      id: 'tea',
-      nombre: 'Trastorno del Espectro Autista',
-      descripcion: 'Perfil compatible con TEA: afectación del área social-emocional con desarrollo típico o adelantado en otras áreas',
-      icono: '🧩',
-      color: '#6f42c1',
-      generarNinoData: () => ({
-        nombre: generarNombreAleatorio('Perfil TEA'),
-        fecha_nacimiento: calcularFechaNacimiento(36), // 36 meses
-        semanas_gestacion: 40
-      }),
-      perfil: 'tea',
-      dominioAfectado: 5 // ID del dominio Social-Emocional
     },
     {
       id: 'regresion',
@@ -137,7 +109,11 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       perfil: 'aceleracion',
       edadIntervencion: 18, // Edad en meses donde inicia la intervención
       retrasoInicial: 0.65 // Retraso del 35% antes de la intervención
-    },
+    }
+  ];
+
+  // Definición de perfiles clínicos de ejemplo - MULTIDOMINIO HETEROGÉNEO
+  const perfilesMultidominioHeterogeneo = [
     {
       id: 'retraso-global-tea',
       nombre: 'Retraso Global + TEA',
@@ -169,6 +145,52 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       cdBase: 65, // Retraso global del 35%
       dominioDesproporcionado: 3, // Comunicación/Lenguaje
       factorDesproporcion: 0.55 // El dominio específico está al 55% del CD base (35.75% absoluto)
+    }
+  ];
+
+  // Definición de perfiles clínicos de ejemplo - UNIDOMINIO
+  const perfilesUnidominio = [
+    {
+      id: 'retraso-motor-grueso',
+      nombre: 'Retraso Motor Grueso',
+      descripcion: 'Desarrollo típico excepto en motricidad gruesa, sugiere hipotonía o problema motor específico',
+      icono: '🏃',
+      color: '#17a2b8',
+      generarNinoData: () => ({
+        nombre: generarNombreAleatorio('Retraso Motor'),
+        fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
+        semanas_gestacion: 40
+      }),
+      perfil: 'retraso-motor',
+      dominioAfectado: 1 // ID del dominio motor grueso
+    },
+    {
+      id: 'retraso-lenguaje',
+      nombre: 'Retraso del Lenguaje',
+      descripcion: 'Desarrollo típico excepto en comunicación/lenguaje, sugiere trastorno específico del lenguaje',
+      icono: '💬',
+      color: '#dc3545',
+      generarNinoData: () => ({
+        nombre: generarNombreAleatorio('Retraso Lenguaje'),
+        fecha_nacimiento: calcularFechaNacimiento(24), // 24 meses
+        semanas_gestacion: 40
+      }),
+      perfil: 'retraso-lenguaje',
+      dominioAfectado: 3 // ID del dominio de comunicación
+    },
+    {
+      id: 'tea',
+      nombre: 'Trastorno del Espectro Autista',
+      descripcion: 'Perfil compatible con TEA: afectación del área social-emocional con desarrollo típico o adelantado en otras áreas',
+      icono: '🧩',
+      color: '#6f42c1',
+      generarNinoData: () => ({
+        nombre: generarNombreAleatorio('Perfil TEA'),
+        fecha_nacimiento: calcularFechaNacimiento(36), // 36 meses
+        semanas_gestacion: 40
+      }),
+      perfil: 'tea',
+      dominioAfectado: 5 // ID del dominio Social-Emocional
     }
   ];
 
@@ -277,14 +299,33 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
 
     // Generador de números pseudoaleatorios seeded para reproducibilidad
     // Usar el ID del niño como semilla para que cada niño tenga variabilidad consistente
-    let seed = nino.id || Math.floor(Math.random() * 10000);
+    let seed;
+    if (typeof nino.id === 'number') {
+      seed = nino.id;
+    } else if (typeof nino.id === 'string') {
+      // Convertir string ID a número usando hash simple
+      seed = nino.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    } else {
+      seed = Math.floor(Math.random() * 10000);
+    }
+    
     const random = () => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     };
 
     // Filtrar hitos hasta la edad actual
-    const hitosRelevantes = hitosNormativos.filter(h => h.edad_media_meses <= edadActualMeses);
+    // Para trayectoria-retraso, necesitamos considerar el decalaje al filtrar
+    let hitosRelevantes;
+    if (perfil.perfil === 'trayectoria-retraso') {
+      // Incluir hitos cuya edad normal + decalaje esté dentro de la edad actual
+      const decalaje = perfil.decalajeInicial || 0;
+      hitosRelevantes = hitosNormativos.filter(h => 
+        (h.edad_media_meses + decalaje) <= (edadActualMeses + 10) // +10 para variabilidad
+      );
+    } else {
+      hitosRelevantes = hitosNormativos.filter(h => h.edad_media_meses <= edadActualMeses);
+    }
 
     switch (perfil.perfil) {
       case 'tipico':
@@ -494,6 +535,23 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
         });
         break;
 
+      case 'trayectoria-retraso':
+        // Trayectoria con decalaje en el inicio pero misma velocidad de desarrollo
+        // Todos los hitos se consiguen con el mismo desfase temporal
+        hitosRelevantes.forEach(hito => {
+          const decalaje = perfil.decalajeInicial; // Retraso constante en meses
+          const variabilidad = (random() - 0.5) * hito.desviacion_estandar * 2; // Variabilidad normal
+          const edadConseguido = hito.edad_media_meses + decalaje + variabilidad;
+          
+          if (edadConseguido <= edadActualMeses) {
+            hitosGenerados.push({
+              hito_id: hito.id,
+              edad_conseguido: Math.max(0, edadConseguido)
+            });
+          }
+        });
+        break;
+
       default:
         break;
     }
@@ -639,60 +697,215 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
 
         <div style={{ marginBottom: '30px' }}>
           <h3>Crear Nuevos Ejemplos</h3>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-            gap: '15px',
-            marginBottom: '20px'
-          }}>
-            {perfilesEjemplo.map(perfil => (
-              <div 
-                key={perfil.id}
-                style={{
-                  border: `2px solid ${perfil.color}`,
-                  borderRadius: '10px',
-                  padding: '15px',
-                  backgroundColor: 'white',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  cursor: cargando ? 'not-allowed' : 'pointer',
-                  opacity: cargando ? 0.6 : 1,
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!cargando) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                }}
-              >
-                <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
-                <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
-                <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
-                  {perfil.descripcion}
-                </p>
-                <button
-                  onClick={() => crearEjemplo(perfil)}
-                  disabled={cargando}
+          
+          {/* Sección: Ejemplos Multidominio Homogéneo */}
+          <div style={{ marginBottom: '30px' }}>
+            <h4 style={{ 
+              color: '#2196F3', 
+              marginBottom: '15px',
+              paddingBottom: '8px',
+              borderBottom: '2px solid #2196F3'
+            }}>
+              🌐 Ejemplos Multidominio Homogéneo
+            </h4>
+            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '15px' }}>
+              Patrones de desarrollo que afectan de manera uniforme a todos los dominios del desarrollo.
+            </p>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+              gap: '15px',
+              marginBottom: '20px'
+            }}>
+              {perfilesMultidominioHomogeneo.map(perfil => (
+                <div 
+                  key={perfil.id}
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: perfil.color,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
+                    border: `2px solid ${perfil.color}`,
+                    borderRadius: '10px',
+                    padding: '15px',
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     cursor: cargando ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '0.95em'
+                    opacity: cargando ? 0.6 : 1,
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!cargando) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                   }}
                 >
-                  {cargando ? '⏳ Creando...' : '+ Crear Ejemplo'}
-                </button>
-              </div>
-            ))}
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
+                  <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
+                    {perfil.descripcion}
+                  </p>
+                  <button
+                    onClick={() => crearEjemplo(perfil)}
+                    disabled={cargando}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      backgroundColor: perfil.color,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: cargando ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.95em'
+                    }}
+                  >
+                    {cargando ? '⏳ Creando...' : '+ Crear Ejemplo'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección: Ejemplos Multidominio Heterogéneo */}
+          <div style={{ marginBottom: '30px' }}>
+            <h4 style={{ 
+              color: '#8b5cf6', 
+              marginBottom: '15px',
+              paddingBottom: '8px',
+              borderBottom: '2px solid #8b5cf6'
+            }}>
+              🔀 Ejemplos Multidominio Heterogéneo
+            </h4>
+            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '15px' }}>
+              Trastornos complejos que combinan retraso global con afectación desproporcionada de un dominio específico.
+            </p>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+              gap: '15px',
+              marginBottom: '20px'
+            }}>
+              {perfilesMultidominioHeterogeneo.map(perfil => (
+                <div 
+                  key={perfil.id}
+                  style={{
+                    border: `2px solid ${perfil.color}`,
+                    borderRadius: '10px',
+                    padding: '15px',
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    cursor: cargando ? 'not-allowed' : 'pointer',
+                    opacity: cargando ? 0.6 : 1,
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!cargando) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                  }}
+                >
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
+                  <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
+                    {perfil.descripcion}
+                  </p>
+                  <button
+                    onClick={() => crearEjemplo(perfil)}
+                    disabled={cargando}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      backgroundColor: perfil.color,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: cargando ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.95em'
+                    }}
+                  >
+                    {cargando ? '⏳ Creando...' : '+ Crear Ejemplo'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección: Ejemplos Unidominio */}
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ 
+              color: '#dc3545', 
+              marginBottom: '15px',
+              paddingBottom: '8px',
+              borderBottom: '2px solid #dc3545'
+            }}>
+              🎯 Ejemplos Unidominio
+            </h4>
+            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '15px' }}>
+              Trastornos específicos que afectan principalmente a un dominio del desarrollo (motor, lenguaje, social-emocional).
+            </p>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+              gap: '15px',
+              marginBottom: '20px'
+            }}>
+              {perfilesUnidominio.map(perfil => (
+                <div 
+                  key={perfil.id}
+                  style={{
+                    border: `2px solid ${perfil.color}`,
+                    borderRadius: '10px',
+                    padding: '15px',
+                    backgroundColor: 'white',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    cursor: cargando ? 'not-allowed' : 'pointer',
+                    opacity: cargando ? 0.6 : 1,
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!cargando) {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                  }}
+                >
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
+                  <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
+                    {perfil.descripcion}
+                  </p>
+                  <button
+                    onClick={() => crearEjemplo(perfil)}
+                    disabled={cargando}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      backgroundColor: perfil.color,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: cargando ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '0.95em'
+                    }}
+                  >
+                    {cargando ? '⏳ Creando...' : '+ Crear Ejemplo'}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

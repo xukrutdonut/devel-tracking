@@ -12,30 +12,19 @@ const getApiUrl = () => {
   // IMPORTANTE: Si estamos en HTTPS desde un dominio externo,
   // necesitamos usar una ruta relativa para el proxy
   if (protocol === 'https:') {
-    // En HTTPS, siempre usar ruta relativa
+    // En HTTPS, siempre usar ruta relativa (proxy configurado en vite.config.mjs)
     return '/api';
   }
   
-  // En desarrollo con HTTP
-  if (import.meta.env.DEV) {
-    // Si es localhost, podemos usar el puerto directo
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:8001/api';
-    }
-    // Para otros casos, usar proxy
+  // Si NO es localhost, siempre usar proxy (independientemente de HTTP/HTTPS)
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
     return '/api';
   }
   
-  // En producción, usar ruta relativa (asume proxy/nginx configurado)
-  return '/api';
+  // Solo en localhost con HTTP usar puerto directo
+  return 'http://localhost:8001/api';
 };
 
 export const API_URL = getApiUrl();
-
-// Log para debugging
-console.log('🔧 API_URL configurado:', getApiUrl());
-console.log('🔧 Protocol:', window.location.protocol);
-console.log('🔧 Hostname:', window.location.hostname);
-console.log('🔧 Modo:', import.meta.env.DEV ? 'Desarrollo' : 'Producción');
 
 

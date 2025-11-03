@@ -793,7 +793,6 @@ function HitosRegistro({ ninoId }) {
                     onClick={() => {
                       // Simplemente no hace nada, omite el hito del análisis
                       // Podrías agregar feedback visual si lo deseas
-                      console.log(`Hito "${hito.nombre}" omitido - No lo sé`);
                     }}
                     title="Omitir este hito del análisis"
                     style={{

@@ -35,12 +35,6 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Middleware para logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
-
 // ==================== RUTAS DE AUTENTICACIÓN ====================
 
 // Registro de nuevo usuario
@@ -275,7 +269,6 @@ app.get('/api/ninos', verificarToken, (req, res) => {
 
 // Crear nuevo niño
 app.post('/api/ninos', verificarToken, (req, res) => {
-  console.log('Recibida petición de crear niño:', req.body);
   const { nombre, fecha_nacimiento, semanas_gestacion } = req.body;
   
   // Validación
@@ -285,7 +278,6 @@ app.post('/api/ninos', verificarToken, (req, res) => {
   }
   
   const semanasGest = semanas_gestacion || 40; // Default 40 si no se proporciona
-  console.log('Insertando niño:', { nombre, fecha_nacimiento, semanas_gestacion: semanasGest, usuario_id: req.usuario.id });
   
   db.run('INSERT INTO ninos (nombre, fecha_nacimiento, semanas_gestacion, usuario_id) VALUES (?, ?, ?, ?)', 
     [nombre, fecha_nacimiento, semanasGest, req.usuario.id], 
@@ -301,7 +293,6 @@ app.post('/api/ninos', verificarToken, (req, res) => {
         semanas_gestacion: semanasGest,
         usuario_id: req.usuario.id
       };
-      console.log('Niño creado exitosamente:', resultado);
       res.json(resultado);
     }
   );
@@ -878,5 +869,4 @@ app.get('/api/analisis/:ninoId', verificarToken, (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor ejecutándose en http://0.0.0.0:${PORT}`);
-  console.log(`Accesible también en http://localhost:${PORT}`);
 });

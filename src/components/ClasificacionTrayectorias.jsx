@@ -102,7 +102,6 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         }
       } catch (itinerarioError) {
         // Endpoint no existe o error, continuar con datos retrospectivos
-        console.log('ℹ️ No hay datos prospectivos, usando datos retrospectivos');
       }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
@@ -130,15 +129,11 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const construirDatosRetrospectivos = async (ninoData) => {
     try {
-      console.log('🔍 Construyendo datos retrospectivos para clasificación...');
-      
       // Cargar hitos conseguidos
       const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
-      console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
       if (!hitosConseguidos || hitosConseguidos.length < 3) {
-        console.log('⚠️ No hay suficientes hitos (mínimo 3)');
         setDatos(null);
         return;
       }
@@ -149,24 +144,20 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       
       // Filtrar por fuente
       const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_normativa_id === fuenteSeleccionada);
-      console.log(`📚 Hitos normativos fuente ${fuenteSeleccionada}: ${hitosNormativosFuente.length}`);
       
       // Cargar dominios si no están cargados aún
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
-        console.log('⚠️ Dominios no cargados, cargando ahora...');
         const dominiosResponse = await fetchConAuth(`${API_URL}/dominios`);
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }
-      console.log(`🎯 Dominios disponibles: ${dominiosParaUsar.length}`);
       
       // Calcular edad actual del niño usando ninoData
       const fechaNac = new Date(ninoData.fecha_nacimiento);
       const hoy = new Date();
       const diffTime = Math.abs(hoy - fechaNac);
       const edadActualMeses = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-      console.log(`👶 Edad actual: ${edadActualMeses} meses`);
       
       // Construir puntos de evaluación desde datos longitudinales
       const puntosEvaluacion = construirPuntosEvaluacion(
@@ -175,17 +166,14 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         dominiosParaUsar,
         edadActualMeses
       );
-      console.log(`📈 Puntos de evaluación construidos: ${puntosEvaluacion.length}`);
       
       if (puntosEvaluacion.length < 3) {
-        console.log('⚠️ No hay suficientes puntos de evaluación (mínimo 3)');
         setDatos(null);
         return;
       }
 
       // Clasificar trayectorias
       const clasificacionesPorDominio = clasificarTrayectorias(puntosEvaluacion);
-      console.log(`✅ Clasificaciones generadas: ${clasificacionesPorDominio.length}`);
       
       setDatos({
         evaluaciones: puntosEvaluacion

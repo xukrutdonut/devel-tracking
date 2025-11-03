@@ -87,7 +87,6 @@ export default function AnalisisAceleracion({ ninoId }) {
         }
       } catch (itinerarioError) {
         // Endpoint no existe o error, continuar con datos retrospectivos
-        console.log('ℹ️ No hay datos prospectivos, usando datos retrospectivos');
       }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
@@ -118,15 +117,11 @@ export default function AnalisisAceleracion({ ninoId }) {
 
   const construirDatosRetrospectivos = async (ninoData) => {
     try {
-      console.log('🔍 Construyendo datos retrospectivos para análisis de aceleración...');
-      
       // Cargar hitos conseguidos
       const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
-      console.log(`📊 Hitos conseguidos: ${hitosConseguidos?.length || 0}`);
       
       if (!hitosConseguidos || hitosConseguidos.length < 2) {
-        console.log('⚠️ No hay suficientes hitos (mínimo 2)');
         setDatos(null);
         return;
       }
@@ -137,24 +132,20 @@ export default function AnalisisAceleracion({ ninoId }) {
       
       // Filtrar por fuente
       const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_normativa_id === fuenteSeleccionada);
-      console.log(`📚 Hitos normativos fuente ${fuenteSeleccionada}: ${hitosNormativosFuente.length}`);
       
       // Cargar dominios si no están cargados aún
       let dominiosParaUsar = dominios;
       if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
-        console.log('⚠️ Dominios no cargados, cargando ahora...');
         const dominiosResponse = await fetchConAuth(`${API_URL}/dominios`);
         dominiosParaUsar = await dominiosResponse.json();
         setDominios(dominiosParaUsar);
       }
-      console.log(`🎯 Dominios disponibles: ${dominiosParaUsar.length}`);
       
       // Calcular edad actual del niño usando ninoData pasado como parámetro
       const fechaNac = new Date(ninoData.fecha_nacimiento);
       const hoy = new Date();
       const diffTime = Math.abs(hoy - fechaNac);
       const edadActualMeses = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-      console.log(`👶 Edad actual: ${edadActualMeses} meses`);
       
       // Construir puntos de evaluación desde datos longitudinales
       const puntosEvaluacion = construirPuntosEvaluacion(
@@ -163,17 +154,14 @@ export default function AnalisisAceleracion({ ninoId }) {
         dominiosParaUsar,
         edadActualMeses
       );
-      console.log(`📈 Puntos de evaluación construidos: ${puntosEvaluacion.length}`);
       
       if (puntosEvaluacion.length < 2) {
-        console.log('⚠️ No hay suficientes puntos de evaluación (mínimo 2)');
         setDatos(null);
         return;
       }
 
       // Calcular métricas de trayectoria
       const datosCalculados = calcularAceleracionesDesdePuntos(puntosEvaluacion);
-      console.log(`✅ Datos calculados: ${datosCalculados.length} puntos`);
       
       setDatos({
         evaluaciones: puntosEvaluacion,
@@ -194,18 +182,6 @@ export default function AnalisisAceleracion({ ninoId }) {
   const calcularAceleracionesDesdePuntos = (puntosEvaluacion) => {
     const datos = [];
     
-    console.log(`🔧 Calculando para dominio: ${dominioSeleccionado}`);
-    console.log(`🔧 Puntos disponibles: ${puntosEvaluacion.length}`);
-    
-    // Log de ejemplo del primer punto para ver estructura
-    if (puntosEvaluacion.length > 0) {
-      console.log(`🔧 Estructura del primer punto:`, JSON.stringify({
-        edad: puntosEvaluacion[0].edad_meses,
-        dominios: puntosEvaluacion[0].dominios,
-        cd_global: puntosEvaluacion[0].cd_global
-      }, null, 2));
-    }
-    
     for (let i = 0; i < puntosEvaluacion.length; i++) {
       const punto_actual = puntosEvaluacion[i];
       let cd_actual;
@@ -215,10 +191,6 @@ export default function AnalisisAceleracion({ ninoId }) {
       } else {
         const dominio = punto_actual.dominios?.find(d => d.dominio_id === parseInt(dominioSeleccionado));
         cd_actual = dominio?.cd;
-        if (!dominio && i === 0) {
-          console.log(`⚠️ No se encontró dominio ${dominioSeleccionado} en punto edad ${punto_actual.edad_meses}`);
-          console.log(`⚠️ Dominios disponibles en este punto:`, punto_actual.dominios?.map(d => d.dominio_id));
-        }
       }
       
       if (cd_actual === null || cd_actual === undefined) {
