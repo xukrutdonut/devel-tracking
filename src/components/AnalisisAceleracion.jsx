@@ -484,7 +484,7 @@ export default function AnalisisAceleracion({ ninoId }) {
       </div>
 
       {/* 1. Gráfico de Trayectoria del Desarrollo (Posición - Derivada 0ª) */}
-      <div style={{ marginBottom: '30px' }}>
+      <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
         <h3>📊 Trayectoria del Desarrollo (Edad de Desarrollo vs Edad Cronológica)</h3>
         <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
           Relación entre edad cronológica y edad de desarrollo. La línea diagonal representa desarrollo típico (ED = EC).
@@ -534,7 +534,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
       {/* 2. Gráfico de Velocidad del Desarrollo (Derivada 1ª) */}
       {datos.datosAceleracion.some(d => d.velocidad !== null) && (
-        <div style={{ marginBottom: '30px' }}>
+        <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
           <h3>🚀 Velocidad del Desarrollo (Derivada 1ª)</h3>
           <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
             Tasa de cambio del desarrollo. Indica "cómo cambia" el ritmo: valores positivos = progreso, negativos = regresión.
@@ -571,7 +571,7 @@ export default function AnalisisAceleracion({ ninoId }) {
 
       {/* 3. Gráfico de Aceleración del Desarrollo (Derivada 2ª) */}
       {datos.datosAceleracion.some(d => d.aceleracion !== null) && (
-        <div style={{ marginBottom: '30px' }}>
+        <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
           <h3>⚡ Aceleración del Desarrollo (Derivada 2ª)</h3>
           <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
             Cambio en la velocidad. Indica "cómo cambia el cambio": valores positivos = acelerando, negativos = desacelerando.

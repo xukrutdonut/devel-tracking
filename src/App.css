@@ -583,8 +583,9 @@ body {
 .chart-container {
   margin: 2rem 0;
   padding: 2rem;
-  background: #f9f9f9;
+  background: white;
   border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .chart-container h3 {
@@ -2083,4 +2084,33 @@ body {
 .btn-descargar-txt:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Estilos para puntos de scatter plot con hover */
+.scatter-point {
+  cursor: pointer;
+}
+
+.scatter-point:hover .hover-highlight {
+  stroke: #000 !important;
+  stroke-width: 2 !important;
+  opacity: 1 !important;
+}
+
+/* Asegurar que los scatter plots estén por encima de las líneas */
+.recharts-scatter {
+  z-index: 10 !important;
+}
+
+.recharts-line {
+  z-index: 5 !important;
+}
+
+/* Mejorar área de detección de los puntos scatter */
+.recharts-scatter-symbol {
+  cursor: pointer;
+}
+
+.recharts-scatter-symbol:hover {
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
 }

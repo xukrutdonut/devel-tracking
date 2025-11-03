@@ -312,17 +312,20 @@ function GraficoDesarrollo({ ninoId }) {
   // Función para renderizar puntos personalizados (marca pérdidas)
   const renderizarPuntoPersonalizado = (props) => {
     const { cx, cy, payload, fill } = props;
-    if (!payload) return null;
+    // Solo renderizar si tiene datos de hito real
+    if (!payload || !payload.hito_nombre) return null;
     
     // Si el punto tiene pérdida, usar un símbolo diferente (cruz o X)
     if (payload.tiene_perdida) {
       return (
-        <g>
+        <g className="scatter-point">
+          {/* Círculo de resaltado en hover - DEBE IR PRIMERO */}
+          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
           {/* Círculo rojo para pérdida */}
           <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
           {/* X blanca dentro */}
           <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
-                fill="#fff" fontSize="12" fontWeight="bold">
+                fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
             ×
           </text>
         </g>
@@ -331,7 +334,14 @@ function GraficoDesarrollo({ ninoId }) {
     
     // Punto normal de adquisición - usar color con mejor contraste
     const colorPunto = fill === '#fff' || !fill ? '#2c3e50' : fill;
-    return <circle cx={cx} cy={cy} r={6} fill={colorPunto} stroke="#fff" strokeWidth={2} />;
+    return (
+      <g className="scatter-point">
+        {/* Círculo de resaltado en hover - DEBE IR PRIMERO */}
+        <circle cx={cx} cy={cy} r={8} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+        {/* Punto visible */}
+        <circle cx={cx} cy={cy} r={6} fill={colorPunto} stroke="#fff" strokeWidth={2} />
+      </g>
+    );
   };
 
 
@@ -567,6 +577,21 @@ function GraficoDesarrollo({ ninoId }) {
       return resultado;
     });
 
+  // Crear datos de Z-Score para hitos individuales (para tooltips en scatter plot)
+  const datosZScoreIndividuales = datosGraficoGlobal
+    .filter(punto => !punto.tiene_perdida)
+    .map(punto => {
+      const sd = Math.max(punto.edad_cronologica * 0.15, 2);
+      const diferencia = punto.edad_desarrollo - punto.edad_cronologica;
+      const zscore = diferencia / sd;
+      
+      return {
+        ...punto,
+        zscore: zscore,
+        diferencia_meses: diferencia
+      };
+    });
+
   // Datos para la línea de 45 grados (desarrollo típico)
   const maxEdad = Math.max(
     edadActualMeses,
@@ -741,6 +766,102 @@ function GraficoDesarrollo({ ninoId }) {
     hito => hito.edad_conseguido_meses > edadActualMeses
   ).length;
 
+  // Custom tooltip para los puntos del scatter plot
+  const ScatterTooltip = ({ active, payload, coordinate }) => {
+    if (!active || !payload || !payload.length || !coordinate) {
+      return null;
+    }
+
+    // Filtrar solo los payloads que tienen hito_nombre (puntos reales, no líneas de tendencia)
+    const puntosReales = payload.filter(p => p.payload && p.payload.hito_nombre);
+    
+    if (puntosReales.length === 0) {
+      return null;
+    }
+
+    // Si hay múltiples puntos, buscar todos los puntos cercanos en la misma posición
+    // Obtener la posición del hover
+    const edadCronologica = puntosReales[0].payload.edad_cronologica;
+    const edadDesarrollo = puntosReales[0].payload.edad_desarrollo;
+    
+    // Buscar todos los hitos en la misma posición (tolerancia de 0.5 meses)
+    const tolerancia = 0.5;
+    let hitosEnPosicion = datosGraficoGlobal.filter(punto => 
+      punto.hito_nombre &&
+      Math.abs(punto.edad_cronologica - edadCronologica) < tolerancia &&
+      Math.abs(punto.edad_desarrollo - edadDesarrollo) < tolerancia
+    );
+
+    // Si estamos en vista de dominio específico, filtrar solo hitos de ese dominio
+    if (dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos') {
+      hitosEnPosicion = hitosEnPosicion.filter(punto => punto.dominio_id === parseInt(dominioSeleccionado));
+    }
+
+    // Organizar en grid (2 columnas)
+    const columnas = 2;
+
+    return (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${Math.min(hitosEnPosicion.length, columnas)}, 1fr)`,
+        gap: '10px',
+        maxWidth: '800px'
+      }}>
+        {hitosEnPosicion.map((punto, index) => {
+          // Calcular Cociente de Desarrollo (CD)
+          // CD = (Edad de Desarrollo / Edad Cronológica) × 100
+          const cocienteDesarrollo = punto.edad_cronologica > 0 
+            ? (punto.edad_desarrollo / punto.edad_cronologica) * 100 
+            : null;
+          
+          // Calcular Z-score
+          // Z = (Edad de Desarrollo - Edad Cronológica) / SD
+          const sd = Math.max(punto.edad_cronologica * 0.15, 2);
+          const zscore = (punto.edad_desarrollo - punto.edad_cronologica) / sd;
+          
+          return (
+            <div key={index} className="custom-tooltip" style={{
+              backgroundColor: 'white',
+              padding: '10px 15px',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              minWidth: '280px'
+            }}>
+              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
+                {punto.hito_nombre}
+              </p>
+              <div style={{ fontSize: '0.9em', color: '#555' }}>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Dominio:</strong> <span style={{ color: coloresDominios[punto.dominio_id], fontWeight: 'bold' }}>{punto.dominio_nombre}</span>
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Edad cronológica:</strong> {punto.edad_cronologica?.toFixed(1)} meses
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Edad de desarrollo:</strong> {punto.edad_desarrollo?.toFixed(1)} meses
+                </p>
+                {cocienteDesarrollo !== null && (
+                  <p style={{ margin: '4px 0' }}>
+                    <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
+                  </p>
+                )}
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Puntuación Z:</strong> {zscore.toFixed(2)}
+                </p>
+                {punto.tiene_perdida && (
+                  <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontWeight: 'bold' }}>
+                    ⚠️ Hito perdido en regresión
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -880,28 +1001,97 @@ function GraficoDesarrollo({ ninoId }) {
     return null;
   };
 
-  // Custom tooltip para Z-scores
-  const ZScoreTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="custom-tooltip">
-          <p className="label"><strong>Edad: {data.edad_cronologica?.toFixed(1)} meses</strong></p>
-          <p style={{ color: payload[0].color }}>
-            Puntuación Z: {data.zscore?.toFixed(2) || 'N/A'}
-          </p>
-          {data.diferencia_meses !== undefined && (
-            <p style={{ fontSize: '0.9em' }}>
-              Diferencia: {data.diferencia_meses > 0 ? '+' : ''}{data.diferencia_meses.toFixed(1)} meses
-            </p>
-          )}
-          <p style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-            {interpretarZScore(data.zscore)}
-          </p>
-        </div>
-      );
+  // Custom tooltip para Z-scores con información de hitos individuales
+  const ZScoreTooltip = ({ active, payload, coordinate }) => {
+    if (!active || !payload || !payload.length || !coordinate) {
+      return null;
     }
-    return null;
+
+    // Filtrar solo los payloads que tienen hito_nombre (puntos reales, no líneas de tendencia)
+    const puntosReales = payload.filter(p => p.payload && p.payload.hito_nombre);
+    
+    if (puntosReales.length === 0) {
+      return null;
+    }
+
+    // Obtener la posición del hover
+    const edadCronologica = puntosReales[0].payload.edad_cronologica;
+    const zscore = puntosReales[0].payload.zscore;
+    
+    // Buscar todos los hitos en la misma posición (tolerancia)
+    const tolerancia = 0.5;
+    const toleranciaZ = 0.2;
+    let hitosEnPosicion = datosZScoreIndividuales.filter(punto => 
+      punto.hito_nombre &&
+      Math.abs(punto.edad_cronologica - edadCronologica) < tolerancia &&
+      Math.abs(punto.zscore - zscore) < toleranciaZ
+    );
+
+    // Si estamos en vista de dominio específico, filtrar solo hitos de ese dominio
+    if (dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos') {
+      hitosEnPosicion = hitosEnPosicion.filter(punto => punto.dominio_id === parseInt(dominioSeleccionado));
+    }
+
+    // Organizar en grid (2 columnas)
+    const columnas = 2;
+
+    return (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${Math.min(hitosEnPosicion.length, columnas)}, 1fr)`,
+        gap: '10px',
+        maxWidth: '800px'
+      }}>
+        {hitosEnPosicion.map((punto, index) => {
+          // Calcular Cociente de Desarrollo (CD)
+          const cocienteDesarrollo = punto.edad_cronologica > 0 
+            ? (punto.edad_desarrollo / punto.edad_cronologica) * 100 
+            : null;
+          
+          return (
+            <div key={index} className="custom-tooltip" style={{
+              backgroundColor: 'white',
+              padding: '10px 15px',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              minWidth: '280px'
+            }}>
+              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
+                {punto.hito_nombre}
+              </p>
+              <div style={{ fontSize: '0.9em', color: '#555' }}>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Dominio:</strong> <span style={{ color: coloresDominios[punto.dominio_id], fontWeight: 'bold' }}>{punto.dominio_nombre}</span>
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Edad cronológica:</strong> {punto.edad_cronologica?.toFixed(1)} meses
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Edad de desarrollo:</strong> {punto.edad_desarrollo?.toFixed(1)} meses
+                </p>
+                {cocienteDesarrollo !== null && (
+                  <p style={{ margin: '4px 0' }}>
+                    <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
+                  </p>
+                )}
+                <p style={{ margin: '4px 0' }}>
+                  <strong>Puntuación Z:</strong> {punto.zscore?.toFixed(2)}
+                </p>
+                <p style={{ 
+                  margin: '6px 0 0 0', 
+                  color: punto.zscore < -1 ? '#e74c3c' : punto.zscore > 1 ? '#27ae60' : '#666',
+                  fontWeight: 'bold',
+                  fontSize: '0.85em'
+                }}>
+                  {interpretarZScore(punto.zscore)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -1068,7 +1258,7 @@ function GraficoDesarrollo({ ninoId }) {
               label={{ value: 'Edad de Desarrollo (meses)', angle: -90, position: 'insideLeft' }}
               domain={[0, 'dataMax + 6']}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<ScatterTooltip />} cursor={false} />
             <Legend />
             
             {/* Línea de desarrollo típico (45 grados) */}
@@ -1079,10 +1269,11 @@ function GraficoDesarrollo({ ninoId }) {
                 dataKey="edad_desarrollo"
                 stroke="#95a5a6"
                 strokeWidth={2}
-                
                 dot={false}
+                activeDot={false}
                 name="Desarrollo típico"
                 connectNulls
+                isAnimationActive={false}
               />
             )}
             
@@ -1101,51 +1292,63 @@ function GraficoDesarrollo({ ninoId }) {
             />
             
             {/* Puntos y líneas de tendencia por dominio (modo "todos") */}
-            {dominioSeleccionado === 'todos' && dominios.map(dominio => (
-              <React.Fragment key={`dominio_${dominio.id}`}>
-                {/* Línea con puntos para datos reales */}
-                <Line
-                  data={datosGrafico}
-                  type="monotone"
-                  dataKey={`dominio_${dominio.id}`}
-                  stroke="none"
-                  dot={{ fill: coloresDominios[dominio.id], r: 5, strokeWidth: 2, stroke: '#fff' }}
-                  name={`${dominio.nombre} (datos)`}
-                  connectNulls={false}
+            {dominioSeleccionado === 'todos' && (
+              <>
+                {/* Líneas de tendencia por dominio - PRIMERO (debajo de los puntos) */}
+                {dominios.map(dominio => (
+                  lineasTendenciaPorDominio[dominio.id] && lineasTendenciaPorDominio[dominio.id].length > 0 && (
+                    <Line 
+                      key={`tendencia_${dominio.id}`}
+                      data={lineasTendenciaPorDominio[dominio.id]}
+                      type="natural" 
+                      dataKey={`dominio_${dominio.id}`}
+                      stroke={coloresDominios[dominio.id]}
+                      strokeWidth={2.5}
+                      dot={false}
+                      activeDot={false}
+                      name={`${dominio.nombre} (tendencia)`}
+                      isAnimationActive={false}
+                    />
+                  )
+                ))}
+                {/* UN SOLO Scatter con todos los puntos de todos los dominios - DESPUÉS (encima de las líneas) */}
+                <Scatter
+                  data={datosGraficoGlobal}
+                  dataKey="edad_desarrollo"
+                  shape={(props) => {
+                    const { cx, cy, payload } = props;
+                    if (!payload || !payload.hito_nombre) return null;
+                    const color = coloresDominios[payload.dominio_id] || '#2c3e50';
+                    
+                    if (payload.tiene_perdida) {
+                      return (
+                        <g className="scatter-point">
+                          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                          <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
+                          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
+                                fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+                            ×
+                          </text>
+                        </g>
+                      );
+                    }
+                    return (
+                      <g className="scatter-point">
+                        <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                        <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
+                      </g>
+                    );
+                  }}
+                  name="Hitos por dominio"
                   isAnimationActive={false}
                 />
-                {/* Línea de tendencia sin puntos */}
-                {lineasTendenciaPorDominio[dominio.id] && lineasTendenciaPorDominio[dominio.id].length > 0 && (
-                  <Line 
-                    data={lineasTendenciaPorDominio[dominio.id]}
-                    type="natural" 
-                    dataKey={`dominio_${dominio.id}`}
-                    stroke={coloresDominios[dominio.id]}
-                    strokeWidth={2.5}
-                    dot={false}
-                    name={`${dominio.nombre} (tendencia)`}
-                    
-                    isAnimationActive={false}
-                  />
-                )}
-              </React.Fragment>
-            ))}
+              </>
+            )}
 
             {/* Puntos + línea de tendencia de edad de desarrollo global */}
             {dominioSeleccionado === 'global' && (
               <>
-                {/* Línea con puntos para datos reales - USA datosGraficoGlobal para mostrar pérdidas */}
-                <Line
-                  data={datosGraficoGlobal}
-                  type="monotone"
-                  dataKey="edad_desarrollo"
-                  stroke="none"
-                  dot={renderizarPuntoPersonalizado}
-                  name="Desarrollo Global (datos)"
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                {/* Línea de tendencia principal */}
+                {/* Línea de tendencia principal - PRIMERO (debajo) */}
                 {lineaTendenciaDesarrollo.length > 0 && (
                   <Line 
                     data={lineaTendenciaDesarrollo}
@@ -1154,43 +1357,77 @@ function GraficoDesarrollo({ ninoId }) {
                     stroke="#e74c3c"
                     strokeWidth={2.5}
                     dot={false}
+                    activeDot={false}
                     name="Tendencia Global"
                     isAnimationActive={false}
                   />
                 )}
+                {/* Scatter para capturar tooltips de cada hito individual - DESPUÉS (encima) */}
+                <Scatter
+                  data={datosGraficoGlobal}
+                  dataKey="edad_desarrollo"
+                  fill="#e74c3c"
+                  shape={renderizarPuntoPersonalizado}
+                  name="Hitos individuales"
+                  isAnimationActive={false}
+                />
               </>
             )}
 
             {/* Puntos + tendencia de dominio específico seleccionado */}
-            {dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos' && (
-              <>
-                {/* Línea con puntos para datos reales */}
-                <Line
-                  data={datosGrafico}
-                  type="monotone"
-                  dataKey={`dominio_${dominioSeleccionado}`}
-                  stroke="none"
-                  dot={{ fill: coloresDominios[dominioSeleccionado], r: 6, strokeWidth: 2, stroke: '#fff' }}
-                  name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (datos)`}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                {/* Línea de tendencia sin puntos */}
-                {lineasTendenciaPorDominio[dominioSeleccionado] && lineasTendenciaPorDominio[dominioSeleccionado].length > 0 && (
-                  <Line 
-                    data={lineasTendenciaPorDominio[dominioSeleccionado]}
-                    type="natural" 
-                    dataKey={`dominio_${dominioSeleccionado}`}
-                    stroke={coloresDominios[dominioSeleccionado]}
-                    strokeWidth={3}
-                    dot={false}
-                    name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
-                    
-                    isAnimationActive={false}
-                  />
-                )}
-              </>
-            )}
+            {dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos' && (() => {
+              const puntosDominioSeleccionado = datosGraficoGlobal.filter(p => p.dominio_id === parseInt(dominioSeleccionado));
+              return (
+                <>
+                  {/* Línea de tendencia sin puntos - PRIMERO (debajo) */}
+                  {lineasTendenciaPorDominio[dominioSeleccionado] && lineasTendenciaPorDominio[dominioSeleccionado].length > 0 && (
+                    <Line 
+                      data={lineasTendenciaPorDominio[dominioSeleccionado]}
+                      type="natural" 
+                      dataKey={`dominio_${dominioSeleccionado}`}
+                      stroke={coloresDominios[dominioSeleccionado]}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={false}
+                      name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {/* Scatter para hitos individuales del dominio - DESPUÉS (encima) */}
+                  {puntosDominioSeleccionado.length > 0 && (
+                    <Scatter
+                      data={puntosDominioSeleccionado}
+                      dataKey="edad_desarrollo"
+                      fill={coloresDominios[dominioSeleccionado]}
+                      shape={(props) => {
+                        const { cx, cy, payload } = props;
+                        if (!payload || !payload.hito_nombre) return null;
+                        if (payload.tiene_perdida) {
+                          return (
+                            <g className="scatter-point">
+                              <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                              <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
+                              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
+                                    fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+                                ×
+                              </text>
+                            </g>
+                          );
+                        }
+                        return (
+                          <g className="scatter-point">
+                            <circle cx={cx} cy={cy} r={8} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                            <circle cx={cx} cy={cy} r={6} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
+                          </g>
+                        );
+                      }}
+                      name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre}`}
+                      isAnimationActive={false}
+                    />
+                  )}
+                </>
+              );
+            })()}
 
             {/* Mostrar red flags */}
             {redFlags.map((rf, idx) => (
@@ -1253,7 +1490,7 @@ function GraficoDesarrollo({ ninoId }) {
             <YAxis 
               label={{ value: 'Puntuación Z', angle: -90, position: 'insideLeft' }}
             />
-            <Tooltip content={<ZScoreTooltip />} />
+            <Tooltip content={<ZScoreTooltip />} cursor={false} />
             <Legend />
             
             {/* Bandas de referencia */}
@@ -1266,16 +1503,7 @@ function GraficoDesarrollo({ ninoId }) {
             {/* Z-Score global */}
             {dominioSeleccionado === 'global' && (
               <>
-                <Line
-                  data={datosZScore}
-                  type="monotone"
-                  dataKey="zscore"
-                  stroke="none"
-                  dot={{ fill: '#3498db', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                  name="Z-Score Global (datos)"
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
+                {/* Línea de tendencia - PRIMERO (debajo) */}
                 {lineaTendenciaZScore.length > 0 && (
                   <Line 
                     data={lineaTendenciaZScore}
@@ -1284,68 +1512,116 @@ function GraficoDesarrollo({ ninoId }) {
                     stroke="#2980b9"
                     strokeWidth={3}
                     dot={false}
+                    activeDot={false}
                     name="Tendencia Z-Score Global"
                     isAnimationActive={false}
                   />
                 )}
+                {/* Scatter para hitos individuales con Z-Score - DESPUÉS (encima) */}
+                <Scatter
+                  data={datosZScoreIndividuales}
+                  dataKey="zscore"
+                  fill="#3498db"
+                  shape={(props) => {
+                    const { cx, cy, payload } = props;
+                    if (!payload || !payload.hito_nombre) return null;
+                    return (
+                      <g className="scatter-point">
+                        <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                        <circle cx={cx} cy={cy} r={5} fill="#3498db" stroke="#fff" strokeWidth={2} />
+                      </g>
+                    );
+                  }}
+                  name="Z-Score de hitos"
+                  isAnimationActive={false}
+                />
               </>
             )}
 
             {/* Z-Score por todos los dominios */}
-            {dominioSeleccionado === 'todos' && dominios.map(dominio => (
-              <React.Fragment key={`z_dominio_${dominio.id}`}>
-                <Line
-                  data={datosZScore}
-                  type="monotone"
-                  dataKey={`zscore_dominio_${dominio.id}`}
-                  stroke="none"
-                  dot={{ fill: coloresDominios[dominio.id], r: 4, strokeWidth: 2, stroke: '#fff' }}
-                  name={`${dominio.nombre} (datos)`}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                {lineasTendenciaZScorePorDominio[dominio.id] && (
-                  <Line 
-                    data={lineasTendenciaZScorePorDominio[dominio.id]}
-                    type="natural" 
-                    dataKey={`zscore_dominio_${dominio.id}`}
-                    stroke={coloresDominios[dominio.id]}
-                    strokeWidth={2}
-                    dot={false}
-                    name={`${dominio.nombre} (tendencia)`}
-                    isAnimationActive={false}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-
-            {/* Z-Score de dominio específico */}
-            {dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos' && (
+            {dominioSeleccionado === 'todos' && (
               <>
-                <Line
-                  data={datosZScore}
-                  type="monotone"
-                  dataKey={`zscore_dominio_${dominioSeleccionado}`}
-                  stroke="none"
-                  dot={{ fill: coloresDominios[dominioSeleccionado], r: 5, strokeWidth: 2, stroke: '#fff' }}
-                  name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (datos)`}
-                  connectNulls={false}
+                {/* Líneas de tendencia por dominio - PRIMERO (debajo) */}
+                {dominios.map(dominio => (
+                  lineasTendenciaZScorePorDominio[dominio.id] && (
+                    <Line 
+                      key={`z_tendencia_${dominio.id}`}
+                      data={lineasTendenciaZScorePorDominio[dominio.id]}
+                      type="natural" 
+                      dataKey={`zscore_dominio_${dominio.id}`}
+                      stroke={coloresDominios[dominio.id]}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={false}
+                      name={`${dominio.nombre} (tendencia)`}
+                      isAnimationActive={false}
+                    />
+                  )
+                ))}
+                {/* UN SOLO Scatter con todos los puntos de todos los dominios - DESPUÉS (encima) */}
+                <Scatter
+                  data={datosZScoreIndividuales}
+                  dataKey="zscore"
+                  shape={(props) => {
+                    const { cx, cy, payload } = props;
+                    if (!payload || !payload.hito_nombre) return null;
+                    const color = coloresDominios[payload.dominio_id] || '#3498db';
+                    
+                    return (
+                      <g className="scatter-point">
+                        <circle cx={cx} cy={cy} r={6} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                        <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={2} />
+                      </g>
+                    );
+                  }}
+                  name="Z-Score por dominio"
                   isAnimationActive={false}
                 />
-                {lineasTendenciaZScorePorDominio[dominioSeleccionado] && (
-                  <Line 
-                    data={lineasTendenciaZScorePorDominio[dominioSeleccionado]}
-                    type="natural" 
-                    dataKey={`zscore_dominio_${dominioSeleccionado}`}
-                    stroke={coloresDominios[dominioSeleccionado]}
-                    strokeWidth={3}
-                    dot={false}
-                    name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
-                    isAnimationActive={false}
-                  />
-                )}
               </>
             )}
+
+            {/* Z-Score de dominio específico */}
+            {dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos' && (() => {
+              const puntosZScoreDominioSeleccionado = datosZScoreIndividuales.filter(p => p.dominio_id === parseInt(dominioSeleccionado));
+              return (
+                <>
+                  {/* Línea de tendencia - PRIMERO (debajo) */}
+                  {lineasTendenciaZScorePorDominio[dominioSeleccionado] && (
+                    <Line 
+                      data={lineasTendenciaZScorePorDominio[dominioSeleccionado]}
+                      type="natural" 
+                      dataKey={`zscore_dominio_${dominioSeleccionado}`}
+                      stroke={coloresDominios[dominioSeleccionado]}
+                      strokeWidth={3}
+                      dot={false}
+                      activeDot={false}
+                      name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {/* Scatter para hitos individuales del dominio - DESPUÉS (encima) */}
+                  {puntosZScoreDominioSeleccionado.length > 0 && (
+                    <Scatter
+                      data={puntosZScoreDominioSeleccionado}
+                      dataKey="zscore"
+                      fill={coloresDominios[dominioSeleccionado]}
+                      shape={(props) => {
+                        const { cx, cy, payload } = props;
+                        if (!payload || !payload.hito_nombre) return null;
+                        return (
+                          <g className="scatter-point">
+                            <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                            <circle cx={cx} cy={cy} r={5} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
+                          </g>
+                        );
+                      }}
+                      name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre}`}
+                      isAnimationActive={false}
+                    />
+                  )}
+                </>
+              );
+            })()}
           </ComposedChart>
         </ResponsiveContainer>
         
@@ -1355,45 +1631,6 @@ function GraficoDesarrollo({ ninoId }) {
             Z = 0 es el promedio, Z entre -1 y +1 es normal (68% de la población), 
             Z entre -2 y +2 incluye el 95% de la población. Valores fuera de este rango requieren atención.
           </p>
-        </div>
-      </div>
-
-      {/* Estadísticas por dominio con Edad de Desarrollo */}
-      <div className="dominios-stats">
-        <h3>Edad de Desarrollo por Dominio</h3>
-        <div className="dominios-grid">
-          {Object.entries(edadDesarrolloPorDominio).map(([id, stats]) => {
-            const diferencia = stats.edad_desarrollo_promedio - edadActualMeses;
-            return (
-              <div key={id} className="dominio-stat-card">
-                <h4>{stats.dominio_nombre}</h4>
-                <div className="dominio-metrics">
-                  <div className="metric">
-                    <span className="metric-label">Edad de Desarrollo:</span>
-                    <span className={`metric-value ${diferencia < -3 ? 'retraso' : diferencia > 3 ? 'adelanto' : 'normal'}`}>
-                      {stats.edad_desarrollo_promedio.toFixed(1)} meses
-                    </span>
-                  </div>
-                  <div className="metric">
-                    <span className="metric-label">Diferencia:</span>
-                    <span className={`metric-value ${diferencia < -3 ? 'retraso' : diferencia > 3 ? 'adelanto' : 'normal'}`}>
-                      {diferencia > 0 ? '+' : ''}{diferencia.toFixed(1)} meses
-                    </span>
-                  </div>
-                  <div className="metric">
-                    <span className="metric-label">Hitos evaluados:</span>
-                    <span className="metric-value">{stats.total_hitos}</span>
-                  </div>
-                  <div className="metric">
-                    <span className="metric-label">Estado:</span>
-                    <span className="metric-value">
-                      {interpretarDiferencia(diferencia)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
 
