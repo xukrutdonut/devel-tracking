@@ -2086,15 +2086,14 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* Estilos para puntos de scatter plot con hover */
+/* Estilos para puntos de scatter plot con click */
 .scatter-point {
   cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-.scatter-point:hover .hover-highlight {
-  stroke: #000 !important;
-  stroke-width: 2 !important;
-  opacity: 1 !important;
+.scatter-point:hover {
+  transform: scale(1.1);
 }
 
 /* Asegurar que los scatter plots estén por encima de las líneas */
@@ -2109,8 +2108,4 @@ body {
 /* Mejorar área de detección de los puntos scatter */
 .recharts-scatter-symbol {
   cursor: pointer;
-}
-
-.recharts-scatter-symbol:hover {
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
 }

@@ -227,13 +227,31 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       const hitosAGenerar = generarHitosPorPerfil(hitosNormativos, perfil, nino);
 
       if (esModoInvitado()) {
+        // En modo invitado, enriquecer los hitos con datos normativos para la visualización
+        const hitosEnriquecidos = hitosAGenerar.map(hitoGenerado => {
+          const hitoNormativo = hitosNormativos.find(h => h.id === hitoGenerado.hito_id);
+          if (!hitoNormativo) return null;
+          
+          return {
+            ...hitoGenerado,
+            id: hitoGenerado.hito_id,
+            edad_conseguido_meses: hitoGenerado.edad_conseguido,
+            edad_perdido_meses: hitoGenerado.edad_perdido,
+            edad_media_meses: hitoNormativo.edad_media_meses,
+            desviacion_estandar: hitoNormativo.desviacion_estandar,
+            dominio_id: hitoNormativo.dominio_id,
+            dominio_nombre: hitoNormativo.dominio_nombre,
+            hito_nombre: hitoNormativo.nombre
+          };
+        }).filter(h => h !== null);
+        
         // En modo invitado, agregar ejemplo a la lista local y notificar al padre
         setEjemplos(prev => [...prev, nino]);
         setMensaje(`✅ Ejemplo temporal creado: ${ninoData.nombre}`);
         
-        // Notificar al componente padre con el niño y sus hitos
+        // Notificar al componente padre con el niño y sus hitos enriquecidos
         if (onEjemploCreado) {
-          onEjemploCreado(nino, hitosAGenerar);
+          onEjemploCreado(nino, hitosEnriquecidos);
         }
         
         // Mostrar mensaje brevemente y luego abrir el gráfico

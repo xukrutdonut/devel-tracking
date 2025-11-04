@@ -25,7 +25,7 @@ import { API_URL } from '../config';
  * - Velocidad (Derivada 1ª): ΔCD/Δt - "¿Cómo cambia?"
  * - Aceleración (Derivada 2ª): Δ²CD/Δt² - "¿Cómo cambia el cambio?"
  */
-export default function AnalisisAceleracion({ ninoId }) {
+export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesarrollo }) {
   const [datos, setDatos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fuenteSeleccionada, setFuenteSeleccionada] = useState(1);
@@ -483,196 +483,182 @@ export default function AnalisisAceleracion({ ninoId }) {
         </div>
       </div>
 
-      {/* 1. Gráfico de Trayectoria del Desarrollo (Posición - Derivada 0ª) */}
-      <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
-        <h3>📊 Trayectoria del Desarrollo (Edad de Desarrollo vs Edad Cronológica)</h3>
-        <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
-          Relación entre edad cronológica y edad de desarrollo. La línea diagonal representa desarrollo típico (ED = EC).
-        </p>
-        <ResponsiveContainer width="100%" height={350}>
-          <ComposedChart data={datos.datosAceleracion.map(d => ({
-            ...d,
-            edad_desarrollo: (d.cd / 100) * d.edad_meses,
-            edad_tipica: d.edad_meses
-          }))}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="edad_meses" 
-              label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
-              domain={[0, 'auto']}
-            />
-            <YAxis 
-              label={{ value: 'Edad de Desarrollo (meses)', angle: -90, position: 'insideLeft' }}
-              domain={[0, 'auto']}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            
-            {/* Línea diagonal de referencia (desarrollo típico) - debe ser perfectamente recta */}
-            <Line 
-              type="linear" 
-              dataKey="edad_tipica" 
-              stroke="#999" 
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              name="Desarrollo Típico (ED=EC)" 
-              dot={false}
-            />
-            
-            {/* Trayectoria real del niño - conectar puntos sin suavizado */}
-            <Line 
-              type="linear" 
-              dataKey="edad_desarrollo" 
-              stroke="#2196F3" 
-              strokeWidth={3}
-              name="Edad de Desarrollo del Niño" 
-              dot={{ r: 6, fill: '#2196F3' }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
+      {/* 1. Gráfico de Velocidad del Desarrollo (Derivada 1ª de la línea de tendencia) */}
+      {(() => {
+        // Calcular velocidad desde la línea de tendencia (derivada primera)
+        if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
+          return null;
+        }
 
-      {/* 2. Gráfico de Velocidad del Desarrollo (Derivada 1ª) */}
-      {datos.datosAceleracion.some(d => d.velocidad !== null) && (
-        <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
-          <h3>🚀 Velocidad del Desarrollo (Derivada 1ª)</h3>
-          <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
-            Tasa de cambio del desarrollo. Indica "cómo cambia" el ritmo: valores positivos = progreso, negativos = regresión.
-          </p>
-          <ResponsiveContainer width="100%" height={350}>
-            <ComposedChart data={datos.datosAceleracion}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="edad_meses" 
-                label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5 }}
-              />
-              <YAxis 
-                label={{ value: 'Velocidad (puntos CD/mes)', angle: -90, position: 'insideLeft' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              
-              {/* Línea de referencia en 0 */}
-              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Sin cambio (0)" />
-              
-              {/* Velocidad */}
-              <Line 
-                type="monotone" 
-                dataKey="velocidad" 
-                stroke="#4CAF50" 
-                strokeWidth={3}
-                name="Velocidad de Desarrollo" 
-                dot={{ r: 5 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        const lineaTendencia = datosRegresionGraficoDesarrollo.lineaTendencia;
+        const datosVelocidad = lineaTendencia.map((punto, idx) => {
+          if (idx === 0) {
+            return {
+              edad_meses: punto.edad_cronologica,
+              velocidad: null
+            };
+          }
+          
+          const puntoAnterior = lineaTendencia[idx - 1];
+          const deltaDesarrollo = punto.edad_desarrollo - puntoAnterior.edad_desarrollo;
+          const deltaEdadCronologica = punto.edad_cronologica - puntoAnterior.edad_cronologica;
+          const velocidad = deltaEdadCronologica !== 0 ? deltaDesarrollo / deltaEdadCronologica : null;
+          
+          return {
+            edad_meses: punto.edad_cronologica,
+            velocidad: velocidad
+          };
+        }).filter(d => d.velocidad !== null);
 
-      {/* 3. Gráfico de Aceleración del Desarrollo (Derivada 2ª) */}
-      {datos.datosAceleracion.some(d => d.aceleracion !== null) && (
-        <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
-          <h3>⚡ Aceleración del Desarrollo (Derivada 2ª)</h3>
-          <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
-            Cambio en la velocidad. Indica "cómo cambia el cambio": valores positivos = acelerando, negativos = desacelerando.
-          </p>
-          <ResponsiveContainer width="100%" height={350}>
-            <ComposedChart data={datos.datosAceleracion}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="edad_meses" 
-                label={{ value: 'Edad (meses)', position: 'insideBottom', offset: -5 }}
-              />
-              <YAxis 
-                label={{ value: 'Aceleración (puntos/mes²)', angle: -90, position: 'insideLeft' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              
-              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Aceleración = 0" />
-              
-              {/* Área positiva (aceleración) en verde */}
-              <Area 
-                type="monotone" 
-                dataKey={(data) => data.aceleracion > 0 ? data.aceleracion : 0}
-                fill="#4CAF50" 
-                fillOpacity={0.3}
-                stroke="none"
-              />
-              
-              {/* Área negativa (desaceleración) en rojo */}
-              <Area 
-                type="monotone" 
-                dataKey={(data) => data.aceleracion < 0 ? data.aceleracion : 0}
-                fill="#F44336" 
-                fillOpacity={0.3}
-                stroke="none"
-              />
-              
-              <Line 
-                type="monotone" 
-                dataKey="aceleracion" 
-                stroke="#FF9800" 
-                strokeWidth={2}
-                name="Aceleración (2ª)" 
-                dot={{ r: 5 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        if (datosVelocidad.length === 0) return null;
+        
+        // Información de depuración
+        const velocidadMin = Math.min(...datosVelocidad.map(d => d.velocidad));
+        const velocidadMax = Math.max(...datosVelocidad.map(d => d.velocidad));
+        const velocidadPromedio = datosVelocidad.reduce((sum, d) => sum + d.velocidad, 0) / datosVelocidad.length;
+        const variacionVelocidad = velocidadMax - velocidadMin;
+        
+        console.log('Velocidad - Min:', velocidadMin.toFixed(4), 'Max:', velocidadMax.toFixed(4), 'Promedio:', velocidadPromedio.toFixed(4), 'Variación:', variacionVelocidad.toFixed(4));
 
-      {/* Tabla de interpretaciones */}
-      <div style={{ marginTop: '30px' }}>
-        <h3>📋 Interpretación Detallada</h3>
-        <table style={{ 
-          width: '100%', 
-          borderCollapse: 'collapse',
-          marginTop: '15px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5' }}>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Edad</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>CD (0ª)</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Velocidad (1ª)</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Aceleración (2ª)</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd' }}>Interpretación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {datos.datosAceleracion.map((punto, index) => (
-              <tr key={index} style={{ backgroundColor: index % 2 === 0 ? 'white' : '#fafafa' }}>
-                <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {punto.edad_meses}m
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <strong>{punto.cd?.toFixed(1)}%</strong>
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {punto.velocidad !== null ? (
-                    <span style={{ color: punto.velocidad > 0 ? '#4CAF50' : '#F44336' }}>
-                      {punto.velocidad > 0 ? '↗' : punto.velocidad < 0 ? '↘' : '→'} 
-                      {punto.velocidad?.toFixed(2)}
-                    </span>
-                  ) : '—'}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {punto.aceleracion !== null ? (
-                    <span style={{ color: punto.aceleracion > 0 ? '#4CAF50' : '#F44336' }}>
-                      {punto.aceleracion > 0 ? '⬆' : punto.aceleracion < 0 ? '⬇' : '—'} 
-                      {punto.aceleracion?.toFixed(3)}
-                    </span>
-                  ) : '—'}
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd', fontSize: '13px' }}>
-                  {punto.interpretacion}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        return (
+          <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
+            <h3>🚀 Velocidad del Desarrollo (Derivada 1ª de la Trayectoria)</h3>
+            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
+              Pendiente de la línea de tendencia de "Gráficos de Trayectoria". Indica la tasa de cambio: valor 1.0 = desarrollo típico, {'>'} 1.0 = desarrollo acelerado, {'<'} 1.0 = desarrollo enlentecido.
+              <br />
+              <span style={{ fontSize: '0.85em', color: '#999' }}>
+                Rango: {velocidadMin.toFixed(3)} - {velocidadMax.toFixed(3)} | Promedio: {velocidadPromedio.toFixed(3)} | Variación: {variacionVelocidad.toFixed(4)}
+              </span>
+            </p>
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="edad_meses"
+                  type="number"
+                  label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis 
+                  label={{ value: 'Velocidad (ED/EC)', angle: -90, position: 'insideLeft' }}
+                  domain={[0, 2]}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                
+                {/* Línea de referencia en 1.0 (desarrollo típico) */}
+                <ReferenceLine y={1.0} stroke="#999" strokeDasharray="5 5" label="Desarrollo Típico (1.0)" />
+                
+                {/* Velocidad */}
+                <Line 
+                  data={datosVelocidad}
+                  type="monotone" 
+                  dataKey="velocidad" 
+                  stroke="#4CAF50" 
+                  strokeWidth={3}
+                  name="Velocidad de Desarrollo" 
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      })()}
+
+      {/* 2. Gráfico de Aceleración del Desarrollo (Derivada 2ª - derivada de velocidad) */}
+      {(() => {
+        // Calcular aceleración desde la velocidad (derivada segunda)
+        if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
+          return null;
+        }
+
+        const lineaTendencia = datosRegresionGraficoDesarrollo.lineaTendencia;
+        
+        // Primero calcular velocidad
+        const datosVelocidad = lineaTendencia.map((punto, idx) => {
+          if (idx === 0) return null;
+          
+          const puntoAnterior = lineaTendencia[idx - 1];
+          const deltaDesarrollo = punto.edad_desarrollo - puntoAnterior.edad_desarrollo;
+          const deltaEdadCronologica = punto.edad_cronologica - puntoAnterior.edad_cronologica;
+          const velocidad = deltaEdadCronologica !== 0 ? deltaDesarrollo / deltaEdadCronologica : null;
+          
+          return {
+            edad_meses: punto.edad_cronologica,
+            velocidad: velocidad
+          };
+        }).filter(d => d !== null && d.velocidad !== null);
+
+        // Ahora calcular aceleración (derivada de velocidad)
+        const datosAceleracion = datosVelocidad.map((punto, idx) => {
+          if (idx === 0) {
+            return {
+              edad_meses: punto.edad_meses,
+              aceleracion: null
+            };
+          }
+          
+          const puntoAnterior = datosVelocidad[idx - 1];
+          const deltaVelocidad = punto.velocidad - puntoAnterior.velocidad;
+          const deltaEdadCronologica = punto.edad_meses - puntoAnterior.edad_meses;
+          const aceleracion = deltaEdadCronologica !== 0 ? deltaVelocidad / deltaEdadCronologica : null;
+          
+          return {
+            edad_meses: punto.edad_meses,
+            aceleracion: aceleracion
+          };
+        }).filter(d => d.aceleracion !== null);
+
+        if (datosAceleracion.length === 0) return null;
+        
+        // Información de depuración
+        const aceleracionMin = Math.min(...datosAceleracion.map(d => d.aceleracion));
+        const aceleracionMax = Math.max(...datosAceleracion.map(d => d.aceleracion));
+        const aceleracionPromedio = datosAceleracion.reduce((sum, d) => sum + d.aceleracion, 0) / datosAceleracion.length;
+        
+        console.log('Aceleración - Min:', aceleracionMin.toFixed(6), 'Max:', aceleracionMax.toFixed(6), 'Promedio:', aceleracionPromedio.toFixed(6));
+
+        return (
+          <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '10px' }}>
+            <h3>⚡ Aceleración del Desarrollo (Derivada 2ª de la Trayectoria)</h3>
+            <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '10px' }}>
+              Cambio en la velocidad. Indica "cómo cambia el cambio": valores positivos = acelerando, negativos = desacelerando.
+              <br />
+              <span style={{ fontSize: '0.85em', color: '#999' }}>
+                Rango: {aceleracionMin.toFixed(6)} - {aceleracionMax.toFixed(6)} | Promedio: {aceleracionPromedio.toFixed(6)}
+              </span>
+            </p>
+            <ResponsiveContainer width="100%" height={350}>
+              <ComposedChart>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="edad_meses"
+                  type="number"
+                  label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis 
+                  label={{ value: 'Aceleración ((ED/EC)/mes)', angle: -90, position: 'insideLeft' }}
+                  domain={[-0.05, 0.05]}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                
+                <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Aceleración = 0" />
+                
+                {/* Aceleración */}
+                <Line 
+                  data={datosAceleracion}
+                  type="monotone" 
+                  dataKey="aceleracion" 
+                  stroke="#FF5722" 
+                  strokeWidth={3}
+                  name="Aceleración de Desarrollo" 
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      })()}
 
       {/* Leyenda informativa */}
       <div style={{ 

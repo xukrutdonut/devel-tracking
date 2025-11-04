@@ -26,6 +26,7 @@ function App() {
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
   const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion, bibliografia
+  const [datosRegresion, setDatosRegresion] = useState(null); // Compartir datos de regresión entre gráficas
 
   useEffect(() => {
     if (autenticado) {
@@ -244,7 +245,10 @@ function App() {
         )}
 
         {vistaActual === 'grafico' && ninoSeleccionado && (
-          <GraficoDesarrollo ninoId={ninoSeleccionado.id} />
+          <GraficoDesarrollo 
+            ninoId={ninoSeleccionado.id} 
+            onDatosRegresionCalculados={setDatosRegresion}
+          />
         )}
 
         {vistaActual === 'redflags' && ninoSeleccionado && (
@@ -252,7 +256,10 @@ function App() {
         )}
 
         {vistaActual === 'aceleracion' && ninoSeleccionado && (
-          <AnalisisAceleracion ninoId={ninoSeleccionado.id} />
+          <AnalisisAceleracion 
+            ninoId={ninoSeleccionado.id} 
+            datosRegresionGraficoDesarrollo={datosRegresion}
+          />
         )}
 
         {vistaActual === 'clasificacion' && ninoSeleccionado && (

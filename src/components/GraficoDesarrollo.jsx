@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ScatterChart, Scatter, ZAxis, ComposedChart, Area } from 'recharts';
 import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
 import { API_URL } from '../config';
@@ -21,7 +21,7 @@ import GeneradorInforme from './GeneradorInforme';
  * - Lajiness-O'Neill et al. (2018). Infant Behav Dev, 50:224-37.
  *   Sistema de vigilancia continua tipo PediaTrac con múltiples fuentes normativas
  */
-function GraficoDesarrollo({ ninoId }) {
+function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   const [analisis, setAnalisis] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
   const [dominioSeleccionado, setDominioSeleccionado] = useState('global');
@@ -30,6 +30,10 @@ function GraficoDesarrollo({ ninoId }) {
   const [mostrarLinea45, setMostrarLinea45] = useState(true);
   const [mostrarGeneradorInforme, setMostrarGeneradorInforme] = useState(false);
   const [ninoData, setNinoData] = useState(null);
+  const [tooltipActivo, setTooltipActivo] = useState(null); // Tooltip activado por click
+  
+  // Ref para guardar datos de regresión calculados
+  const datosRegresionRef = useRef(null);
 
   useEffect(() => {
     cargarDatos();
@@ -41,6 +45,7 @@ function GraficoDesarrollo({ ninoId }) {
       cargarDatos();
     }
   }, [fuenteSeleccionada]);
+
 
   const cargarFuentesNormativas = async () => {
     try {
@@ -309,18 +314,45 @@ function GraficoDesarrollo({ ninoId }) {
     return lineaTendencia;
   };
 
+  // Función para manejar click en puntos
+  const handlePuntoClick = (payload) => {
+    if (!payload || !payload.hito_nombre) return;
+    
+    // Si ya está activo este punto, desactivar
+    if (tooltipActivo && tooltipActivo.hito_id === payload.hito_id) {
+      setTooltipActivo(null);
+    } else {
+      // Activar este punto
+      setTooltipActivo(payload);
+    }
+  };
+
   // Función para renderizar puntos personalizados (marca pérdidas)
   const renderizarPuntoPersonalizado = (props) => {
     const { cx, cy, payload, fill } = props;
     // Solo renderizar si tiene datos de hito real
     if (!payload || !payload.hito_nombre) return null;
     
+    const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+    
     // Si el punto tiene pérdida, usar un símbolo diferente (cruz o X)
     if (payload.tiene_perdida) {
       return (
-        <g className="scatter-point">
-          {/* Círculo de resaltado en hover - DEBE IR PRIMERO */}
-          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+        <g 
+          className="scatter-point" 
+          onClick={() => handlePuntoClick(payload)}
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Círculo de resaltado cuando está activo */}
+          <circle 
+            cx={cx} 
+            cy={cy} 
+            r={10} 
+            fill="none" 
+            stroke="#000" 
+            strokeWidth={isActivo ? 2 : 0} 
+            style={{ pointerEvents: 'none' }} 
+          />
           {/* Círculo rojo para pérdida */}
           <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
           {/* X blanca dentro */}
@@ -335,9 +367,21 @@ function GraficoDesarrollo({ ninoId }) {
     // Punto normal de adquisición - usar color con mejor contraste
     const colorPunto = fill === '#fff' || !fill ? '#2c3e50' : fill;
     return (
-      <g className="scatter-point">
-        {/* Círculo de resaltado en hover - DEBE IR PRIMERO */}
-        <circle cx={cx} cy={cy} r={8} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+      <g 
+        className="scatter-point" 
+        onClick={() => handlePuntoClick(payload)}
+        style={{ cursor: 'pointer' }}
+      >
+        {/* Círculo de resaltado cuando está activo */}
+        <circle 
+          cx={cx} 
+          cy={cy} 
+          r={8} 
+          fill="none" 
+          stroke="#000" 
+          strokeWidth={isActivo ? 2 : 0} 
+          style={{ pointerEvents: 'none' }} 
+        />
         {/* Punto visible */}
         <circle cx={cx} cy={cy} r={6} fill={colorPunto} stroke="#fff" strokeWidth={2} />
       </g>
@@ -760,6 +804,25 @@ function GraficoDesarrollo({ ninoId }) {
       }
     }
   });
+
+  // Enviar datos de regresión al padre (sin usar hooks adicionales)
+  if (onDatosRegresionCalculados && regresionDesarrollo && lineaTendenciaDesarrollo) {
+    const nuevosDatos = {
+      regresion: regresionDesarrollo,
+      lineaTendencia: lineaTendenciaDesarrollo,
+      datosOriginales: datosParaTendencia,
+      dominioSeleccionado: dominioSeleccionado,
+      fuenteSeleccionada: fuenteSeleccionada
+    };
+    
+    // Solo enviar si cambió (comparar con ref para evitar llamadas repetidas)
+    const datosActualesStr = JSON.stringify(nuevosDatos);
+    if (datosRegresionRef.current !== datosActualesStr) {
+      datosRegresionRef.current = datosActualesStr;
+      // Usar setTimeout para evitar actualizar estado durante render
+      setTimeout(() => onDatosRegresionCalculados(nuevosDatos), 0);
+    }
+  }
 
   // Contar hitos descartados
   const hitosDescartados = analisis.hitos_conseguidos.filter(
@@ -1236,6 +1299,112 @@ function GraficoDesarrollo({ ninoId }) {
         </div>
       ) : (
         <>
+      {/* Modal de tooltip al hacer click */}
+      {tooltipActivo && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={() => setTooltipActivo(null)}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              padding: '25px',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              maxWidth: '500px',
+              width: '90%',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botón cerrar */}
+            <button
+              onClick={() => setTooltipActivo(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#999',
+                lineHeight: 1,
+                padding: '5px 10px'
+              }}
+            >
+              ×
+            </button>
+
+            {/* Contenido del tooltip */}
+            <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#2c3e50' }}>
+              {tooltipActivo.hito_nombre}
+            </h3>
+            
+            <div style={{ fontSize: '1em', color: '#555', lineHeight: '1.8' }}>
+              <p style={{ margin: '8px 0' }}>
+                <strong>Dominio:</strong>{' '}
+                <span style={{ 
+                  color: coloresDominios[tooltipActivo.dominio_id], 
+                  fontWeight: 'bold' 
+                }}>
+                  {tooltipActivo.dominio_nombre}
+                </span>
+              </p>
+              
+              <p style={{ margin: '8px 0' }}>
+                <strong>Edad cronológica:</strong> {tooltipActivo.edad_cronologica?.toFixed(1)} meses
+              </p>
+              
+              <p style={{ margin: '8px 0' }}>
+                <strong>Edad de desarrollo:</strong> {tooltipActivo.edad_desarrollo?.toFixed(1)} meses
+              </p>
+              
+              <p style={{ margin: '8px 0' }}>
+                <strong>Cociente de Desarrollo (CD):</strong>{' '}
+                {tooltipActivo.edad_cronologica > 0 
+                  ? ((tooltipActivo.edad_desarrollo / tooltipActivo.edad_cronologica) * 100).toFixed(1) + '%'
+                  : 'N/A'}
+              </p>
+              
+              <p style={{ margin: '8px 0' }}>
+                <strong>Puntuación Z:</strong>{' '}
+                {(() => {
+                  const sd = Math.max(tooltipActivo.edad_cronologica * 0.15, 2);
+                  const zscore = (tooltipActivo.edad_desarrollo - tooltipActivo.edad_cronologica) / sd;
+                  return zscore.toFixed(2);
+                })()}
+              </p>
+              
+              {tooltipActivo.tiene_perdida && (
+                <p style={{ 
+                  margin: '15px 0 0 0', 
+                  padding: '10px', 
+                  backgroundColor: '#fee', 
+                  border: '1px solid #fcc',
+                  borderRadius: '4px',
+                  color: '#c00', 
+                  fontWeight: 'bold' 
+                }}>
+                  ⚠️ Hito perdido en regresión
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="chart-container">
         <h3>Edad de Desarrollo vs Edad Cronológica</h3>
         <p className="chart-description">
@@ -1258,7 +1427,8 @@ function GraficoDesarrollo({ ninoId }) {
               label={{ value: 'Edad de Desarrollo (meses)', angle: -90, position: 'insideLeft' }}
               domain={[0, 'dataMax + 6']}
             />
-            <Tooltip content={<ScatterTooltip />} cursor={false} />
+            {/* Tooltip deshabilitado - usamos modal con click */}
+            <Tooltip content={() => null} cursor={false} />
             <Legend />
             
             {/* Línea de desarrollo típico (45 grados) */}
@@ -1319,11 +1489,24 @@ function GraficoDesarrollo({ ninoId }) {
                     const { cx, cy, payload } = props;
                     if (!payload || !payload.hito_nombre) return null;
                     const color = coloresDominios[payload.dominio_id] || '#2c3e50';
+                    const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
                     
                     if (payload.tiene_perdida) {
                       return (
-                        <g className="scatter-point">
-                          <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                        <g 
+                          className="scatter-point"
+                          onClick={() => handlePuntoClick(payload)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <circle 
+                            cx={cx} 
+                            cy={cy} 
+                            r={10} 
+                            fill="none" 
+                            stroke="#000" 
+                            strokeWidth={isActivo ? 2 : 0} 
+                            style={{ pointerEvents: 'none' }} 
+                          />
                           <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
                           <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
                                 fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
@@ -1333,8 +1516,20 @@ function GraficoDesarrollo({ ninoId }) {
                       );
                     }
                     return (
-                      <g className="scatter-point">
-                        <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                      <g 
+                        className="scatter-point"
+                        onClick={() => handlePuntoClick(payload)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <circle 
+                          cx={cx} 
+                          cy={cy} 
+                          r={7} 
+                          fill="none" 
+                          stroke="#000" 
+                          strokeWidth={isActivo ? 2 : 0} 
+                          style={{ pointerEvents: 'none' }} 
+                        />
                         <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
                       </g>
                     );
@@ -1402,10 +1597,24 @@ function GraficoDesarrollo({ ninoId }) {
                       shape={(props) => {
                         const { cx, cy, payload } = props;
                         if (!payload || !payload.hito_nombre) return null;
+                        const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                        
                         if (payload.tiene_perdida) {
                           return (
-                            <g className="scatter-point">
-                              <circle cx={cx} cy={cy} r={10} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                            <g 
+                              className="scatter-point"
+                              onClick={() => handlePuntoClick(payload)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <circle 
+                                cx={cx} 
+                                cy={cy} 
+                                r={10} 
+                                fill="none" 
+                                stroke="#000" 
+                                strokeWidth={isActivo ? 2 : 0} 
+                                style={{ pointerEvents: 'none' }} 
+                              />
                               <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
                               <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" 
                                     fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
@@ -1415,8 +1624,20 @@ function GraficoDesarrollo({ ninoId }) {
                           );
                         }
                         return (
-                          <g className="scatter-point">
-                            <circle cx={cx} cy={cy} r={8} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                          <g 
+                            className="scatter-point"
+                            onClick={() => handlePuntoClick(payload)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <circle 
+                              cx={cx} 
+                              cy={cy} 
+                              r={8} 
+                              fill="none" 
+                              stroke="#000" 
+                              strokeWidth={isActivo ? 2 : 0} 
+                              style={{ pointerEvents: 'none' }} 
+                            />
                             <circle cx={cx} cy={cy} r={6} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
                           </g>
                         );
@@ -1490,7 +1711,8 @@ function GraficoDesarrollo({ ninoId }) {
             <YAxis 
               label={{ value: 'Puntuación Z', angle: -90, position: 'insideLeft' }}
             />
-            <Tooltip content={<ZScoreTooltip />} cursor={false} />
+            {/* Tooltip deshabilitado - usamos modal con click */}
+            <Tooltip content={() => null} cursor={false} />
             <Legend />
             
             {/* Bandas de referencia */}
@@ -1525,9 +1747,23 @@ function GraficoDesarrollo({ ninoId }) {
                   shape={(props) => {
                     const { cx, cy, payload } = props;
                     if (!payload || !payload.hito_nombre) return null;
+                    const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    
                     return (
-                      <g className="scatter-point">
-                        <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                      <g 
+                        className="scatter-point"
+                        onClick={() => handlePuntoClick(payload)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <circle 
+                          cx={cx} 
+                          cy={cy} 
+                          r={7} 
+                          fill="none" 
+                          stroke="#000" 
+                          strokeWidth={isActivo ? 2 : 0} 
+                          style={{ pointerEvents: 'none' }} 
+                        />
                         <circle cx={cx} cy={cy} r={5} fill="#3498db" stroke="#fff" strokeWidth={2} />
                       </g>
                     );
@@ -1566,10 +1802,23 @@ function GraficoDesarrollo({ ninoId }) {
                     const { cx, cy, payload } = props;
                     if (!payload || !payload.hito_nombre) return null;
                     const color = coloresDominios[payload.dominio_id] || '#3498db';
+                    const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
                     
                     return (
-                      <g className="scatter-point">
-                        <circle cx={cx} cy={cy} r={6} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                      <g 
+                        className="scatter-point"
+                        onClick={() => handlePuntoClick(payload)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <circle 
+                          cx={cx} 
+                          cy={cy} 
+                          r={6} 
+                          fill="none" 
+                          stroke="#000" 
+                          strokeWidth={isActivo ? 2 : 0} 
+                          style={{ pointerEvents: 'none' }} 
+                        />
                         <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={2} />
                       </g>
                     );
@@ -1608,9 +1857,23 @@ function GraficoDesarrollo({ ninoId }) {
                       shape={(props) => {
                         const { cx, cy, payload } = props;
                         if (!payload || !payload.hito_nombre) return null;
+                        const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                        
                         return (
-                          <g className="scatter-point">
-                            <circle cx={cx} cy={cy} r={7} fill="none" stroke="#000" strokeWidth={0} className="hover-highlight" style={{ pointerEvents: 'none' }} />
+                          <g 
+                            className="scatter-point"
+                            onClick={() => handlePuntoClick(payload)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <circle 
+                              cx={cx} 
+                              cy={cy} 
+                              r={7} 
+                              fill="none" 
+                              stroke="#000" 
+                              strokeWidth={isActivo ? 2 : 0} 
+                              style={{ pointerEvents: 'none' }} 
+                            />
                             <circle cx={cx} cy={cy} r={5} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
                           </g>
                         );
