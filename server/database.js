@@ -165,6 +165,21 @@ db.serialize(() => {
     FOREIGN KEY (red_flag_id) REFERENCES red_flags(id)
   )`);
 
+  // Tabla de evaluaciones con escalas estandarizadas
+  db.run(`CREATE TABLE IF NOT EXISTS escalas_evaluaciones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nino_id INTEGER NOT NULL,
+    escala TEXT NOT NULL,
+    fecha_evaluacion DATE NOT NULL,
+    edad_evaluacion_meses REAL NOT NULL,
+    puntuaciones TEXT NOT NULL,
+    profesional_evaluador TEXT,
+    centro_evaluacion TEXT,
+    notas TEXT,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (nino_id) REFERENCES ninos(id)
+  )`);
+
   // Insertar fuentes normativas predeterminadas
   const fuentesNormativas = [
     [

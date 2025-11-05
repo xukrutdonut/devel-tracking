@@ -120,9 +120,9 @@ Se han implementado modelos estadísticos avanzados basados en la bibliografía 
 
 **Qué hace**:
 - Clasifica automáticamente en 5 tipos:
-  1. **DELAY** (Retraso): Paralela pero retrasada
-  2. **DEVIANCE** (Desviación): Pendiente diferente
-  3. **DYSMATURITY** (Inmadurez): Con oleadas
+  1. **DELAY, IMMATURITY** (Retraso - inicio retrasado): Paralela con inicio retrasado
+  2. **DEVIANCE** (Desviación de la media): Pendiente diferente
+  3. **DYSMATURITY** (Dismadurez - desarrollo trastornado): Con oleadas
   4. **ACELERADO**: Superior a norma
   5. **NORMAL**: Dentro de parámetros
 

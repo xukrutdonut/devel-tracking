@@ -179,7 +179,7 @@ function RedFlagsRegistro({ ninoId }) {
                 
                 {observada ? (
                   <div className="ya-registrada">
-                    ✓ Ya registrada a los {observada.edad_observada_meses} meses
+                    <i className="fas fa-check-circle"></i> Ya registrada a los {observada.edad_observada_meses} meses
                   </div>
                 ) : (
                   <button 

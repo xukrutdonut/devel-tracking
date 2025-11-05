@@ -313,10 +313,10 @@ export function clasificarTipoTrayectoria(puntos) {
   // Clasificación según Thomas et al. (2009)
   let tipo, descripcion, caracteristicas, implicaciones;
   
-  // DELAY: Z-score bajo pero estable, velocidad cercana a normal
+  // DELAY, IMMATURITY: Z-score bajo pero estable, velocidad cercana a normal (inicio retrasado)
   if (cdMedia < 85 && cdVarianza < 50 && Math.abs(velocidadMedia) < 0.5) {
     tipo = 'DELAY';
-    descripcion = 'Retraso (Trayectoria paralela retrasada)';
+    descripcion = 'Retraso - inicio retrasado (Trayectoria paralela con inicio retrasado)';
     caracteristicas = [
       `CD medio: ${cdMedia.toFixed(1)}% (bajo pero estable)`,
       `Varianza CD: ${cdVarianza.toFixed(1)} (baja)`,
@@ -330,11 +330,11 @@ export function clasificarTipoTrayectoria(puntos) {
       'Intervención: Estimulación generalizada'
     ];
   }
-  // DEVIANCE: Cambio sistemático en CD
+  // DEVIANCE (Desviación de la trayectoria desde un mismo origen): Cambio sistemático en CD
   else if (Math.abs(cdCambio) > 10 && velocidadVarianza < 1.0) {
     if (cdCambio > 0) {
       tipo = 'DEVIANCE_CONVERGENTE';
-      descripcion = 'Desviación convergente (Recuperación)';
+      descripcion = 'Desviación de la trayectoria desde un mismo origen convergente (Recuperación)';
       caracteristicas = [
         `CD inicial: ${cdPrimero.toFixed(1)}%`,
         `CD final: ${cdUltimo.toFixed(1)}%`,
@@ -350,7 +350,7 @@ export function clasificarTipoTrayectoria(puntos) {
       ];
     } else {
       tipo = 'DEVIANCE_DIVERGENTE';
-      descripcion = 'Desviación divergente (Empeoramiento)';
+      descripcion = 'Desviación de la trayectoria desde un mismo origen divergente (Empeoramiento)';
       caracteristicas = [
         `CD inicial: ${cdPrimero.toFixed(1)}%`,
         `CD final: ${cdUltimo.toFixed(1)}%`,
@@ -369,7 +369,7 @@ export function clasificarTipoTrayectoria(puntos) {
   // DYSMATURITY: Inicio normal, posterior deterioro
   else if (cdPrimero > 85 && cdUltimo < 70 && cdCambio < -15) {
     tipo = 'DYSMATURITY';
-    descripcion = 'Inmadurez (Regresión)';
+    descripcion = 'Dismadurez (Regresión - desarrollo trastornado)';
     caracteristicas = [
       `CD inicial: ${cdPrimero.toFixed(1)}% (normal)`,
       `CD final: ${cdUltimo.toFixed(1)}% (retraso)`,

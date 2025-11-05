@@ -886,6 +886,130 @@ app.get('/api/analisis/:ninoId', verificarToken, (req, res) => {
   }); // Cierre de verificarAccesoNino
 });
 
+// ==================== RUTAS DE ESCALAS ESTANDARIZADAS ====================
+
+// Obtener todas las evaluaciones de un niño
+app.get('/api/escalas-evaluaciones/:ninoId', verificarToken, (req, res) => {
+  const { ninoId } = req.params;
+  
+  verificarAccesoNino(req.usuario, ninoId, (tieneAcceso) => {
+    if (!tieneAcceso) {
+      return res.status(403).json({ error: 'No tiene acceso a este niño' });
+    }
+    
+    const query = `
+      SELECT * FROM escalas_evaluaciones 
+      WHERE nino_id = ? 
+      ORDER BY fecha_evaluacion DESC
+    `;
+    
+    db.all(query, [ninoId], (err, rows) => {
+      if (err) {
+        console.error('Error al obtener evaluaciones:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(rows);
+    });
+  });
+});
+
+// Crear nueva evaluación con escala
+app.post('/api/escalas-evaluaciones', verificarToken, (req, res) => {
+  const { 
+    nino_id, 
+    escala, 
+    fecha_evaluacion, 
+    edad_evaluacion_meses,
+    puntuaciones,
+    profesional_evaluador,
+    centro_evaluacion,
+    notas 
+  } = req.body;
+  
+  // Validar datos requeridos
+  if (!nino_id || !escala || !fecha_evaluacion || !edad_evaluacion_meses || !puntuaciones) {
+    return res.status(400).json({ 
+      error: 'Faltan datos requeridos: nino_id, escala, fecha_evaluacion, edad_evaluacion_meses, puntuaciones' 
+    });
+  }
+  
+  verificarAccesoNino(req.usuario, nino_id, (tieneAcceso) => {
+    if (!tieneAcceso) {
+      return res.status(403).json({ error: 'No tiene acceso a este niño' });
+    }
+    
+    const query = `
+      INSERT INTO escalas_evaluaciones (
+        nino_id, escala, fecha_evaluacion, edad_evaluacion_meses, 
+        puntuaciones, profesional_evaluador, centro_evaluacion, notas
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    db.run(
+      query,
+      [
+        nino_id, 
+        escala, 
+        fecha_evaluacion, 
+        edad_evaluacion_meses,
+        puntuaciones, // Ya es JSON string
+        profesional_evaluador || null,
+        centro_evaluacion || null,
+        notas || null
+      ],
+      function(err) {
+        if (err) {
+          console.error('Error al crear evaluación:', err);
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ 
+          id: this.lastID,
+          mensaje: 'Evaluación creada correctamente' 
+        });
+      }
+    );
+  });
+});
+
+// Eliminar evaluación
+app.delete('/api/escalas-evaluaciones/:id', verificarToken, (req, res) => {
+  const { id } = req.params;
+  
+  // Primero verificar que la evaluación existe y el usuario tiene acceso al niño
+  db.get(
+    'SELECT nino_id FROM escalas_evaluaciones WHERE id = ?',
+    [id],
+    (err, evaluacion) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!evaluacion) {
+        return res.status(404).json({ error: 'Evaluación no encontrada' });
+      }
+      
+      verificarAccesoNino(req.usuario, evaluacion.nino_id, (tieneAcceso) => {
+        if (!tieneAcceso) {
+          return res.status(403).json({ error: 'No tiene acceso a esta evaluación' });
+        }
+        
+        db.run(
+          'DELETE FROM escalas_evaluaciones WHERE id = ?',
+          [id],
+          function(err) {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            if (this.changes === 0) {
+              return res.status(404).json({ error: 'Evaluación no encontrada' });
+            }
+            res.json({ mensaje: 'Evaluación eliminada correctamente' });
+          }
+        );
+      });
+    }
+  );
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor ejecutándose en http://0.0.0.0:${PORT}`);
 });

@@ -19,7 +19,11 @@ import GuiaClasificacionTrayectorias from './GuiaClasificacionTrayectorias';
  */
 export default function Bibliografia() {
   const [pestanaActiva, setPestanaActiva] = useState('guia'); // 'guia' o 'referencias'
+  const [seccionExpandida, setSeccionExpandida] = useState(null);
 
+  const toggleSeccion = (id) => {
+    setSeccionExpandida(seccionExpandida === id ? null : id);
+  };
 
   const referencias = [
     {
@@ -309,6 +313,173 @@ export default function Bibliografia() {
             <small>Sices (2007)</small>
           </div>
         </div>
+      </div>
+
+      <div className="referencias-completas">
+          <div key={ref.id} className="referencia-card">
+            <div className="referencia-header" onClick={() => toggleSeccion(ref.id)}>
+              <div className="referencia-titulo">
+                <h4>
+                  {ref.autor} ({ref.año})
+                  {ref.pdf && <span className="pdf-badge">📄 PDF</span>}
+                </h4>
+                <p className="titulo-completo">{ref.titulo}</p>
+                <p className="revista-info">{ref.revista}, {ref.volumen}</p>
+              </div>
+              <button className="expand-btn">
+                {seccionExpandida === ref.id ? '▼' : '▶'}
+              </button>
+            </div>
+
+            {seccionExpandida === ref.id && (
+              <div className="referencia-contenido">
+                {ref.citaClave && (
+                  <div className="cita-clave">
+                    <strong>💡 Cita Clave:</strong>
+                    <blockquote>{ref.citaClave}</blockquote>
+                  </div>
+                )}
+
+                <div className="conceptos-clave">
+                  <h5>🎯 Conceptos Clave:</h5>
+                  {ref.conceptosClave.map((concepto, idx) => (
+                    <div key={idx} className="concepto-item">
+                      <h6>{concepto.titulo}</h6>
+                      <p><strong>Descripción:</strong> {concepto.descripcion}</p>
+                      <p className="implementacion">
+                        <strong>⚙️ Implementación:</strong> {concepto.implementacion}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="aplicaciones">
+                  <h5>✅ Aplicaciones en Esta Herramienta:</h5>
+                  <ul>
+                    {ref.aplicaciones.map((app, idx) => (
+                      <li key={idx}>{app}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {ref.pdf && (
+                  <div className="pdf-link">
+                    <a href={`/${ref.pdf}`} target="_blank" rel="noopener noreferrer">
+                      📄 Consultar PDF completo
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="funcionalidades-implementadas">
+        <h3><i className="fas fa-table"></i> Tabla de Funcionalidades con Base Bibliográfica</h3>
+        <table className="tabla-funcionalidades">
+          <thead>
+            <tr>
+              <th>Funcionalidad</th>
+              <th>Fundamentación Bibliográfica</th>
+              <th>Componente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Análisis de 3 derivadas (posición, velocidad, aceleración)</td>
+              <td>Deboeck et al. (2016)</td>
+              <td>AnalisisAceleracion.jsx</td>
+            </tr>
+            <tr>
+              <td>Detección de tipos de trayectoria (DELAY, DEVIANCE, etc.)</td>
+              <td>Thomas et al. (2009)</td>
+              <td>ClasificacionTrayectorias.jsx</td>
+            </tr>
+            <tr>
+              <td>Patrones diagnósticos automáticos (TEA, PCI, RGD)</td>
+              <td>Tervo (2006)</td>
+              <td>GraficoDesarrollo.jsx</td>
+            </tr>
+            <tr>
+              <td>Sistema de vigilancia continua</td>
+              <td>Lajiness-O'Neill et al. (2018)</td>
+              <td>Sistema completo</td>
+            </tr>
+            <tr>
+              <td>Uso de Z-scores vs medias</td>
+              <td>Sices (2007)</td>
+              <td>ageCalculations.js</td>
+            </tr>
+            <tr>
+              <td>Múltiples fuentes normativas (CDC, OMS, Bayley, Battelle)</td>
+              <td>Lajiness-O'Neill et al. (2018)</td>
+              <td>Base de datos</td>
+            </tr>
+            <tr>
+              <td>Análisis por dominios (7 áreas del desarrollo)</td>
+              <td>Thomas (2016), Tervo (2006)</td>
+              <td>GraficoDesarrollo.jsx</td>
+            </tr>
+            <tr>
+              <td>Visualización de trayectorias temporales</td>
+              <td>Thomas et al. (2009)</td>
+              <td>GraficoDesarrollo.jsx</td>
+            </tr>
+            <tr>
+              <td>Interpretaciones automáticas contextualizadas</td>
+              <td>Thomas et al. (2009), Tervo (2006)</td>
+              <td>Todos los componentes</td>
+            </tr>
+            <tr>
+              <td>Umbrales ajustables de alerta</td>
+              <td>Sices (2007)</td>
+              <td>GraficoDesarrollo.jsx</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mejoras-futuras">
+        <h3>🔄 Mejoras Futuras Sugeridas (Con Base Bibliográfica)</h3>
+        <div className="mejoras-grid">
+          <div className="mejora-card">
+            <h4>Modelos Estadísticos Avanzados</h4>
+            <p>HLM/MLM para análisis multinivel, LGCM para curvas de crecimiento latente, modelos polinomiales para oleadas de desarrollo.</p>
+            <small>Referencia: Thomas - Statistical approaches with SPSS</small>
+          </div>
+          <div className="mejora-card">
+            <h4>Análisis Pre/Post Intervención</h4>
+            <p>Comparar velocidades antes y después de terapia, detectar efectos de intervención en aceleración.</p>
+            <small>Referencia: Deboeck et al. (2016)</small>
+          </div>
+          <div className="mejora-card">
+            <h4>Clasificación Automática Mejorada</h4>
+            <p>Algoritmo refinado para clasificar automáticamente los 4 tipos de trayectorias con alertas específicas.</p>
+            <small>Referencia: Thomas et al. (2009)</small>
+          </div>
+          <div className="mejora-card">
+            <h4>Ventanas de Logro OMS</h4>
+            <p>Sistema de semáforo completo (verde/amarillo/rojo) usando percentiles 5-25-75-95.</p>
+            <small>Referencia: Sices (2007)</small>
+          </div>
+        </div>
+      </div>
+
+      <div className="conclusion">
+        <h3>🎯 Conclusión</h3>
+        <p>
+          Esta herramienta integra <strong>más de una década de investigación científica</strong> sobre 
+          análisis de trayectorias del desarrollo, implementando un marco teórico sólido (neuroconstructivismo, 
+          teorías del cambio), métodos cuantitativos rigurosos (derivadas, Z-scores, modelos estadísticos), 
+          aplicabilidad clínica (patrones diagnósticos, vigilancia continua), respeto por la variabilidad 
+          (rangos normativos, umbrales ajustables) y base empírica (validación tipo PediaTrac, múltiples 
+          fuentes normativas).
+        </p>
+        <p>
+          <strong>La herramienta no es solo una aplicación de registro, sino una implementación práctica 
+          de los avances científicos en el análisis del desarrollo infantil.</strong>
+        </p>
       </div>
 
       <div className="referencias-completas">

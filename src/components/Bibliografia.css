@@ -6,17 +6,20 @@
 }
 
 .bibliografia-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0073AA;
   color: white;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  border-bottom: 2px solid #005177;
 }
 
 .bibliografia-header h2 {
   margin: 0 0 15px 0;
   font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .bibliografia-intro {
@@ -30,14 +33,16 @@
 .filtros-bibliografia {
   background: white;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
 }
 
 .filtros-bibliografia h3 {
   margin: 0 0 15px 0;
-  color: #2c3e50;
+  color: #111;
+  font-weight: 700;
 }
 
 .filtros-buttons {
@@ -48,41 +53,46 @@
 
 .filtros-buttons button {
   padding: 10px 20px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #0073AA;
   background: white;
-  border-radius: 8px;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 0.95em;
-  transition: all 0.3s ease;
-  font-weight: 500;
+  transition: all 0.2s ease;
+  font-weight: 700;
+  color: #0073AA;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .filtros-buttons button:hover {
-  border-color: #667eea;
-  color: #667eea;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+  background: #0073AA;
+  color: white;
+  transform: none;
+  box-shadow: none;
 }
 
 .filtros-buttons button.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0073AA;
   color: white;
-  border-color: #667eea;
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  border-color: #0073AA;
+  box-shadow: none;
 }
 
 /* Marco Teórico */
 .marco-teorico {
-  background: #f8f9fa;
+  background: #f7f7f7;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
+  border: 1px solid #ddd;
 }
 
 .marco-teorico h3 {
   margin: 0 0 20px 0;
-  color: #2c3e50;
+  color: #111;
   font-size: 1.5em;
+  font-weight: 700;
 }
 
 .principios-grid {
@@ -94,27 +104,30 @@
 .principio-card {
   background: white;
   padding: 20px;
-  border-radius: 10px;
-  border-left: 4px solid #667eea;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease;
+  border-radius: 0;
+  border-left: 4px solid #0073AA;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
+  border-left: 4px solid #0073AA;
+  transition: all 0.2s ease;
 }
 
 .principio-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .principio-card h4 {
   margin: 0 0 10px 0;
-  color: #667eea;
+  color: #0073AA;
   font-size: 1.1em;
+  font-weight: 700;
 }
 
 .principio-card p {
   margin: 0 0 10px 0;
-  color: #555;
-  line-height: 1.6;
+  color: #767676;
+  line-height: 1.8;
 }
 
 .principio-card small {
@@ -128,28 +141,30 @@
 }
 
 .referencias-lista h3 {
-  color: #2c3e50;
+  color: #111;
   font-size: 1.5em;
   margin-bottom: 10px;
+  font-weight: 700;
 }
 
 .contador-refs {
-  color: #666;
+  color: #767676;
   font-size: 0.95em;
   margin-bottom: 20px;
 }
 
 .referencia-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
+  transition: all 0.2s ease;
+  border: 1px solid #ddd;
 }
 
 .referencia-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .referencia-header {
@@ -158,21 +173,22 @@
   align-items: center;
   padding: 20px;
   cursor: pointer;
-  background: linear-gradient(to right, #f8f9fa, white);
-  border-bottom: 1px solid #e0e0e0;
+  background: white;
+  border-bottom: 1px solid #ddd;
 }
 
 .referencia-header:hover {
-  background: linear-gradient(to right, #e9ecef, #f8f9fa);
+  background: #f7f7f7;
 }
 
 .referencia-titulo h4 {
   margin: 0 0 8px 0;
-  color: #2c3e50;
+  color: #111;
   font-size: 1.2em;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-weight: 700;
 }
 
 .pdf-badge {
@@ -186,20 +202,20 @@
 
 .titulo-completo {
   margin: 5px 0;
-  color: #34495e;
+  color: #111;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.8;
 }
 
 .revista-info {
   margin: 5px 0 0 0;
-  color: #7f8c8d;
+  color: #767676;
   font-size: 0.9em;
   font-style: italic;
 }
 
 .expand-btn {
-  background: #667eea;
+  background: #0073AA;
   color: white;
   border: none;
   border-radius: 50%;
@@ -207,19 +223,19 @@
   height: 35px;
   cursor: pointer;
   font-size: 1em;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .expand-btn:hover {
-  background: #764ba2;
-  transform: scale(1.1);
+  background: #005177;
+  transform: none;
 }
 
 /* Contenido de Referencia */
 .referencia-contenido {
   padding: 20px;
-  background: #fafbfc;
+  background: #f7f7f7;
   animation: slideDown 0.3s ease;
 }
 
@@ -235,25 +251,26 @@
 }
 
 .cita-clave {
-  background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+  background: #fff3cd;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 20px;
-  border-left: 4px solid #f39c12;
+  border-left: 4px solid #ffc107;
 }
 
 .cita-clave strong {
-  color: #e67e22;
+  color: #856404;
   display: block;
   margin-bottom: 10px;
+  font-weight: 700;
 }
 
 .cita-clave blockquote {
   margin: 0;
   padding: 0;
   font-style: italic;
-  color: #555;
-  line-height: 1.6;
+  color: #767676;
+  line-height: 1.8;
   font-size: 1.05em;
 }
 
@@ -262,49 +279,55 @@
 }
 
 .conceptos-clave h5 {
-  color: #2c3e50;
+  color: #111;
   margin: 0 0 15px 0;
   font-size: 1.2em;
+  font-weight: 700;
 }
 
 .concepto-item {
   background: white;
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 15px;
-  border-left: 3px solid #3498db;
+  border-left: 3px solid #0073AA;
+  border: 1px solid #ddd;
+  border-left: 3px solid #0073AA;
 }
 
 .concepto-item h6 {
   margin: 0 0 10px 0;
-  color: #3498db;
+  color: #0073AA;
   font-size: 1.05em;
+  font-weight: 700;
 }
 
 .concepto-item p {
   margin: 8px 0;
-  color: #555;
-  line-height: 1.5;
+  color: #767676;
+  line-height: 1.8;
 }
 
 .implementacion {
   background: #e8f5e9;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 0;
   border-left: 3px solid #4caf50;
 }
 
 .aplicaciones {
   background: white;
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 0;
   margin-bottom: 15px;
+  border: 1px solid #ddd;
 }
 
 .aplicaciones h5 {
-  color: #2c3e50;
+  color: #111;
   margin: 0 0 10px 0;
   font-size: 1.1em;
+  font-weight: 700;
 }
 
 .aplicaciones ul {
@@ -314,8 +337,8 @@
 
 .aplicaciones li {
   margin: 8px 0;
-  color: #555;
-  line-height: 1.5;
+  color: #767676;
+  line-height: 1.8;
 }
 
 .pdf-link {
@@ -325,34 +348,39 @@
 
 .pdf-link a {
   display: inline-block;
-  background: #e74c3c;
+  background: #0073AA;
   color: white;
   padding: 12px 25px;
-  border-radius: 8px;
+  border-radius: 5px;
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.85em;
 }
 
 .pdf-link a:hover {
-  background: #c0392b;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+  background: #005177;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Tabla de Funcionalidades */
 .funcionalidades-implementadas {
   background: white;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
 }
 
 .funcionalidades-implementadas h3 {
   margin: 0 0 20px 0;
-  color: #2c3e50;
+  color: #111;
   font-size: 1.5em;
+  font-weight: 700;
 }
 
 .tabla-funcionalidades {
@@ -362,24 +390,24 @@
 }
 
 .tabla-funcionalidades thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #0073AA;
   color: white;
 }
 
 .tabla-funcionalidades th {
   padding: 15px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .tabla-funcionalidades td {
   padding: 12px 15px;
-  border-bottom: 1px solid #e0e0e0;
-  color: #555;
+  border-bottom: 1px solid #ddd;
+  color: #767676;
 }
 
 .tabla-funcionalidades tbody tr:hover {
-  background: #f8f9fa;
+  background: #f7f7f7;
 }
 
 .tabla-funcionalidades tbody tr:last-child td {
@@ -390,7 +418,7 @@
 .mejoras-futuras {
   background: #fff3cd;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
   border: 2px solid #ffc107;
 }
@@ -399,6 +427,7 @@
   margin: 0 0 20px 0;
   color: #856404;
   font-size: 1.5em;
+  font-weight: 700;
 }
 
 .mejoras-grid {
@@ -410,26 +439,29 @@
 .mejora-card {
   background: white;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 0;
   border-left: 4px solid #ffc107;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  border: 1px solid #ddd;
+  border-left: 4px solid #ffc107;
 }
 
 .mejora-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .mejora-card h4 {
   margin: 0 0 10px 0;
-  color: #f39c12;
+  color: #856404;
   font-size: 1.1em;
+  font-weight: 700;
 }
 
 .mejora-card p {
   margin: 0 0 10px 0;
-  color: #555;
-  line-height: 1.5;
+  color: #767676;
+  line-height: 1.8;
   font-size: 0.95em;
 }
 
@@ -441,9 +473,9 @@
 
 /* Conclusión */
 .conclusion {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  background: #e8f5e9;
   padding: 30px;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 30px;
   border-left: 5px solid #4caf50;
 }
@@ -452,31 +484,35 @@
   margin: 0 0 15px 0;
   color: #2e7d32;
   font-size: 1.5em;
+  font-weight: 700;
 }
 
 .conclusion p {
   margin: 10px 0;
-  color: #424242;
-  line-height: 1.7;
+  color: #111;
+  line-height: 1.8;
   font-size: 1.05em;
 }
 
 .conclusion strong {
   color: #1b5e20;
+  font-weight: 700;
 }
 
 /* Referencias Completas */
 .referencias-completas {
   background: white;
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ddd;
 }
 
 .referencias-completas h3 {
   margin: 0 0 20px 0;
-  color: #2c3e50;
+  color: #111;
   font-size: 1.5em;
+  font-weight: 700;
 }
 
 .lista-referencias-apa {
@@ -486,11 +522,11 @@
 
 .lista-referencias-apa li {
   margin: 15px 0;
-  color: #555;
+  color: #767676;
 }
 
 .lista-referencias-apa em {
-  color: #666;
+  color: #767676;
 }
 
 /* Responsive */

@@ -22,11 +22,11 @@
 
 **🎯 Clasificación de Trayectorias (ClasificacionTrayectorias.jsx)**
 - Implementación de 4 tipos de trayectorias atípicas:
-  - DELAY (Retraso): Trayectoria paralela pero retrasada
-  - DEVIANCE (Desviación): Trayectoria con pendiente diferente
+  - DELAY, IMMATURITY (Retraso - inicio retrasado): Trayectoria paralela con inicio retrasado
+  - DEVIANCE (Desviación de la media): Trayectoria con pendiente diferente
     - Convergente (recuperación)
     - Divergente (empeoramiento)
-  - DYSMATURITY (Inmadurez): Inicio normal con posterior desaceleración
+  - DYSMATURITY (Dismadurez - desarrollo trastornado): Inicio normal con posterior desaceleración
   - DIFFERENCE (Diferencia): Patrón cualitativamente diferente
 - Clasificación por dominio del desarrollo
 - Métricas estadísticas (CD medio, varianza, velocidad)

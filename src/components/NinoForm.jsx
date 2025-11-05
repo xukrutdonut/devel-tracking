@@ -126,7 +126,7 @@ function NinoForm({ onNinoCreado }) {
           />
           {semanasGestacion < 37 && (
             <p className="warning-text">
-              ⚠️ Niño pretérmino: se calculará edad corregida
+              <i className="fas fa-exclamation-triangle"></i> Niño pretérmino: se calculará edad corregida
             </p>
           )}
         </div>

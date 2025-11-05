@@ -3,7 +3,7 @@ import { API_URL } from '../config';
 import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GraficoDesarrollo from './GraficoDesarrollo';
 
-function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
+function EjemplosPracticos({ onEjemploCreado, onSeleccionarNino }) {
   const [ejemplos, setEjemplos] = useState([]);
   const [ejemploSeleccionado, setEjemploSeleccionado] = useState(null);
   const [cargando, setCargando] = useState(false);
@@ -29,7 +29,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'desarrollo-tipico',
       nombre: 'Desarrollo Típico',
       descripcion: 'Niño con desarrollo normotípico, alcanza todos los hitos en edades esperadas',
-      icono: '😊',
+      icono: 'fa-smile',
       color: '#28a745',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Desarrollo Típico'),
@@ -43,7 +43,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'trayectoria-retraso',
       nombre: 'Trayectoria con Retraso',
       descripcion: 'Decalaje en el inicio del desarrollo pero con misma velocidad de progresión (pendiente paralela a lo típico)',
-      icono: '📐',
+      icono: 'fa-ruler-combined',
       color: '#9c27b0',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Trayectoria con Retraso'),
@@ -57,7 +57,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'desviacion-desarrollo',
       nombre: 'Desviación del Desarrollo',
       descripcion: 'Desviación del desarrollo en todos los dominios con CD 50 (alcanza hitos al 50% de la edad esperada)',
-      icono: '🔵',
+      icono: 'fa-circle-notch',
       color: '#ffc107',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Desviación Desarrollo CD50'),
@@ -71,7 +71,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'regresion',
       nombre: 'Regresión del Desarrollo',
       descripcion: 'Desarrollo normal hasta 18m, luego PÉRDIDA de hitos en áreas vulnerables (lenguaje, social)',
-      icono: '📉',
+      icono: 'fa-chart-line-down',
       color: '#e91e63',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Regresión Desarrollo'),
@@ -85,7 +85,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'estancamiento',
       nombre: 'Estancamiento/Meseta',
       descripcion: 'Desarrollo normal hasta 12m, luego velocidad reducida a 15% (progreso casi detenido)',
-      icono: '📊',
+      icono: 'fa-chart-bar',
       color: '#ff9800',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Estancamiento'),
@@ -99,7 +99,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'aceleracion-intervencion',
       nombre: 'Aceleración por Intervención',
       descripcion: 'Retraso inicial seguido de aceleración del desarrollo tras inicio de atención temprana a los 18 meses',
-      icono: '📈',
+      icono: 'fa-chart-line-up',
       color: '#4caf50',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Respuesta a Intervención'),
@@ -118,7 +118,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'retraso-global-tea',
       nombre: 'Retraso Global + TEA',
       descripcion: 'Retraso global (CD 60) con afectación desproporcionada del área social-emocional (>2 DE del promedio)',
-      icono: '🔵🧩',
+      icono: 'fa-puzzle-piece',
       color: '#8b5cf6',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Retraso Global + TEA'),
@@ -134,7 +134,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'retraso-global-lenguaje',
       nombre: 'Retraso Global + Lenguaje Severo',
       descripcion: 'Retraso global (CD 65) con afectación desproporcionada del lenguaje (>2 DE del promedio)',
-      icono: '🔵💬',
+      icono: 'fa-comments',
       color: '#f59e0b',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Retraso Global + Lenguaje'),
@@ -154,7 +154,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'retraso-motor-grueso',
       nombre: 'Retraso Motor Grueso',
       descripcion: 'Desarrollo típico excepto en motricidad gruesa, sugiere hipotonía o problema motor específico',
-      icono: '🏃',
+      icono: 'fa-running',
       color: '#17a2b8',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Retraso Motor'),
@@ -168,7 +168,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'retraso-lenguaje',
       nombre: 'Retraso del Lenguaje',
       descripcion: 'Desarrollo típico excepto en comunicación/lenguaje, sugiere trastorno específico del lenguaje',
-      icono: '💬',
+      icono: 'fa-comment',
       color: '#dc3545',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Retraso Lenguaje'),
@@ -182,7 +182,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'tea',
       nombre: 'Trastorno del Espectro Autista',
       descripcion: 'Perfil compatible con TEA: afectación del área social-emocional con desarrollo típico o adelantado en otras áreas',
-      icono: '🧩',
+      icono: 'fa-puzzle-piece',
       color: '#6f42c1',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Perfil TEA'),
@@ -684,7 +684,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
   return (
     <div className="ejemplos-clinicos" style={{ padding: '20px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <h2>📚 Ejemplos Clínicos de Trayectorias de Desarrollo</h2>
+        <h2>📚 Ejemplos Prácticos de Trayectorias de Desarrollo</h2>
         
         <div style={{ 
           backgroundColor: '#e7f3ff', 
@@ -759,7 +759,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
                     e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                   }}
                 >
-                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}><i className={`fas ${perfil.icono}`} style={{ color: "#2196F3" }}></i></div>
                   <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
                   <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
                     {perfil.descripcion}
@@ -829,7 +829,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
                     e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                   }}
                 >
-                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}><i className={`fas ${perfil.icono}`} style={{ color: "#2196F3" }}></i></div>
                   <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
                   <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
                     {perfil.descripcion}
@@ -899,7 +899,7 @@ function EjemplosClinicos({ onEjemploCreado, onSeleccionarNino }) {
                     e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                   }}
                 >
-                  <div style={{ fontSize: '2em', marginBottom: '10px' }}>{perfil.icono}</div>
+                  <div style={{ fontSize: '2em', marginBottom: '10px' }}><i className={`fas ${perfil.icono}`} style={{ color: "#2196F3" }}></i></div>
                   <h4 style={{ margin: '0 0 8px 0', color: perfil.color }}>{perfil.nombre}</h4>
                   <p style={{ fontSize: '0.9em', color: '#666', marginBottom: '12px', minHeight: '60px' }}>
                     {perfil.descripcion}
@@ -1048,4 +1048,4 @@ function calcularEdadMeses(fechaNacimiento) {
   return Math.floor(diffDays / 30.44);
 }
 
-export default EjemplosClinicos;
+export default EjemplosPracticos;

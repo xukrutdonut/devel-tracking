@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart, Scatter, ScatterChart, ZAxis } from 'recharts';
 import { construirPuntosEvaluacion, clasificarTipoTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
+import { clasificarTrayectoriaThomas2009 } from '../utils/regresionTrayectorias';
 import { fetchConAuth } from '../utils/authService';
 import { API_URL } from '../config';
 import { 
@@ -23,11 +24,14 @@ import {
  * 1. LONGITUDINAL RETROSPECTIVO: Múltiples hitos con edades de logro
  * 2. PROSPECTIVO: Múltiples evaluaciones puntuales en el tiempo
  * 
- * Implementa clasificación de 4 tipos de trayectorias atípicas:
- * 1. DELAY (Retraso): Trayectoria paralela pero retrasada
- * 2. DEVIANCE (Desviación): Trayectoria con pendiente diferente
- * 3. DYSMATURITY (Inmadurez): Inicio normal pero posterior desaceleración
- * 4. DIFFERENCE (Diferencia cualitativa): Patrón cualitativamente diferente
+ * Implementa clasificación basada en 7 tipos de trayectorias atípicas (Thomas et al., 2009):
+ * 1. DELAYED ONSET: Inicio retrasado (diferencia en intercepto)
+ * 2. SLOWED RATE: Velocidad reducida (diferencia en pendiente)
+ * 3. DELAYED ONSET + SLOWED RATE: Ambos (intercepto y pendiente diferentes)
+ * 4. NONLINEAR: Trayectoria no lineal
+ * 5. PREMATURE ASYMPTOTE: Asíntota prematura (desarrollo se detiene antes)
+ * 6. ZERO TRAJECTORY: Sin cambio con la edad
+ * 7. NO SYSTEMATIC RELATIONSHIP: Sin relación sistemática con edad
  * 
  * Referencias:
  * - Thomas MS, et al. (2009). J Speech Lang Hear Res. 52(2):336-58.
@@ -188,19 +192,22 @@ export default function ClasificacionTrayectorias({ ninoId }) {
   };
 
   /**
-   * Clasifica las trayectorias según Thomas et al. (2009)
+   * Clasifica las trayectorias según Thomas et al. (2009) - 7 tipologías
    * 
-   * Criterios:
-   * 1. DELAY: Z-score constante negativo, velocidad normal
-   * 2. DEVIANCE: Z-score cambia sistemáticamente (velocidad anormal)
-   * 3. DYSMATURITY: Z-score inicialmente normal, luego empeora
-   * 4. DIFFERENCE: Patrón no clasificable en anteriores
+   * Implementación completa usando análisis de regresión:
+   * 1. DELAYED ONSET: Diferencia en intercepto
+   * 2. SLOWED RATE: Diferencia en pendiente  
+   * 3. DELAYED ONSET + SLOWED RATE: Ambos parámetros diferentes
+   * 4. NONLINEAR: Mejor ajuste con función no lineal
+   * 5. PREMATURE ASYMPTOTE: Estancamiento prematuro
+   * 6. ZERO TRAJECTORY: Sin cambio con edad
+   * 7. NO SYSTEMATIC RELATIONSHIP: Sin relación sistemática
    */
   const clasificarTrayectorias = (evaluaciones) => {
     const clasificaciones = [];
 
     // Analizar trayectoria global
-    const globalClass = clasificarTrayectoria(evaluaciones, 'global');
+    const globalClass = clasificarTrayectoriaConRegresion(evaluaciones, 'global');
     if (globalClass) {
       clasificaciones.push({
         dominio: 'Global',
@@ -222,7 +229,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         const dominio = dominios.find(d => d.id === dominioId);
         if (!dominio) return;
 
-        const dominioClass = clasificarTrayectoria(evaluaciones, dominioId);
+        const dominioClass = clasificarTrayectoriaConRegresion(evaluaciones, dominioId);
         if (dominioClass) {
           clasificaciones.push({
             dominio: dominio.nombre,
@@ -237,7 +244,51 @@ export default function ClasificacionTrayectorias({ ninoId }) {
   };
 
   /**
-   * Clasifica una trayectoria individual
+   * Clasifica una trayectoria usando análisis de regresión completo
+   * Implementación de las 7 tipologías de Thomas et al. (2009)
+   */
+  const clasificarTrayectoriaConRegresion = (evaluaciones, dominioId) => {
+    const datos = extraerDatosDominio(evaluaciones, dominioId);
+    
+    if (datos.length < 3) return null;
+
+    // Preparar datos para clasificación
+    const datosParaRegresion = datos.map(d => ({
+      edad: d.edad,
+      valor: d.cd
+    })).filter(d => d.valor !== null && !isNaN(d.valor));
+
+    if (datosParaRegresion.length < 3) return null;
+
+    // Usar la clasificación automática de Thomas et al. (2009)
+    // Sin datos de referencia por ahora (se podría añadir datos normativos del 50 percentil)
+    const clasificacion = clasificarTrayectoriaThomas2009(datosParaRegresion, null);
+
+    // Agregar métricas adicionales
+    const cds = datos.map(d => d.cd).filter(cd => cd !== null);
+    const cdPrimero = cds[0];
+    const cdUltimo = cds[cds.length - 1];
+    const cdMedia = cds.reduce((a, b) => a + b, 0) / cds.length;
+
+    return {
+      tipo: clasificacion.tipo,
+      descripcion: clasificacion.descripcion,
+      caracteristicas: clasificacion.caracteristicas || [],
+      implicaciones: clasificacion.implicaciones || [],
+      metricas: {
+        cdPrimero: cdPrimero,
+        cdUltimo: cdUltimo,
+        cdMedia: cdMedia,
+        r2: clasificacion.modelo?.r2 || 0,
+        nMediciones: datos.length,
+        confianza: clasificacion.confianza || 0.5
+      },
+      modelo: clasificacion.modelo
+    };
+  };
+
+  /**
+   * Clasifica una trayectoria individual (método antiguo - mantener por compatibilidad)
    */
   const clasificarTrayectoria = (evaluaciones, dominioId) => {
     const datos = extraerDatosDominio(evaluaciones, dominioId);
@@ -272,11 +323,11 @@ export default function ClasificacionTrayectorias({ ninoId }) {
     // Clasificación según criterios de Thomas et al. (2009)
     let tipo, descripcion, caracteristicas, implicaciones;
 
-    // Criterio 1: DELAY (Retraso)
+    // Criterio 1: DELAY, IMMATURITY (Retraso - inicio retrasado)
     // Z-score consistentemente bajo pero estable, velocidad cercana a normal
     if (zMedia < -1 && Math.abs(zVarianza) < 0.5 && Math.abs(velocidadMedia) < 0.5) {
       tipo = 'DELAY';
-      descripcion = 'Retraso (Trayectoria paralela retrasada)';
+      descripcion = 'Retraso - inicio retrasado (Trayectoria paralela con inicio retrasado)';
       caracteristicas = [
         `Z-score medio: ${zMedia.toFixed(2)} (consistentemente bajo)`,
         `Varianza de Z: ${zVarianza.toFixed(3)} (baja variabilidad)`,
@@ -291,12 +342,12 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       ];
     }
     
-    // Criterio 2: DEVIANCE (Desviación)
+    // Criterio 2: DEVIANCE (Desviación de la trayectoria desde un mismo origen)
     // Z-score cambia sistemáticamente (mejora o empeora progresivamente)
     else if (Math.abs(zCambio) > 1.0 && velocidadVarianza < 1.0) {
       if (zCambio > 0) {
         tipo = 'DEVIANCE_CONVERGENTE';
-        descripcion = 'Desviación convergente (Recuperación)';
+        descripcion = 'Desviación de la trayectoria desde un mismo origen convergente (Recuperación)';
         caracteristicas = [
           `Z-score inicial: ${zPrimero.toFixed(2)}`,
           `Z-score final: ${zUltimo.toFixed(2)}`,
@@ -312,7 +363,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         ];
       } else {
         tipo = 'DEVIANCE_DIVERGENTE';
-        descripcion = 'Desviación divergente (Empeoramiento)';
+        descripcion = 'Desviación de la trayectoria desde un mismo origen divergente (Empeoramiento)';
         caracteristicas = [
           `Z-score inicial: ${zPrimero.toFixed(2)}`,
           `Z-score final: ${zUltimo.toFixed(2)}`,
@@ -329,11 +380,11 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       }
     }
     
-    // Criterio 3: DYSMATURITY (Inmadurez)
+    // Criterio 3: DYSMATURITY (Dismadurez - desarrollo trastornado)
     // Inicio normal o cercano a normal, posterior deterioro
     else if (zPrimero > -1 && zUltimo < -1.5 && zCambio < -1) {
       tipo = 'DYSMATURITY';
-      descripcion = 'Inmadurez (Inicio normal, posterior desviación)';
+      descripcion = 'Dismadurez (Inicio normal, posterior desviación - desarrollo trastornado)';
       caracteristicas = [
         `Z-score inicial: ${zPrimero.toFixed(2)} (dentro de normalidad)`,
         `Z-score final: ${zUltimo.toFixed(2)} (retraso significativo)`,
@@ -442,32 +493,55 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const getColorTipo = (tipo) => {
     const colores = {
-      'DELAY': '#2196F3', // Azul - Retraso estable
-      'DEVIANCE_CONVERGENTE': '#4CAF50', // Verde - Mejora
-      'DEVIANCE_DIVERGENTE': '#F44336', // Rojo - Empeora
-      'DYSMATURITY': '#FF9800', // Naranja - Regresión
-      'DIFFERENCE': '#9C27B0', // Púrpura - Atípico
-      'INDETERMINADO': '#9E9E9E' // Gris - Indefinido
+      // Tipos lineales
+      'DELAYED_ONSET': '#2196F3',
+      'SLOWED_RATE_CONVERGENTE': '#4CAF50',
+      'SLOWED_RATE_DIVERGENTE': '#F44336',
+      'DELAYED_ONSET_PLUS_SLOWED_RATE': '#FF5722',
+      'DESARROLLO_NORMAL': '#66BB6A',
+      // Tipos no lineales
+      'NONLINEAR': '#9C27B0',
+      'PREMATURE_ASYMPTOTE': '#FF9800',
+      // Sin trayectoria
+      'ZERO_TRAJECTORY': '#795548',
+      'NO_SYSTEMATIC_RELATIONSHIP': '#607D8B',
+      // Legacy/compatibilidad
+      'DELAY': '#2196F3',
+      'DEVIANCE_CONVERGENTE': '#4CAF50',
+      'DEVIANCE_DIVERGENTE': '#F44336',
+      'DYSMATURITY': '#FF9800',
+      'DIFFERENCE': '#9C27B0',
+      'INDETERMINADO': '#9E9E9E',
+      'INSUFICIENTES_DATOS': '#BDBDBD'
     };
     return colores[tipo] || '#9E9E9E';
   };
 
   const getIconoTipo = (tipo) => {
     const iconos = {
-      'DELAY': '➡️',
-      'DEVIANCE_CONVERGENTE': '📈',
-      'DEVIANCE_DIVERGENTE': '📉',
-      'DYSMATURITY': '⚠️',
-      'DIFFERENCE': '🔀',
-      'INDETERMINADO': '❓'
+      'DELAYED_ONSET': 'fa-clock',
+      'SLOWED_RATE_CONVERGENTE': 'fa-arrow-up',
+      'SLOWED_RATE_DIVERGENTE': 'fa-arrow-down',
+      'DELAYED_ONSET_PLUS_SLOWED_RATE': 'fa-arrows-alt-h',
+      'DESARROLLO_NORMAL': 'fa-check-circle',
+      'NONLINEAR': 'fa-wave-square',
+      'PREMATURE_ASYMPTOTE': 'fa-minus',
+      'ZERO_TRAJECTORY': 'fa-equals',
+      'NO_SYSTEMATIC_RELATIONSHIP': 'fa-random',
+      'DELAY': 'fa-arrow-right',
+      'DEVIANCE_CONVERGENTE': 'fa-chart-line',
+      'DEVIANCE_DIVERGENTE': 'fa-chart-line',
+      'DYSMATURITY': 'fa-exclamation-triangle',
+      'DIFFERENCE': 'fa-random',
+      'INDETERMINADO': 'fa-question-circle'
     };
-    return iconos[tipo] || '❓';
+    return iconos[tipo] || 'fa-question-circle';
   };
 
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>⏳ Cargando clasificación de trayectorias...</p>
+        <p><i className="fas fa-spinner fa-spin"></i> Cargando clasificación de trayectorias...</p>
       </div>
     );
   };
@@ -509,7 +583,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         gap: '10px'
       }}>
         <span style={{ fontSize: '20px' }}>
-          {tipoDatos === 'retrospectivo' ? '📚' : '📊'}
+          <i className={`fas ${tipoDatos === 'retrospectivo' ? 'fa-book' : 'fa-chart-bar'}`}></i>
         </span>
         <span style={{ fontSize: '14px' }}>
           {tipoDatos === 'retrospectivo' && (
@@ -562,7 +636,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
               alignItems: 'center',
               gap: '10px'
             }}>
-              <span style={{ fontSize: '24px' }}>{getIconoTipo(clasif.tipo)}</span>
+              <span style={{ fontSize: '24px' }}><i className={`fas ${getIconoTipo(clasif.tipo)}`}></i></span>
               {clasif.dominio}
             </h3>
             
@@ -578,7 +652,7 @@ export default function ClasificacionTrayectorias({ ninoId }) {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-              <h4 style={{ marginBottom: '8px', fontSize: '14px' }}>📊 Características:</h4>
+              <h4 style={{ marginBottom: '8px', fontSize: '14px' }}><i className="fas fa-list"></i> Características:</h4>
               <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', lineHeight: '1.6' }}>
                 {clasif.caracteristicas.map((car, i) => (
                   <li key={i}>{car}</li>
@@ -602,9 +676,10 @@ export default function ClasificacionTrayectorias({ ninoId }) {
               fontSize: '12px',
               color: '#666'
             }}>
-              <strong>Métricas:</strong> {clasif.metricas.nMediciones} mediciones | 
-              Z medio: {clasif.metricas.zMedia.toFixed(2)} | 
-              V: {clasif.metricas.velocidadMedia.toFixed(2)}
+              <strong>Métricas:</strong> {clasif.metricas.nMediciones} mediciones
+              {clasif.metricas.r2 && ` | R² = ${clasif.metricas.r2.toFixed(3)}`}
+              {clasif.metricas.confianza && ` | Confianza: ${(clasif.metricas.confianza * 100).toFixed(0)}%`}
+              {clasif.metricas.cdMedia && ` | CD medio: ${clasif.metricas.cdMedia.toFixed(1)}%`}
             </div>
           </div>
         ))}
@@ -625,36 +700,29 @@ export default function ClasificacionTrayectorias({ ninoId }) {
           el uso de trayectorias del desarrollo para entender trastornos del neurodesarrollo.
         </p>
 
-        <h4>Los 4 Tipos de Trayectorias Atípicas:</h4>
+        <h4>Las 7 Tipologías de Trayectorias Atípicas (Thomas et al., 2009):</h4>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
-          <div style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', border: '2px solid #2196F3' }}>
-            <strong>➡️ DELAY (Retraso)</strong>
-            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>
-              Misma pendiente, diferente inicio. Trayectoria paralela pero retrasada.
-            </p>
-          </div>
-
-          <div style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', border: '2px solid #4CAF50' }}>
-            <strong>📈📉 DEVIANCE (Desviación)</strong>
-            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>
-              Diferente pendiente. Convergente (mejora) o divergente (empeora).
-            </p>
-          </div>
-
-          <div style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', border: '2px solid #FF9800' }}>
-            <strong>⚠️ DYSMATURITY (Inmadurez)</strong>
-            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>
-              Inicio normal, posterior desaceleración. Patrón regresivo.
-            </p>
-          </div>
-
-          <div style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', border: '2px solid #9C27B0' }}>
-            <strong>🔀 DIFFERENCE (Diferencia)</strong>
-            <p style={{ fontSize: '13px', margin: '5px 0 0 0' }}>
-              Patrón cualitativamente diferente, no reducible a retraso.
-            </p>
-          </div>
+        <div style={{ marginTop: '15px', fontSize: '14px' }}>
+          <p style={{ marginBottom: '10px' }}>
+            El artículo distingue <strong>7 formas</strong> en que un grupo con trastorno puede diferir estadísticamente 
+            del grupo control en las funciones que relacionan rendimiento y edad:
+          </p>
+          
+          <ol style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
+            <li><strong>Delayed onset:</strong> Inicio retrasado (diferencia en intercepto)</li>
+            <li><strong>Slowed rate:</strong> Velocidad reducida (diferencia en pendiente)</li>
+            <li><strong>Delayed onset + slowed rate:</strong> Ambos (intercepto y pendiente diferentes)</li>
+            <li><strong>Nonlinear:</strong> Trayectoria no lineal (función curva mejor ajuste que lineal)</li>
+            <li><strong>Premature asymptote:</strong> Asíntota prematura (desarrollo se detiene antes del nivel esperado)</li>
+            <li><strong>Zero trajectory:</strong> Trayectoria cero (sin cambio confiable con la edad)</li>
+            <li><strong>No systematic relationship:</strong> Sin relación sistemática con edad</li>
+          </ol>
+          
+          <p style={{ marginTop: '15px', fontSize: '13px', fontStyle: 'italic', color: '#555' }}>
+            Nota: La implementación actual es una simplificación que clasifica patrones basándose en 
+            velocidad y z-scores. Una implementación completa requeriría análisis de regresión 
+            con comparación de modelos lineales vs no lineales y detección de asíntotas.
+          </p>
         </div>
 
         <div style={{ marginTop: '20px', fontSize: '13px', color: '#666' }}>

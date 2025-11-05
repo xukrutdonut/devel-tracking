@@ -3,13 +3,11 @@ import './App.css';
 import Login from './components/Login';
 import NinosList from './components/NinosList';
 import NinoForm from './components/NinoForm';
-import HitosRegistro from './components/HitosRegistro';
+import IntroduccionDatos from './components/IntroduccionDatos';
 import GraficoDesarrollo from './components/GraficoDesarrollo';
-import RedFlagsRegistro from './components/RedFlagsRegistro';
-import EjemplosClinicos from './components/EjemplosClinicos';
-import AnalisisAceleracion from './components/AnalisisAceleracion';
-import ClasificacionTrayectorias from './components/ClasificacionTrayectorias';
+import EjemplosPracticos from './components/EjemplosPracticos';
 import Bibliografia from './components/Bibliografia';
+import Investigacion from './components/Investigacion';
 import { API_URL } from './config';
 import { 
   estaAutenticado, 
@@ -25,7 +23,7 @@ function App() {
   const [usuario, setUsuario] = useState(getUsuario());
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
-  const [vistaActual, setVistaActual] = useState('lista'); // lista, registro, grafico, redflags, ejemplos, aceleracion, clasificacion, bibliografia
+  const [vistaActual, setVistaActual] = useState('lista'); // lista, introduccion, grafico, ejemplos, bibliografia, investigacion
   const [datosRegresion, setDatosRegresion] = useState(null); // Compartir datos de regresión entre gráficas
 
   useEffect(() => {
@@ -95,7 +93,7 @@ function App() {
       cargarNinos();
     }
     setNinoSeleccionado(nuevoNino);
-    setVistaActual('registro');
+    setVistaActual('introduccion');
   };
 
   const handleNinoSeleccionado = (nino) => {
@@ -157,15 +155,6 @@ function App() {
           👶 Niños
         </button>
         <button 
-          className={vistaActual === 'ejemplos' ? 'active' : ''}
-          onClick={() => {
-            setVistaActual('ejemplos');
-            setNinoSeleccionado(null);
-          }}
-        >
-          📚 Ejemplos Clínicos
-        </button>
-        <button 
           className={vistaActual === 'bibliografia' ? 'active' : ''}
           onClick={() => {
             setVistaActual('bibliografia');
@@ -174,37 +163,37 @@ function App() {
         >
           📖 Fundamentos Científicos
         </button>
+        <button 
+          className={vistaActual === 'ejemplos' ? 'active' : ''}
+          onClick={() => {
+            setVistaActual('ejemplos');
+            setNinoSeleccionado(null);
+          }}
+        >
+          📚 Ejemplos Prácticos
+        </button>
+        <button 
+          className={vistaActual === 'investigacion' ? 'active' : ''}
+          onClick={() => {
+            setVistaActual('investigacion');
+            setNinoSeleccionado(null);
+          }}
+        >
+          🔬 Investigación
+        </button>
         {ninoSeleccionado && (
           <>
             <button 
-              className={vistaActual === 'registro' ? 'active' : ''}
-              onClick={() => setVistaActual('registro')}
+              className={vistaActual === 'introduccion' ? 'active' : ''}
+              onClick={() => setVistaActual('introduccion')}
             >
-              ✅ Hitos del Desarrollo
-            </button>
-            <button 
-              className={vistaActual === 'redflags' ? 'active' : ''}
-              onClick={() => setVistaActual('redflags')}
-            >
-              🚩 Señales de Alarma
+              📝 Introducción de Datos
             </button>
             <button 
               className={vistaActual === 'grafico' ? 'active' : ''}
               onClick={() => setVistaActual('grafico')}
             >
-              📈 Gráficas de Trayectoria
-            </button>
-            <button 
-              className={vistaActual === 'aceleracion' ? 'active' : ''}
-              onClick={() => setVistaActual('aceleracion')}
-            >
-              📐 Análisis Matemático
-            </button>
-            <button 
-              className={vistaActual === 'clasificacion' ? 'active' : ''}
-              onClick={() => setVistaActual('clasificacion')}
-            >
-              🎯 Tipología Trayectorias
+              📊 Gráficas
             </button>
           </>
         )}
@@ -231,7 +220,7 @@ function App() {
         )}
 
         {vistaActual === 'ejemplos' && (
-          <EjemplosClinicos 
+          <EjemplosPracticos 
             onEjemploCreado={handleEjemploCreado}
             onSeleccionarNino={(nino) => {
               setNinoSeleccionado(nino);
@@ -240,8 +229,8 @@ function App() {
           />
         )}
 
-        {vistaActual === 'registro' && ninoSeleccionado && (
-          <HitosRegistro ninoId={ninoSeleccionado.id} />
+        {vistaActual === 'introduccion' && ninoSeleccionado && (
+          <IntroduccionDatos ninoId={ninoSeleccionado.id} />
         )}
 
         {vistaActual === 'grafico' && ninoSeleccionado && (
@@ -251,23 +240,12 @@ function App() {
           />
         )}
 
-        {vistaActual === 'redflags' && ninoSeleccionado && (
-          <RedFlagsRegistro ninoId={ninoSeleccionado.id} />
-        )}
-
-        {vistaActual === 'aceleracion' && ninoSeleccionado && (
-          <AnalisisAceleracion 
-            ninoId={ninoSeleccionado.id} 
-            datosRegresionGraficoDesarrollo={datosRegresion}
-          />
-        )}
-
-        {vistaActual === 'clasificacion' && ninoSeleccionado && (
-          <ClasificacionTrayectorias ninoId={ninoSeleccionado.id} />
-        )}
-
         {vistaActual === 'bibliografia' && (
           <Bibliografia />
+        )}
+
+        {vistaActual === 'investigacion' && (
+          <Investigacion />
         )}
       </main>
     </div>

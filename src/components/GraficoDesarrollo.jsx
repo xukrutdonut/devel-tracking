@@ -4,6 +4,7 @@ import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
 import { API_URL } from '../config';
 import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GeneradorInforme from './GeneradorInforme';
+import AnalisisAceleracion from './AnalisisAceleracion';
 
 /**
  * Componente de Gráfico del Desarrollo
@@ -1160,7 +1161,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   return (
     <div className="grafico-desarrollo">
       <div className="header-con-boton">
-        <h2>Gráfico de Edad de Desarrollo</h2>
+        <h2>Gráficas del Desarrollo</h2>
         <button 
           className="btn-generar-informe"
           onClick={() => setMostrarGeneradorInforme(true)}
@@ -1169,6 +1170,25 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
           📄 Generar Informe
         </button>
       </div>
+
+      {/* Selector de vista: Trayectoria o Matemático */}
+      <div style={{ 
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#E3F2FD', 
+        borderRadius: '8px',
+        borderLeft: '4px solid #2196F3'
+      }}>
+        <h2 style={{ margin: 0, color: '#1976D2', fontSize: '24px' }}>
+          📈 Trayectorias del Desarrollo
+        </h2>
+        <p style={{ margin: '5px 0 0 0', color: '#555', fontSize: '14px' }}>
+          Visualización longitudinal del progreso en cada dominio del desarrollo
+        </p>
+      </div>
+
+      {/* Vista de Trayectorias */}
+      <>
 
       <div className="filtros">
         <div className="filtro-grupo">
@@ -1258,15 +1278,14 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
         </div>
 
         <div className="stat-card">
-          <h3>Diferencia</h3>
+          <h3>Cociente de Desarrollo</h3>
           <span className={`big-number ${!edadDesarrolloGlobalActual ? 'sin-datos' :
-            edadDesarrolloGlobalActual - edadActualMeses < -3 ? 'retraso' :
-            edadDesarrolloGlobalActual - edadActualMeses > 3 ? 'adelanto' : 'normal'}`}>
+            (edadDesarrolloGlobalActual / edadActualMeses) < 0.85 ? 'retraso' :
+            (edadDesarrolloGlobalActual / edadActualMeses) > 1.15 ? 'adelanto' : 'normal'}`}>
             {edadDesarrolloGlobalActual ? 
-              (edadDesarrolloGlobalActual - edadActualMeses > 0 ? '+' : '') + 
-              (edadDesarrolloGlobalActual - edadActualMeses).toFixed(1) : 'N/A'}
+              ((edadDesarrolloGlobalActual / edadActualMeses) * 100).toFixed(1) : 'N/A'}
           </span>
-          <p>{edadDesarrolloGlobalActual ? 'meses' : ''}</p>
+          <p>{edadDesarrolloGlobalActual ? '% (CD)' : ''}</p>
         </div>
 
         <div className="stat-card">
@@ -1926,6 +1945,29 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
           onClose={() => setMostrarGeneradorInforme(false)}
         />
       )}
+      </>
+
+      {/* Sección de Análisis Matemático */}
+      <div style={{ 
+        marginTop: '40px',
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#FFF3E0', 
+        borderRadius: '8px',
+        borderLeft: '4px solid #FF9800'
+      }}>
+        <h2 style={{ margin: 0, color: '#F57C00', fontSize: '24px' }}>
+          📐 Análisis Matemático: Velocidad y Aceleración
+        </h2>
+        <p style={{ margin: '5px 0 0 0', color: '#555', fontSize: '14px' }}>
+          Análisis de derivadas para evaluar ritmo de cambio y dinámica del desarrollo
+        </p>
+      </div>
+
+      <AnalisisAceleracion 
+        ninoId={ninoId} 
+        datosRegresionGraficoDesarrollo={datosRegresionRef.current}
+      />
     </div>
   );
 }

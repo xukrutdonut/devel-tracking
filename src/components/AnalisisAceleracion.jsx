@@ -359,7 +359,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}>
           <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-            📊 Edad: {data.edad_meses} meses
+            <i className="fas fa-calendar-alt"></i> Edad: {data.edad_meses} meses
           </p>
           <p style={{ color: '#2196F3', marginBottom: '4px' }}>
             <strong>Posición (0ª):</strong> CD = {data.cd?.toFixed(1)}%
@@ -434,7 +434,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
         gap: '10px'
       }}>
         <span style={{ fontSize: '20px' }}>
-          {tipoDatos === 'retrospectivo' ? '📚' : '📊'}
+          <i className={`fas ${tipoDatos === 'retrospectivo' ? 'fa-book' : 'fa-chart-bar'}`}></i>
         </span>
         <span style={{ fontSize: '14px' }}>
           {tipoDatos === 'retrospectivo' && (

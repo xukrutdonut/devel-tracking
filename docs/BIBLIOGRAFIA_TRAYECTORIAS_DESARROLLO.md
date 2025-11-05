@@ -45,21 +45,21 @@ Thomas identifica que los trastornos del neurodesarrollo no son simplemente "ver
 
 ##### A. Los Cuatro Tipos de Trayectorias Atípicas
 
-**1. DELAY (Retraso)**
-- Definición: Misma pendiente, diferente punto de inicio
-- Características: Trayectoria paralela a la normalidad
+**1. DELAY, IMMATURITY (Retraso - inicio retrasado)**
+- Definición: Misma pendiente, inicio retrasado (immaturity)
+- Características: Trayectoria paralela a la normalidad con inicio retrasado
 - Z-score: Constante en el tiempo
 - **Detección en herramienta**: Velocidad normal, CD constante < 100
 
-**2. DEVIANCE (Desviación)**
-- Definición: Diferente pendiente desde el inicio
+**2. DEVIANCE (Desviación de la media)**
+- Definición: Diferente pendiente desde el inicio (desviación progresiva de la media)
 - Características: Trayectoria divergente o convergente
 - Z-score: Cambia sistemáticamente
 - **Detección en herramienta**: Velocidad diferente a la normal, aceleración ≠ 0
 
-**3. DYSMATURITY (Inmadurez)**
+**3. DYSMATURITY (Dismadurez - desarrollo trastornado)**
 - Definición: Inicio normal pero posterior desaceleración
-- Características: Comienza típico, luego se aleja
+- Características: Comienza típico, luego se aleja (desarrollo trastornado)
 - Z-score: Inicialmente normal, luego empeora
 - **Detección en herramienta**: Velocidad inicialmente normal → luego negativa
 

@@ -4,20 +4,20 @@
   display: flex;
   flex-direction: column;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid #ddd;
+  border-radius: 0;
   padding: 1.25rem;
   transition: all 0.2s ease;
   text-decoration: none;
   color: inherit;
   height: 100%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
 .recurso-externo-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: #3b82f6;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-color: #0073AA;
 }
 
 .recurso-header {
@@ -35,8 +35,8 @@
 
 .recurso-fuente {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
+  font-weight: 700;
+  color: #767676;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -44,11 +44,11 @@
 .recurso-duracion,
 .recurso-formato {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: #999;
 }
 
 .recurso-icono {
-  color: #3b82f6;
+  color: #0073AA;
   flex-shrink: 0;
 }
 
@@ -59,16 +59,16 @@
 
 .recurso-titulo {
   font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-weight: 700;
+  color: #111;
   margin: 0 0 0.5rem 0;
   line-height: 1.4;
 }
 
 .recurso-descripcion {
   font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.5;
+  color: #767676;
+  line-height: 1.8;
   margin: 0 0 0.75rem 0;
 }
 
@@ -82,10 +82,10 @@
 .recurso-tag {
   font-size: 0.7rem;
   padding: 0.25rem 0.5rem;
-  background: #eff6ff;
-  color: #3b82f6;
-  border-radius: 4px;
-  font-weight: 500;
+  background: #e3f2fd;
+  color: #0073AA;
+  border-radius: 3px;
+  font-weight: 700;
 }
 
 .recurso-footer {
@@ -93,24 +93,24 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 0.75rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid #ddd;
 }
 
 .recurso-tipo {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: #3b82f6;
+  font-weight: 700;
+  color: #0073AA;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .recurso-external-icon {
-  color: #9ca3af;
+  color: #999;
   transition: color 0.2s ease;
 }
 
 .recurso-externo-card:hover .recurso-external-icon {
-  color: #3b82f6;
+  color: #0073AA;
 }
 
 /* Responsive */

@@ -37,9 +37,9 @@ La aplicación incluye una **sección interactiva de Fundamentos Científicos** 
 ### 2. **Clasificación de Trayectorias del Desarrollo** 🆕
 - **Basado en Thomas et al. (2009)**: Tipología de 4 tipos de trayectorias atípicas
 - **Clasificación automática** por dominio:
-  - **DELAY** (Retraso): Trayectoria paralela pero retrasada
-  - **DEVIANCE Convergente**: Recuperación activa (catching up)
-  - **DEVIANCE Divergente**: Empeoramiento progresivo
+  - **DELAY, IMMATURITY** (Retraso - inicio retrasado): Trayectoria paralela con inicio retrasado
+  - **DEVIANCE Convergente** (Desviación de la media convergente): Recuperación activa (catching up)
+  - **DEVIANCE Divergente** (Desviación de la media divergente): Empeoramiento progresivo
   - **DYSMATURITY**: Inicio normal, posterior desviación (regresión)
   - **DIFFERENCE**: Patrón cualitativamente diferente
 - **Interpretaciones clínicas específicas** para cada tipo
@@ -204,9 +204,9 @@ devel-tracking/
 1. Seleccionar un niño con al menos 3 evaluaciones registradas
 2. Ir a "🎯 Tipología Trayectorias"
 3. **Ver clasificación automática** por dominio:
-   - DELAY (Retraso paralelo)
-   - DEVIANCE Convergente (Recuperación)
-   - DEVIANCE Divergente (Empeoramiento)
+   - DELAY, IMMATURITY (Retraso - inicio retrasado)
+   - DEVIANCE Convergente (Desviación de la media - Recuperación)
+   - DEVIANCE Divergente (Desviación de la media - Empeoramiento)
    - DYSMATURITY (Regresión)
    - DIFFERENCE (Patrón atípico)
 4. **Revisar implicaciones clínicas** específicas para cada tipo
@@ -231,7 +231,7 @@ Esta herramienta integra conceptos de **más de una década de investigación ci
    Base conceptual de las tres derivadas y heteroescedasticidad
 
 2. **Thomas MS et al. (2009)** - *J Speech Lang Hear Res*  
-   Tipología de 4 tipos de trayectorias atípicas (DELAY, DEVIANCE, DYSMATURITY, DIFFERENCE)
+   Tipología de 4 tipos de trayectorias atípicas (DELAY/IMMATURITY [retraso - inicio retrasado], DEVIANCE [desviación de la media], DYSMATURITY, DIFFERENCE)
 
 3. **Thomas MSC (2016)** - *Child Dev Perspect*  
    Distinción entre retraso (delay) y diferencia cualitativa (difference)

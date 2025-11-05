@@ -7,6 +7,114 @@ import { calcularEdadCorregidaMeses } from '../utils/ageCalculations';
  * Componente para generar informes PDF exportables
  * Compatible con copiar/pegar en historias clínicas electrónicas
  */
+
+/**
+ * Genera una gráfica de barras ASCII para visualizar edad de desarrollo por dominio
+ */
+function generarGraficaASCII(datosDominios, edadCronologica) {
+  if (!datosDominios || datosDominios.length === 0) {
+    return 'No hay datos suficientes para generar gráfica.\n';
+  }
+
+  // Escala: cada carácter representa cierta cantidad de meses
+  const escalaMax = Math.max(
+    edadCronologica * 1.2,
+    ...datosDominios.map(d => d.ed)
+  );
+  const escalaMin = 0;
+  const anchoGrafica = 60; // caracteres
+  
+  let grafica = `\nGRÁFICA DE EDAD DE DESARROLLO POR DOMINIO
+(Cada █ representa ${(escalaMax / anchoGrafica).toFixed(1)} meses)\n\n`;
+  
+  // Línea de referencia para edad cronológica
+  const posEC = Math.round((edadCronologica / escalaMax) * anchoGrafica);
+  
+  // Generar cada barra
+  datosDominios.forEach(dom => {
+    const longitudBarra = Math.round((dom.ed / escalaMax) * anchoGrafica);
+    const nombreAbreviado = dom.nombre.substring(0, 17).padEnd(17, ' ');
+    
+    // Crear la barra
+    let barra = '█'.repeat(Math.max(0, longitudBarra));
+    
+    // Añadir indicador de diferencia con EC
+    const diferencia = dom.ed - edadCronologica;
+    let indicador = '';
+    if (Math.abs(diferencia) < 2) {
+      indicador = ' ≈ EC';
+    } else if (diferencia > 0) {
+      indicador = ` +${diferencia.toFixed(1)}m`;
+    } else {
+      indicador = ` ${diferencia.toFixed(1)}m`;
+    }
+    
+    grafica += `${nombreAbreviado} │${barra} ${dom.ed.toFixed(1)}m${indicador}\n`;
+  });
+  
+  // Línea de escala
+  grafica += `${''.padEnd(17, ' ')} │${''.padEnd(anchoGrafica, '─')}\n`;
+  
+  // Marcas de escala
+  const marcas = [];
+  for (let i = 0; i <= 4; i++) {
+    const valor = (escalaMax / 4) * i;
+    const pos = Math.round((valor / escalaMax) * anchoGrafica);
+    marcas.push({ pos, valor });
+  }
+  
+  // Línea con marcas
+  let lineaMarcas = ''.padEnd(17, ' ') + ' │';
+  for (let i = 0; i < anchoGrafica; i++) {
+    const marca = marcas.find(m => m.pos === i);
+    if (marca) {
+      lineaMarcas += '┴';
+    } else if (i === posEC) {
+      lineaMarcas += '↓'; // Indicador de EC
+    } else {
+      lineaMarcas += ' ';
+    }
+  }
+  grafica += lineaMarcas + '\n';
+  
+  // Valores de escala
+  let lineaValores = ''.padEnd(17, ' ') + '   ';
+  marcas.forEach(marca => {
+    const valorStr = marca.valor.toFixed(0);
+    lineaValores += valorStr.padEnd(anchoGrafica / 4, ' ');
+  });
+  grafica += lineaValores + ' (meses)\n';
+  
+  // Leyenda
+  grafica += `\n  EC (Edad Cronológica): ${edadCronologica.toFixed(1)} meses ↓\n`;
+  grafica += `  ED (Edad de Desarrollo): Mostrada para cada dominio\n`;
+  
+  return grafica;
+}
+
+/**
+ * Interpreta el Z-score
+ */
+function interpretarZScore(z) {
+  if (z === null || z === undefined || isNaN(z)) {
+    return 'No disponible';
+  }
+  
+  if (z >= 2) {
+    return `MUY ADELANTADO (>${+2} DE) - Desarrollo significativamente superior`;
+  } else if (z >= 1) {
+    return `ADELANTADO (+1 a +2 DE) - Desarrollo superior al promedio`;
+  } else if (z >= -1) {
+    return `NORMAL (-1 a +1 DE) - Desarrollo dentro del rango esperado`;
+  } else if (z >= -2) {
+    return `VIGILANCIA (-2 a -1 DE) - Desarrollo ligeramente por debajo, requiere seguimiento`;
+  } else if (z >= -3) {
+    return `RETRASO MODERADO (-3 a -2 DE) - Requiere intervención`;
+  } else {
+    return `RETRASO SEVERO (<-3 DE) - Requiere intervención urgente y evaluación especializada`;
+  }
+}
+
 export default function GeneradorInforme({ ninoId, ninoData, analisisData, redFlags, onClose }) {
   const [generando, setGenerando] = useState(false);
   const [formato, setFormato] = useState('pdf'); // 'pdf' o 'texto'
@@ -17,6 +125,11 @@ export default function GeneradorInforme({ ninoId, ninoData, analisisData, redFl
       month: 'long',
       day: 'numeric'
     });
+
+    // Calcular edad cronológica en meses
+    const fechaNac = new Date(ninoData.fecha_nacimiento);
+    const hoy = new Date();
+    const edadCronologicaMeses = Math.round((hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44));
 
     let informe = `═══════════════════════════════════════════════════════════
 INFORME DE EVALUACIÓN DEL NEURODESARROLLO
@@ -32,76 +145,143 @@ Institución: Neuropedia Lab
 
 Nombre: ${ninoData.nombre}
 Fecha de nacimiento: ${new Date(ninoData.fecha_nacimiento).toLocaleDateString('es-ES')}
-Edad cronológica: ${calcularEdadTexto(ninoData.fecha_nacimiento)}
+Edad cronológica: ${calcularEdadTexto(ninoData.fecha_nacimiento)} (${edadCronologicaMeses} meses)
 Sexo: ${ninoData.sexo === 'M' ? 'Masculino' : 'Femenino'}
 ${ninoData.prematuridad ? `Prematuridad: Sí (${ninoData.semanas_gestacion} semanas)\nEdad corregida: ${calcularEdadCorregidaMeses(ninoData.fecha_nacimiento, ninoData.semanas_gestacion)} meses` : ''}
 ${ninoData.factores_riesgo ? `Factores de riesgo: ${ninoData.factores_riesgo}` : ''}
 
 ───────────────────────────────────────────────────────────
-2. RESULTADOS DE LA EVALUACIÓN POR DOMINIOS
+2. RESUMEN EJECUTIVO
 ───────────────────────────────────────────────────────────
+`;
+
+    // Extraer datos del análisis
+    const edadDesarrolloGlobal = analisisData?.edad_desarrollo_global;
+    const zScoreGlobal = analisisData?.z_score_global;
+    
+    // Calcular Z-score global si no existe (aproximación desde ED)
+    const zGlobalCalculado = zScoreGlobal !== null && zScoreGlobal !== undefined 
+      ? zScoreGlobal 
+      : edadDesarrolloGlobal 
+        ? (edadDesarrolloGlobal - edadCronologicaMeses) / Math.max(edadCronologicaMeses * 0.15, 2)
+        : null;
+
+    informe += `
+Edad Cronológica (EC): ${edadCronologicaMeses.toFixed(1)} meses
+Edad de Desarrollo Global (ED): ${edadDesarrolloGlobal ? edadDesarrolloGlobal.toFixed(1) : 'N/A'} meses
+Diferencia (ED - EC): ${edadDesarrolloGlobal ? (edadDesarrolloGlobal - edadCronologicaMeses > 0 ? '+' : '') + (edadDesarrolloGlobal - edadCronologicaMeses).toFixed(1) : 'N/A'} meses
+Puntuación Z Global: ${zGlobalCalculado !== null ? zGlobalCalculado.toFixed(2) : 'N/A'} DE
+Cociente Desarrollo (CD): ${edadDesarrolloGlobal ? ((edadDesarrolloGlobal / edadCronologicaMeses) * 100).toFixed(1) : 'N/A'}%
+
+Interpretación Global: ${interpretarZScore(zGlobalCalculado)}
 
 `;
 
-    // Añadir resultados por dominio
-    if (analisisData && analisisData.dominios) {
-      const nombresDominios = {
-        1: 'Motor Grueso',
-        2: 'Motor Fino',
-        3: 'Lenguaje Receptivo',
-        4: 'Lenguaje Expresivo',
-        5: 'Social-Emocional',
-        6: 'Cognitivo',
-        7: 'Adaptativo'
-      };
-
-      Object.entries(analisisData.dominios).forEach(([id, datos]) => {
-        const nombre = nombresDominios[id] || `Dominio ${id}`;
-        const ultimoPunto = datos.puntos[datos.puntos.length - 1];
-        
-        informe += `${nombre}:
-  • Edad de desarrollo: ${ultimoPunto?.edad_desarrollo?.toFixed(1) || 'N/A'} meses
-  • Edad cronológica: ${ultimoPunto?.edad_cronologica?.toFixed(1) || 'N/A'} meses
-  • Cociente de desarrollo: ${ultimoPunto?.cociente?.toFixed(0) || 'N/A'}%
-  • Velocidad: ${datos.velocidad?.toFixed(2) || 'N/A'} meses/mes
-  • Estado: ${interpretarCociente(ultimoPunto?.cociente)}
-
-`;
-      });
-    }
-
+    // Añadir gráfica ASCII de barras para ED por dominio
     informe += `───────────────────────────────────────────────────────────
-3. ANÁLISIS DE TRAYECTORIAS
+3. PERFIL DE DESARROLLO POR DOMINIOS
 ───────────────────────────────────────────────────────────
 
 `;
 
-    // Análisis global
-    if (analisisData?.global) {
-      const glob = analisisData.global;
-      informe += `Evaluación global:
-  • Velocidad de desarrollo: ${glob.velocidad?.toFixed(2) || 'N/A'} meses/mes
-  • Aceleración: ${glob.aceleracion?.toFixed(3) || 'N/A'} meses/mes²
-  • Interpretación: ${interpretarVelocidad(glob.velocidad)}
+    // Recopilar datos de dominios para la gráfica
+    const nombresDominios = {
+      1: 'Motor Grueso',
+      2: 'Motor Fino',
+      3: 'Lenguaje Recep.',
+      4: 'Lenguaje Expr.',
+      5: 'Social-Emocional',
+      6: 'Cognitivo',
+      7: 'Adaptativo'
+    };
 
-`;
+    const datosDominios = [];
+    
+    if (analisisData && analisisData.estadisticas_por_dominio) {
+      Object.entries(analisisData.estadisticas_por_dominio).forEach(([id, hitos]) => {
+        if (hitos && hitos.length > 0) {
+          // Calcular edad de desarrollo promedio para este dominio
+          const sumaEdades = hitos.reduce((sum, h) => sum + (h.edad_media_meses || 0), 0);
+          const edadDesarrollo = sumaEdades / hitos.length;
+          
+          // Calcular Z-score para este dominio
+          const zScore = (edadDesarrollo - edadCronologicaMeses) / Math.max(edadCronologicaMeses * 0.15, 2);
+          
+          datosDominios.push({
+            id: parseInt(id),
+            nombre: nombresDominios[id] || `Dominio ${id}`,
+            ed: edadDesarrollo,
+            z: zScore,
+            cd: (edadDesarrollo / edadCronologicaMeses) * 100
+          });
+        }
+      });
     }
 
-    // Análisis de asincronías
-    if (analisisData?.asinchronias && analisisData.asinchronias.length > 0) {
-      informe += `Asincronías detectadas:
+    // Ordenar por ID de dominio
+    datosDominios.sort((a, b) => a.id - b.id);
+
+    // Crear gráfica ASCII
+    informe += generarGraficaASCII(datosDominios, edadCronologicaMeses);
+
+    informe += `\n
+DATOS DETALLADOS POR DOMINIO:
 `;
-      analisisData.asinchronias.forEach(asin => {
-        informe += `  • ${asin.dominio1} vs ${asin.dominio2}: ${asin.diferencia.toFixed(1)} meses
+
+    // Tabla detallada de dominios
+    datosDominios.forEach(dom => {
+      informe += `
+${dom.nombre}:
+  Edad de Desarrollo: ${dom.ed.toFixed(1)} meses
+  Edad Cronológica:   ${edadCronologicaMeses.toFixed(1)} meses
+  Diferencia:         ${(dom.ed - edadCronologicaMeses > 0 ? '+' : '')}${(dom.ed - edadCronologicaMeses).toFixed(1)} meses
+  Puntuación Z:       ${dom.z.toFixed(2)} DE
+  CD:                 ${dom.cd.toFixed(1)}%
+  Interpretación:     ${interpretarZScore(dom.z)}
+`;
+    });
+
+    informe += `
+───────────────────────────────────────────────────────────
+4. ANÁLISIS DE ASINCRONÍAS
+───────────────────────────────────────────────────────────
+
+`;
+
+    // Detectar asincronías entre dominios
+    const asincronias = [];
+    for (let i = 0; i < datosDominios.length; i++) {
+      for (let j = i + 1; j < datosDominios.length; j++) {
+        const diferencia = Math.abs(datosDominios[i].ed - datosDominios[j].ed);
+        if (diferencia > 3) { // Diferencia significativa > 3 meses
+          asincronias.push({
+            dom1: datosDominios[i].nombre,
+            dom2: datosDominios[j].nombre,
+            dif: diferencia,
+            mayor: datosDominios[i].ed > datosDominios[j].ed ? datosDominios[i].nombre : datosDominios[j].nombre
+          });
+        }
+      }
+    }
+
+    if (asincronias.length > 0) {
+      asincronias.sort((a, b) => b.dif - a.dif);
+      asincronias.forEach(asin => {
+        informe += `• ${asin.dom1} vs ${asin.dom2}: ${asin.dif.toFixed(1)} meses de diferencia
+  → ${asin.mayor} está más adelantado
 `;
       });
-      informe += '\n';
+    } else {
+      informe += `No se detectaron asincronías significativas entre dominios.
+El desarrollo es relativamente homogéneo.
+`;
     }
 
     // Red flags
     if (redFlags && redFlags.length > 0) {
-      informe += `───────────────────────────────────────────────────────────
-4. SEÑALES DE ALARMA OBSERVADAS
+      informe += `
+───────────────────────────────────────────────────────────
+5. SEÑALES DE ALARMA OBSERVADAS
 ───────────────────────────────────────────────────────────
 
 `;
@@ -114,8 +294,9 @@ ${ninoData.factores_riesgo ? `Factores de riesgo: ${ninoData.factores_riesgo}` :
       });
     }
 
-    informe += `───────────────────────────────────────────────────────────
-5. INTERPRETACIÓN Y RECOMENDACIONES
+    informe += `
+───────────────────────────────────────────────────────────
+6. INTERPRETACIÓN Y RECOMENDACIONES
 ───────────────────────────────────────────────────────────
 
 `;

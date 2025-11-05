@@ -1,0 +1,80 @@
+.introduccion-datos-container {
+  width: 100%;
+}
+
+.subpestanas {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+.subpestaña-btn {
+  padding: 12px 24px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.subpestaña-btn:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.subpestaña-btn.active {
+  background: #2196F3;
+  color: white;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.subpestaña-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #2196F3;
+}
+
+.subpestaña-contenido {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .subpestanas {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .subpestaña-btn {
+    border-radius: 8px;
+    width: 100%;
+  }
+  
+  .subpestaña-btn.active::after {
+    display: none;
+  }
+}

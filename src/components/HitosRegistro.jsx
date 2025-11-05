@@ -114,7 +114,7 @@ function HitosRegistro({ ninoId }) {
       const edadMaxima = edadEvaluacionMeses || edadActualMeses;
       if (edadMeses > edadMaxima) {
         const confirmar = confirm(
-          `⚠️ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad de evaluación (${Math.round(edadMaxima)} meses).\n\n` +
+          `⚠ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad de evaluación (${Math.round(edadMaxima)} meses).\n\n` +
           `Este hito no aparecerá en las gráficas hasta que el niño alcance esa edad.\n\n` +
           `¿Deseas continuar de todas formas?`
         );
@@ -126,7 +126,7 @@ function HitosRegistro({ ninoId }) {
       // En modo longitudinal, solo advertir si es mayor que la edad actual del niño
       if (edadMeses > edadActualMeses) {
         const confirmar = confirm(
-          `⚠️ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad actual del niño (${Math.round(edadActualMeses)} meses).\n\n` +
+          `⚠ ADVERTENCIA: La edad introducida (${edadMeses} meses) es mayor que la edad actual del niño (${Math.round(edadActualMeses)} meses).\n\n` +
           `Este hito no aparecerá en las gráficas hasta que el niño alcance esa edad.\n\n` +
           `¿Deseas continuar de todas formas?`
         );
@@ -494,15 +494,15 @@ function HitosRegistro({ ninoId }) {
       <div className="chart-note" style={{marginBottom: '1.5rem'}}>
         {modoEvaluacion === 'puntual' ? (
           <>
-            <p><strong>📋 Hitos mostrados:</strong> Se presentan hitos esperables en el rango de {rangoEdadInferior > 0 ? `${Math.round(edadParaEvaluacion - 2 - rangoEdadInferior)} a ` : ''}{Math.round(edadParaEvaluacion - 2)} a {Math.round(edadParaEvaluacion + 2)} meses. Si el niño no ha conseguido todos los hitos esperables, puedes ver hitos de edades anteriores.</p>
+            <p><strong><i className="fas fa-clipboard-list"></i> Hitos mostrados:</strong> Se presentan hitos esperables en el rango de {rangoEdadInferior > 0 ? `${Math.round(edadParaEvaluacion - 2 - rangoEdadInferior)} a ` : ''}{Math.round(edadParaEvaluacion - 2)} a {Math.round(edadParaEvaluacion + 2)} meses. Si el niño no ha conseguido todos los hitos esperables, puedes ver hitos de edades anteriores.</p>
             {rangoEdadInferior > 0 && (
               <p style={{ color: '#856404', backgroundColor: '#fff3cd', padding: '8px', borderRadius: '4px', marginTop: '8px' }}>
-                ⚠️ Se están mostrando hitos de {rangoEdadInferior} meses adicionales hacia atrás debido a hitos no alcanzados.
+                <i className="fas fa-exclamation-triangle"></i> Se están mostrando hitos de {rangoEdadInferior} meses adicionales hacia atrás debido a hitos no alcanzados.
               </p>
             )}
           </>
         ) : (
-          <p><strong>📋 Hitos pendientes de evaluación:</strong> Se muestran todos los hitos cuya edad esperada es menor o igual a la edad actual del niño +2 meses ({Math.round(edadParaEvaluacion + 2)} meses{ninoData && ninoData.semanas_gestacion < 37 ? ' - edad corregida' : ''}). Registra la edad específica en meses en que el niño consiguió cada hito.</p>
+          <p><strong><i className="fas fa-clipboard-list"></i> Hitos pendientes de evaluación:</strong> Se muestran todos los hitos cuya edad esperada es menor o igual a la edad actual del niño +2 meses ({Math.round(edadParaEvaluacion + 2)} meses{ninoData && ninoData.semanas_gestacion < 37 ? ' - edad corregida' : ''}). Registra la edad específica en meses en que el niño consiguió cada hito.</p>
         )}
       </div>
 
@@ -664,10 +664,10 @@ function HitosRegistro({ ninoId }) {
               {conseguido ? (
                 <div className="hito-conseguido-info">
                   <div className="conseguido-detalles">
-                    <span>✓ Conseguido a los {conseguido.edad_conseguido_meses} meses</span>
+                    <span><i className="fas fa-check-circle"></i> Conseguido a los {conseguido.edad_conseguido_meses} meses</span>
                     {conseguido.edad_perdido_meses && (
                       <span style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                        ✗ Perdido a los {conseguido.edad_perdido_meses} meses
+                        <i className="fas fa-times-circle"></i> Perdido a los {conseguido.edad_perdido_meses} meses
                       </span>
                     )}
                     <span className={`z-score ${zScore < -2 ? 'retraso' : zScore > 2 ? 'adelanto' : 'normal'}`}>
@@ -720,7 +720,7 @@ function HitosRegistro({ ninoId }) {
                       }
                     }}
                   >
-                    ✓ Conseguido
+                    <i className="fas fa-check"></i> Conseguido
                   </button>
                   
                   <button 
@@ -936,7 +936,7 @@ function HitosRegistro({ ninoId }) {
                         }
                       }}
                     >
-                      ✓ Ahora conseguido
+                      <i className="fas fa-check"></i> Ahora conseguido
                     </button>
                     <button 
                       className="btn-eliminar"

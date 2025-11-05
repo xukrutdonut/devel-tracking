@@ -35,19 +35,19 @@ Implementación completa del análisis basado en derivadas:
 
 Implementación de la tipología científica de 4 patrones atípicos:
 
-**DELAY (Retraso)**
-- Trayectoria paralela pero retrasada
+**DELAY, IMMATURITY (Retraso - inicio retrasado)**
+- Trayectoria paralela con inicio retrasado
 - Mismo orden de hitos que desarrollo típico
 - CD bajo pero estable
 - Pronóstico: Distancia constante con normalidad
 
-**DEVIANCE (Desviación)**
+**DEVIANCE (Desviación de la media)**
 - Convergente: Recuperación progresiva, "catching up"
 - Divergente: Empeoramiento progresivo, distancia aumenta
 
-**DYSMATURITY (Inmadurez)**
+**DYSMATURITY (Dismadurez - desarrollo trastornado)**
 - Inicio normal, posterior desaceleración
-- Patrón regresivo
+- Patrón regresivo (desarrollo trastornado)
 - Considerar: TEA, neurodegenerativo
 
 **DIFFERENCE (Diferencia cualitativa)**
