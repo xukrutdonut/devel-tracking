@@ -72,6 +72,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       // Cargar datos del niño PRIMERO
       const ninoResponse = await fetchConAuth(`${API_URL}/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
+      console.log('📊 [AnalisisAceleracion] Datos del niño:', ninoData);
       setNino(ninoData);
       
       // Intentar cargar itinerario (datos prospectivos)
@@ -81,16 +82,22 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
           `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
         );
         
+        console.log('📊 [AnalisisAceleracion] Status itinerario:', itinerarioResponse.status);
+        
         // Solo parsear como JSON si la respuesta es exitosa
         if (itinerarioResponse.ok) {
           itinerario = await itinerarioResponse.json();
+          console.log('📊 [AnalisisAceleracion] Itinerario:', itinerario);
+          console.log('📊 [AnalisisAceleracion] Evaluaciones:', itinerario?.evaluaciones?.length);
         }
       } catch (itinerarioError) {
+        console.log('⚠️ [AnalisisAceleracion] Error cargando itinerario:', itinerarioError);
         // Endpoint no existe o error, continuar con datos retrospectivos
       }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
       if (itinerario && itinerario.evaluaciones && itinerario.evaluaciones.length >= 2) {
+        console.log('✅ [AnalisisAceleracion] Usando datos prospectivos');
         const datosCalculados = calcularAceleraciones(itinerario.evaluaciones);
         const tipo = determinarTipoDatos(itinerario.evaluaciones);
         
@@ -103,12 +110,13 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
         return;
       }
 
+      console.log('🔄 [AnalisisAceleracion] No hay datos prospectivos suficientes, usando retrospectivos');
       // Si no hay datos prospectivos, construir desde datos longitudinales (retrospectivos)
       // Pasar ninoData como parámetro en lugar de usar el estado
       await construirDatosRetrospectivos(ninoData);
       
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ [AnalisisAceleracion] Error cargando datos:', error);
       setDatos(null);
     } finally {
       setLoading(false);
@@ -117,11 +125,15 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
 
   const construirDatosRetrospectivos = async (ninoData) => {
     try {
+      console.log('🔄 [AnalisisAceleracion] Construyendo datos retrospectivos para niño:', ninoData.id);
+      
       // Cargar hitos conseguidos
       const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
+      console.log('📊 [AnalisisAceleracion] Hitos conseguidos:', hitosConseguidos?.length);
       
       if (!hitosConseguidos || hitosConseguidos.length < 2) {
+        console.log('⚠️ [AnalisisAceleracion] Insuficientes hitos conseguidos:', hitosConseguidos?.length);
         setDatos(null);
         return;
       }
@@ -132,6 +144,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       
       // Filtrar por fuente
       const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_normativa_id === fuenteSeleccionada);
+      console.log('📊 [AnalisisAceleracion] Hitos normativos filtrados:', hitosNormativosFuente?.length);
       
       // Cargar dominios si no están cargados aún
       let dominiosParaUsar = dominios;
@@ -146,6 +159,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       const hoy = new Date();
       const diffTime = Math.abs(hoy - fechaNac);
       const edadActualMeses = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+      console.log('📊 [AnalisisAceleracion] Edad actual:', edadActualMeses, 'meses');
       
       // Construir puntos de evaluación desde datos longitudinales
       const puntosEvaluacion = construirPuntosEvaluacion(
@@ -155,22 +169,27 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
         edadActualMeses
       );
       
+      console.log('📊 [AnalisisAceleracion] Puntos de evaluación construidos:', puntosEvaluacion?.length);
+      
       if (puntosEvaluacion.length < 2) {
+        console.log('⚠️ [AnalisisAceleracion] Insuficientes puntos de evaluación:', puntosEvaluacion.length);
         setDatos(null);
         return;
       }
 
       // Calcular métricas de trayectoria
       const datosCalculados = calcularAceleracionesDesdePuntos(puntosEvaluacion);
+      console.log('📊 [AnalisisAceleracion] Datos calculados:', datosCalculados?.length);
       
       setDatos({
         evaluaciones: puntosEvaluacion,
         datosAceleracion: datosCalculados
       });
       setTipoDatos('retrospectivo');
+      console.log('✅ [AnalisisAceleracion] Datos retrospectivos cargados correctamente');
       
     } catch (error) {
-      console.error('❌ Error construyendo datos retrospectivos:', error);
+      console.error('❌ [AnalisisAceleracion] Error construyendo datos retrospectivos:', error);
       setDatos(null);
     }
   };
@@ -486,7 +505,15 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       {/* 1. Gráfico de Velocidad del Desarrollo (Derivada 1ª de la línea de tendencia) */}
       {(() => {
         // Calcular velocidad desde la línea de tendencia (derivada primera)
+        console.log('🔍 [AnalisisAceleracion] Verificando datos de regresión:', {
+          existe: !!datosRegresionGraficoDesarrollo,
+          tieneLineaTendencia: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
+          longitudLineaTendencia: datosRegresionGraficoDesarrollo?.lineaTendencia?.length,
+          tipoDatos
+        });
+        
         if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
+          console.log('⚠️ [AnalisisAceleracion] No hay datos de regresión, ocultando gráficas de velocidad/aceleración');
           return null;
         }
 
@@ -531,7 +558,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
               </span>
             </p>
             <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart>
+              <ComposedChart data={datosVelocidad}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="edad_meses"
@@ -550,7 +577,6 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
                 
                 {/* Velocidad */}
                 <Line 
-                  data={datosVelocidad}
                   type="monotone" 
                   dataKey="velocidad" 
                   stroke="#4CAF50" 
@@ -567,7 +593,14 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       {/* 2. Gráfico de Aceleración del Desarrollo (Derivada 2ª - derivada de velocidad) */}
       {(() => {
         // Calcular aceleración desde la velocidad (derivada segunda)
+        console.log('🔍 [AnalisisAceleracion] Verificando datos para aceleración:', {
+          existe: !!datosRegresionGraficoDesarrollo,
+          tieneLineaTendencia: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
+          longitudLineaTendencia: datosRegresionGraficoDesarrollo?.lineaTendencia?.length
+        });
+        
         if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
+          console.log('⚠️ [AnalisisAceleracion] No hay datos de regresión, ocultando gráfica de aceleración');
           return null;
         }
 
@@ -628,7 +661,7 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
               </span>
             </p>
             <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart>
+              <ComposedChart data={datosAceleracion}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="edad_meses"
@@ -646,7 +679,6 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
                 
                 {/* Aceleración */}
                 <Line 
-                  data={datosAceleracion}
                   type="monotone" 
                   dataKey="aceleracion" 
                   stroke="#FF5722" 

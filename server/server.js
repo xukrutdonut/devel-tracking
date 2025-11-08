@@ -1010,6 +1010,63 @@ app.delete('/api/escalas-evaluaciones/:id', verificarToken, (req, res) => {
   );
 });
 
+// ==================== RUTA DE ITINERARIO (DATOS PROSPECTIVOS) ====================
+
+// Obtener itinerario de desarrollo con evaluaciones prospectivas
+app.get('/api/itinerario/:ninoId', verificarToken, (req, res) => {
+  const { ninoId } = req.params;
+  const fuenteNormativaId = req.query.fuente || 1;
+  
+  // Para usuarios invitados, devolver datos vacíos (no tienen evaluaciones prospectivas guardadas)
+  if (req.usuario.rol === 'invitado') {
+    return res.json({
+      nino: {
+        id: ninoId,
+        nombre: 'Niño de Ejemplo',
+        fecha_nacimiento: new Date().toISOString().split('T')[0],
+        semanas_gestacion: 40,
+        usuario_id: req.usuario.id
+      },
+      evaluaciones: [],
+      fuente_normativa_id: parseInt(fuenteNormativaId)
+    });
+  }
+  
+  verificarAccesoNino(ninoId, req.usuario.id, req.usuario.rol, (err, tieneAcceso) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!tieneAcceso) return res.status(403).json({ error: 'No tienes acceso a este niño' });
+    
+    // Obtener datos del niño
+    db.get('SELECT * FROM ninos WHERE id = ?', [ninoId], (err, nino) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!nino) return res.status(404).json({ error: 'Niño no encontrado' });
+      
+      // Obtener evaluaciones con escalas estandarizadas
+      const queryEvaluaciones = `
+        SELECT * FROM escalas_evaluaciones 
+        WHERE nino_id = ? 
+        ORDER BY edad_evaluacion_meses
+      `;
+      
+      db.all(queryEvaluaciones, [ninoId], (err, evaluaciones) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Parsear puntuaciones JSON
+        const evaluacionesProcesadas = evaluaciones.map(ev => ({
+          ...ev,
+          puntuaciones: typeof ev.puntuaciones === 'string' ? JSON.parse(ev.puntuaciones) : ev.puntuaciones
+        }));
+        
+        res.json({
+          nino,
+          evaluaciones: evaluacionesProcesadas,
+          fuente_normativa_id: parseInt(fuenteNormativaId)
+        });
+      });
+    });
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor ejecutándose en http://0.0.0.0:${PORT}`);
 });

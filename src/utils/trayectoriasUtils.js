@@ -68,11 +68,11 @@ export function construirPuntosEvaluacion(hitosConseguidos, hitosNormativos, dom
       
       hitosDelDominio.forEach(hito => {
         const hitoNormativo = hitosNormativos.find(hn => hn.id === hito.hito_id);
-        if (hitoNormativo && hitoNormativo.edad_media_meses && hitoNormativo.desviacion_std) {
+        if (hitoNormativo && hitoNormativo.edad_media_meses && hitoNormativo.desviacion_estandar) {
           sumaEdadesNormativas += hitoNormativo.edad_media_meses;
           
           // Calcular Z-score individual
-          const zScore = (hito.edad_conseguido_meses - hitoNormativo.edad_media_meses) / hitoNormativo.desviacion_std;
+          const zScore = (hito.edad_conseguido_meses - hitoNormativo.edad_media_meses) / hitoNormativo.desviacion_estandar;
           sumaZScores += zScore;
           count++;
         }

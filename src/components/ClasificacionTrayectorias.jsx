@@ -88,6 +88,8 @@ export default function ClasificacionTrayectorias({ ninoId }) {
   const cargarDatos = async () => {
     setLoading(true);
     try {
+      console.log('📊 [ClasificacionTrayectorias] Cargando datos para niño:', ninoId);
+      
       // Cargar datos del niño PRIMERO
       const ninoResponse = await fetchConAuth(`${API_URL}/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
@@ -100,16 +102,21 @@ export default function ClasificacionTrayectorias({ ninoId }) {
           `${API_URL}/itinerario/${ninoId}?fuente=${fuenteSeleccionada}`
         );
         
+        console.log('📊 [ClasificacionTrayectorias] Status itinerario:', itinerarioResponse.status);
+        
         // Solo parsear como JSON si la respuesta es exitosa
         if (itinerarioResponse.ok) {
           itinerario = await itinerarioResponse.json();
+          console.log('📊 [ClasificacionTrayectorias] Evaluaciones:', itinerario?.evaluaciones?.length);
         }
       } catch (itinerarioError) {
+        console.log('⚠️ [ClasificacionTrayectorias] Error cargando itinerario:', itinerarioError);
         // Endpoint no existe o error, continuar con datos retrospectivos
       }
 
       // Si hay datos prospectivos (múltiples evaluaciones), usarlos
       if (itinerario && itinerario.evaluaciones && itinerario.evaluaciones.length >= 3) {
+        console.log('✅ [ClasificacionTrayectorias] Usando datos prospectivos');
         const clasificacionesPorDominio = clasificarTrayectorias(itinerario.evaluaciones);
         
         setDatos(itinerario);
@@ -119,12 +126,13 @@ export default function ClasificacionTrayectorias({ ninoId }) {
         return;
       }
 
+      console.log('🔄 [ClasificacionTrayectorias] No hay datos prospectivos suficientes, usando retrospectivos');
       // Si no hay datos prospectivos, construir desde datos longitudinales (retrospectivos)
       // Pasar ninoData como parámetro
       await construirDatosRetrospectivos(ninoData);
       
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ [ClasificacionTrayectorias] Error cargando datos:', error);
       setDatos(null);
     } finally {
       setLoading(false);
@@ -133,11 +141,15 @@ export default function ClasificacionTrayectorias({ ninoId }) {
 
   const construirDatosRetrospectivos = async (ninoData) => {
     try {
+      console.log('🔄 [ClasificacionTrayectorias] Construyendo datos retrospectivos');
+      
       // Cargar hitos conseguidos
       const hitosResponse = await fetchConAuth(`${API_URL}/hitos-conseguidos/${ninoId}`);
       const hitosConseguidos = await hitosResponse.json();
+      console.log('📊 [ClasificacionTrayectorias] Hitos conseguidos:', hitosConseguidos?.length);
       
       if (!hitosConseguidos || hitosConseguidos.length < 3) {
+        console.log('⚠️ [ClasificacionTrayectorias] Insuficientes hitos conseguidos:', hitosConseguidos?.length);
         setDatos(null);
         return;
       }
@@ -524,9 +536,9 @@ export default function ClasificacionTrayectorias({ ninoId }) {
       'SLOWED_RATE_DIVERGENTE': 'fa-arrow-down',
       'DELAYED_ONSET_PLUS_SLOWED_RATE': 'fa-arrows-alt-h',
       'DESARROLLO_NORMAL': 'fa-check-circle',
-      'NONLINEAR': 'fa-wave-square',
+      'NONLINEAR': 'fa-water',
       'PREMATURE_ASYMPTOTE': 'fa-minus',
-      'ZERO_TRAJECTORY': 'fa-equals',
+      'ZERO_TRAJECTORY': 'fa-grip-lines',
       'NO_SYSTEMATIC_RELATIONSHIP': 'fa-random',
       'DELAY': 'fa-arrow-right',
       'DEVIANCE_CONVERGENTE': 'fa-chart-line',

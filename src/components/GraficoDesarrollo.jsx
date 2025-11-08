@@ -32,8 +32,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   const [mostrarGeneradorInforme, setMostrarGeneradorInforme] = useState(false);
   const [ninoData, setNinoData] = useState(null);
   const [tooltipActivo, setTooltipActivo] = useState(null); // Tooltip activado por click
+  const [datosRegresion, setDatosRegresion] = useState(null); // Estado para datos de regresión
   
-  // Ref para guardar datos de regresión calculados
+  // Ref para guardar datos de regresión calculados (para comparación)
   const datosRegresionRef = useRef(null);
 
   useEffect(() => {
@@ -806,8 +807,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
     }
   });
 
-  // Enviar datos de regresión al padre (sin usar hooks adicionales)
-  if (onDatosRegresionCalculados && regresionDesarrollo && lineaTendenciaDesarrollo) {
+  // Guardar datos de regresión para AnalisisAceleracion
+  if (regresionDesarrollo && lineaTendenciaDesarrollo) {
     const nuevosDatos = {
       regresion: regresionDesarrollo,
       lineaTendencia: lineaTendenciaDesarrollo,
@@ -816,13 +817,19 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       fuenteSeleccionada: fuenteSeleccionada
     };
     
-    // Solo enviar si cambió (comparar con ref para evitar llamadas repetidas)
+    // Solo actualizar si cambió (comparar con stringify para detectar cambios)
     const datosActualesStr = JSON.stringify(nuevosDatos);
-    if (datosRegresionRef.current !== datosActualesStr) {
-      datosRegresionRef.current = datosActualesStr;
-      // Usar setTimeout para evitar actualizar estado durante render
-      setTimeout(() => onDatosRegresionCalculados(nuevosDatos), 0);
+    const datosRefStr = JSON.stringify(datosRegresionRef.current);
+    if (datosRefStr !== datosActualesStr) {
+      datosRegresionRef.current = nuevosDatos;
+      // Programar actualización del estado después del render actual
+      Promise.resolve().then(() => setDatosRegresion(nuevosDatos));
     }
+  }
+  
+  // Enviar datos de regresión al padre si se proporciona callback
+  if (onDatosRegresionCalculados && datosRegresion) {
+    Promise.resolve().then(() => onDatosRegresionCalculados(datosRegresion));
   }
 
   // Contar hitos descartados
@@ -1966,7 +1973,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
 
       <AnalisisAceleracion 
         ninoId={ninoId} 
-        datosRegresionGraficoDesarrollo={datosRegresionRef.current}
+        datosRegresionGraficoDesarrollo={datosRegresion}
       />
     </div>
   );

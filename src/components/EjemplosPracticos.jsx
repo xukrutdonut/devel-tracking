@@ -71,7 +71,7 @@ function EjemplosPracticos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'regresion',
       nombre: 'Regresión del Desarrollo',
       descripcion: 'Desarrollo normal hasta 18m, luego PÉRDIDA de hitos en áreas vulnerables (lenguaje, social)',
-      icono: 'fa-chart-line-down',
+      icono: 'fa-arrow-down',
       color: '#e91e63',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Regresión Desarrollo'),
@@ -99,7 +99,7 @@ function EjemplosPracticos({ onEjemploCreado, onSeleccionarNino }) {
       id: 'aceleracion-intervencion',
       nombre: 'Aceleración por Intervención',
       descripcion: 'Retraso inicial seguido de aceleración del desarrollo tras inicio de atención temprana a los 18 meses',
-      icono: 'fa-chart-line-up',
+      icono: 'fa-arrow-up',
       color: '#4caf50',
       generarNinoData: () => ({
         nombre: generarNombreAleatorio('Respuesta a Intervención'),
