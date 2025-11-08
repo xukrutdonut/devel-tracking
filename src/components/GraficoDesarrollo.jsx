@@ -848,14 +848,27 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       fuenteSeleccionada: fuenteSeleccionada
     };
     
+    console.log('📊 [GraficoDesarrollo] Datos de regresión calculados:', {
+      tieneRegresion: !!regresionDesarrollo,
+      longitudLineaTendencia: lineaTendenciaDesarrollo?.length,
+      longitudDatosOriginales: datosParaTendencia?.length
+    });
+    
     // Solo actualizar si cambió (comparar con stringify para detectar cambios)
     const datosActualesStr = JSON.stringify(nuevosDatos);
     const datosRefStr = JSON.stringify(datosRegresionRef.current);
     if (datosRefStr !== datosActualesStr) {
+      console.log('📊 [GraficoDesarrollo] Actualizando estado datosRegresion');
       datosRegresionRef.current = nuevosDatos;
       // Programar actualización del estado después del render actual
       Promise.resolve().then(() => setDatosRegresion(nuevosDatos));
     }
+  } else {
+    console.log('⚠️ [GraficoDesarrollo] No hay datos de regresión:', {
+      tieneRegresion: !!regresionDesarrollo,
+      tieneLineaTendencia: !!lineaTendenciaDesarrollo,
+      longitudDatosParaTendencia: datosParaTendencia?.length
+    });
   }
   
   // Enviar datos de regresión al padre si se proporciona callback

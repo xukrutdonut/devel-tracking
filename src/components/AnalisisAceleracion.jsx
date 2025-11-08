@@ -35,6 +35,15 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
   const [tipoDatos, setTipoDatos] = useState('desconocido');
   const [nino, setNino] = useState(null);
 
+  // Debug: Log cuando cambia el prop de regresión
+  useEffect(() => {
+    console.log('📊 [AnalisisAceleracion] Props recibidos:', {
+      ninoId,
+      datosRegresionExiste: !!datosRegresionGraficoDesarrollo,
+      datosRegresion: datosRegresionGraficoDesarrollo
+    });
+  }, [ninoId, datosRegresionGraficoDesarrollo]);
+
   useEffect(() => {
     cargarFuentes();
     cargarDominios();
