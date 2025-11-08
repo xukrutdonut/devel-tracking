@@ -123,7 +123,72 @@ Para verificar que funciona correctamente:
 - **Thomas et al. (2009)**: "Using developmental trajectories to understand developmental disorders"
 - Artículo base: "Las matemáticas aplicadas a la evaluación del neurodesarrollo" de neuropediatoolkit.org
 
+## Fix Adicional: Modo Invitado
+
+### Problema en Modo Invitado
+
+Tras el fix inicial, las gráficas seguían sin aparecer en modo invitado. La función `construirAnalisisLocal` que procesa los hitos guardados en `sessionStorage` no estaba enriqueciendo los hitos con toda la información necesaria de los hitos normativos.
+
+### Solución para Modo Invitado
+
+Se mejoró la función `construirAnalisisLocal` para:
+
+1. **Enriquecer hitos con datos normativos**: Busca cada hito normativo correspondiente y combina la información
+2. **Asegurar campos completos**: Garantiza que cada hito tenga:
+   - `hito_nombre`: Nombre del hito
+   - `edad_media_meses`: Edad esperada del hito
+   - `desviacion_estandar`: Desviación estándar
+   - `dominio_nombre`: Nombre del dominio
+   - `edad_conseguido_meses`: Edad cuando se logró
+   - `edad_perdido_meses`: Edad cuando se perdió (si aplica)
+
+3. **Logging para depuración**: Console.logs que muestran cuántos hitos se procesan
+
+```javascript
+// Enriquecer hitos con información de hitos normativos
+const hitosEnriquecidos = hitos.map(hito => {
+  const hitoNormativo = hitosNormativos.find(hn => hn.id === hito.hito_id);
+  
+  if (!hitoNormativo) {
+    console.warn('⚠️ Hito normativo no encontrado para hito_id:', hito.hito_id);
+    return hito;
+  }
+  
+  return {
+    ...hito,
+    hito_nombre: hitoNormativo.hito || hito.hito_nombre,
+    edad_media_meses: hitoNormativo.edad_media_meses,
+    desviacion_estandar: hitoNormativo.desviacion_estandar,
+    dominio_nombre: hitoNormativo.dominio_nombre || hito.dominio_nombre,
+    edad_conseguido_meses: hito.edad_conseguido_meses || hito.edad_meses,
+    edad_perdido_meses: hito.edad_perdido_meses || null
+  };
+});
+```
+
+### Flujo Completo en Modo Invitado
+
+```
+EjemplosPracticos (crea ejemplo)
+         ↓
+  sessionStorage guarda hitos
+         ↓
+GraficoDesarrollo.cargarDatos()
+         ↓
+  construirAnalisisLocal() - Enriquece hitos
+         ↓
+   Calcula regresión polinomial
+         ↓
+   datosRegresion (state)
+         ↓
+AnalisisAceleracion (recibe prop)
+         ↓
+   Renderiza gráficas de velocidad y aceleración
+```
+
 ## Archivos Modificados
 
-- `src/components/GraficoDesarrollo.jsx`: Paso de datos de regresión mediante state
+- `src/components/GraficoDesarrollo.jsx`: 
+  - Paso de datos de regresión mediante state (usuarios autenticados)
+  - Función `construirAnalisisLocal` mejorada (modo invitado)
 - `src/components/AnalisisAceleracion.jsx`: Console.logs para depuración
