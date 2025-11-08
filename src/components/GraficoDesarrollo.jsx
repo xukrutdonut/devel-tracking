@@ -495,6 +495,12 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   const datosGraficoGlobal = puntosPlausibles;
   const datosParaTendencia = puntosPlausibles;
   
+  console.log('📊 [GraficoDesarrollo] Datos para tendencia:', {
+    puntosParaGrafica: puntosParaGrafica?.length,
+    puntosPlausibles: puntosPlausibles?.length,
+    datosParaTendencia: datosParaTendencia?.length
+  });
+  
   // Agrupar puntos por edad cronológica para calcular promedios por dominio
   // (necesario para la vista por dominios)
   // USAR SOLO PUNTOS BIOLÓGICAMENTE PLAUSIBLES
