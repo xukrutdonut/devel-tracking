@@ -138,7 +138,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       return {
         ...hito,
         // Datos del hito normativo
-        hito_nombre: hitoNormativo.hito || hito.hito_nombre,
+        hito_nombre: hitoNormativo.nombre || hito.hito_nombre,
         edad_media_meses: hitoNormativo.edad_media_meses,
         desviacion_estandar: hitoNormativo.desviacion_estandar,
         dominio_nombre: hitoNormativo.dominio_nombre || hito.dominio_nombre,
