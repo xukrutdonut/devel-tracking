@@ -113,16 +113,47 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
     }
   };
   
-  // Función auxiliar para construir análisis desde datos locales
+  // Función auxiliar para construir análisis desde datos locales (modo invitado)
   const construirAnalisisLocal = (nino, hitos, hitosNormativos) => {
+    console.log('🔍 [GraficoDesarrollo] Construyendo análisis local para modo invitado');
+    console.log('   - Hitos recibidos:', hitos?.length);
+    console.log('   - Hitos normativos:', hitosNormativos?.length);
+    
     const edadActualMeses = calcularEdadCorregidaMeses(
       nino.fecha_nacimiento,
       nino.semanas_gestacion || 40
     );
     
+    // Enriquecer hitos con información de hitos normativos
+    const hitosEnriquecidos = hitos.map(hito => {
+      // Buscar el hito normativo correspondiente
+      const hitoNormativo = hitosNormativos.find(hn => hn.id === hito.hito_id);
+      
+      if (!hitoNormativo) {
+        console.warn('⚠️ Hito normativo no encontrado para hito_id:', hito.hito_id);
+        return hito;
+      }
+      
+      // Combinar información del hito conseguido con el normativo
+      return {
+        ...hito,
+        // Datos del hito normativo
+        hito_nombre: hitoNormativo.hito || hito.hito_nombre,
+        edad_media_meses: hitoNormativo.edad_media_meses,
+        desviacion_estandar: hitoNormativo.desviacion_estandar,
+        dominio_nombre: hitoNormativo.dominio_nombre || hito.dominio_nombre,
+        // Asegurar que edad_conseguido_meses existe
+        edad_conseguido_meses: hito.edad_conseguido_meses || hito.edad_meses,
+        // Información de pérdida si existe
+        edad_perdido_meses: hito.edad_perdido_meses || null
+      };
+    });
+    
+    console.log('   - Hitos enriquecidos:', hitosEnriquecidos?.length);
+    
     // Agrupar hitos por dominio
     const hitosPorDominio = {};
-    hitos.forEach(hito => {
+    hitosEnriquecidos.forEach(hito => {
       if (!hitosPorDominio[hito.dominio_id]) {
         hitosPorDominio[hito.dominio_id] = [];
       }
@@ -132,9 +163,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
     return {
       nino,
       edad_actual_meses: edadActualMeses,
-      hitos_conseguidos: hitos,
+      hitos_conseguidos: hitosEnriquecidos,
       estadisticas_por_dominio: hitosPorDominio,
-      total_hitos: hitos.length
+      total_hitos: hitosEnriquecidos.length
     };
   };
 
