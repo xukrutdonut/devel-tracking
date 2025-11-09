@@ -33,6 +33,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   const [ninoData, setNinoData] = useState(null);
   const [tooltipActivo, setTooltipActivo] = useState(null); // Tooltip activado por click
   const [datosRegresion, setDatosRegresion] = useState(null); // Estado para datos de regresión
+  const [puntoHover, setPuntoHover] = useState(null); // Punto en hover (para mostrar borde)
   
   // Ref para guardar datos de regresión calculados (para comparación)
   const datosRegresionRef = useRef(null);
@@ -367,6 +368,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
     if (!payload || !payload.hito_nombre) return null;
     
     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
     
     // Si el punto tiene pérdida, usar un símbolo diferente (cruz o X)
     if (payload.tiene_perdida) {
@@ -374,16 +376,20 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
         <g 
           className="scatter-point" 
           onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
+          onMouseEnter={() => setPuntoHover(payload)}
+          onMouseLeave={() => setPuntoHover(null)}
           style={{ cursor: 'pointer' }}
         >
-          {/* Círculo de resaltado cuando está activo */}
+          {/* Círculo de resaltado cuando está activo o en hover */}
           <circle 
             cx={cx} 
             cy={cy} 
             r={10} 
             fill="none" 
             stroke="#000" 
-            strokeWidth={isActivo ? 2 : 0} 
+            strokeWidth={isActivo || isHover ? 2 : 0} 
             style={{ pointerEvents: 'none' }} 
           />
           {/* Círculo rojo para pérdida */}
@@ -403,16 +409,20 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       <g 
         className="scatter-point" 
         onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
+        onMouseEnter={() => setPuntoHover(payload)}
+        onMouseLeave={() => setPuntoHover(null)}
         style={{ cursor: 'pointer' }}
       >
-        {/* Círculo de resaltado cuando está activo */}
+        {/* Círculo de resaltado cuando está activo o en hover */}
         <circle 
           cx={cx} 
           cy={cy} 
           r={8} 
           fill="none" 
           stroke="#000" 
-          strokeWidth={isActivo ? 2 : 0} 
+          strokeWidth={isActivo || isHover ? 2 : 0} 
           style={{ pointerEvents: 'none' }} 
         />
         {/* Punto visible */}
@@ -1568,12 +1578,17 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                     if (!payload || !payload.hito_nombre) return null;
                     const color = coloresDominios[payload.dominio_id] || '#2c3e50';
                     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
                     
                     if (payload.tiene_perdida) {
                       return (
                         <g 
                           className="scatter-point"
                           onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                           style={{ cursor: 'pointer' }}
                         >
                           <circle 
@@ -1582,7 +1597,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                             r={10} 
                             fill="none" 
                             stroke="#000" 
-                            strokeWidth={isActivo ? 2 : 0} 
+                            strokeWidth={isActivo || isHover ? 2 : 0} 
                             style={{ pointerEvents: 'none' }} 
                           />
                           <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
@@ -1597,6 +1612,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
+                        onMouseEnter={() => setPuntoHover(payload)}
+                        onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1605,7 +1624,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           r={7} 
                           fill="none" 
                           stroke="#000" 
-                          strokeWidth={isActivo ? 2 : 0} 
+                          strokeWidth={isActivo || isHover ? 2 : 0} 
                           style={{ pointerEvents: 'none' }} 
                         />
                         <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
@@ -1680,12 +1699,15 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                         const { cx, cy, payload } = props;
                         if (!payload || !payload.hito_nombre) return null;
                         const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
                         
                         if (payload.tiene_perdida) {
                           return (
                             <g 
                               className="scatter-point"
                               onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                               style={{ cursor: 'pointer' }}
                             >
                               <circle 
@@ -1694,7 +1716,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                                 r={10} 
                                 fill="none" 
                                 stroke="#000" 
-                                strokeWidth={isActivo ? 2 : 0} 
+                                strokeWidth={isActivo || isHover ? 2 : 0} 
                                 style={{ pointerEvents: 'none' }} 
                               />
                               <circle cx={cx} cy={cy} r={8} fill="#e74c3c" stroke="#fff" strokeWidth={2} />
@@ -1709,6 +1731,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
                             <circle 
@@ -1717,7 +1741,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                               r={8} 
                               fill="none" 
                               stroke="#000" 
-                              strokeWidth={isActivo ? 2 : 0} 
+                              strokeWidth={isActivo || isHover ? 2 : 0} 
                               style={{ pointerEvents: 'none' }} 
                             />
                             <circle cx={cx} cy={cy} r={6} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
@@ -1832,11 +1856,14 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                     const { cx, cy, payload } = props;
                     if (!payload || !payload.hito_nombre) return null;
                     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
                     
                     return (
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1845,7 +1872,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           r={7} 
                           fill="none" 
                           stroke="#000" 
-                          strokeWidth={isActivo ? 2 : 0} 
+                          strokeWidth={isActivo || isHover ? 2 : 0} 
                           style={{ pointerEvents: 'none' }} 
                         />
                         <circle cx={cx} cy={cy} r={5} fill="#3498db" stroke="#fff" strokeWidth={2} />
@@ -1889,11 +1916,14 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                     if (!payload || !payload.hito_nombre) return null;
                     const color = coloresDominios[payload.dominio_id] || '#3498db';
                     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
                     
                     return (
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1902,7 +1932,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           r={6} 
                           fill="none" 
                           stroke="#000" 
-                          strokeWidth={isActivo ? 2 : 0} 
+                          strokeWidth={isActivo || isHover ? 2 : 0} 
                           style={{ pointerEvents: 'none' }} 
                         />
                         <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={2} />
@@ -1946,11 +1976,14 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                         const { cx, cy, payload } = props;
                         if (!payload || !payload.hito_nombre) return null;
                         const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
+                    const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
                         
                         return (
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
+                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
                             <circle 
@@ -1959,7 +1992,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                               r={7} 
                               fill="none" 
                               stroke="#000" 
-                              strokeWidth={isActivo ? 2 : 0} 
+                              strokeWidth={isActivo || isHover ? 2 : 0} 
                               style={{ pointerEvents: 'none' }} 
                             />
                             <circle cx={cx} cy={cy} r={5} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
