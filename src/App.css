@@ -2177,11 +2177,7 @@ body {
 /* Estilos para puntos de scatter plot con click */
 .scatter-point {
   cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.scatter-point:hover {
-  transform: scale(1.1);
+  /* Removido: transition y transform que causaban movimiento al hover */
 }
 
 /* Asegurar que los scatter plots estén por encima de las líneas */
