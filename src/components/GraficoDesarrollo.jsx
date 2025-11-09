@@ -34,6 +34,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   const [tooltipActivo, setTooltipActivo] = useState(null); // Tooltip activado por click
   const [datosRegresion, setDatosRegresion] = useState(null); // Estado para datos de regresión
   const [puntoHover, setPuntoHover] = useState(null); // Punto en hover (para mostrar borde)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 }); // Posición del mouse
   
   // Ref para guardar datos de regresión calculados (para comparación)
   const datosRegresionRef = useRef(null);
@@ -376,9 +377,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
         <g 
           className="scatter-point" 
           onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
-          onMouseEnter={() => setPuntoHover(payload)}
+          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
           onMouseLeave={() => setPuntoHover(null)}
           style={{ cursor: 'pointer' }}
         >
@@ -409,9 +410,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       <g 
         className="scatter-point" 
         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
-        onMouseEnter={() => setPuntoHover(payload)}
+        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
         onMouseLeave={() => setPuntoHover(null)}
         style={{ cursor: 'pointer' }}
       >
@@ -1158,6 +1159,53 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
 
   return (
     <div className="grafico-desarrollo">
+      {/* Tooltip flotante que sigue al mouse */}
+      {puntoHover && (
+        <div style={{
+          position: 'fixed',
+          left: `${mousePosition.x + 15}px`,
+          top: `${mousePosition.y - 100}px`,
+          backgroundColor: 'white',
+          padding: '10px 15px',
+          border: '2px solid #333',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+          minWidth: '280px',
+          zIndex: 10000,
+          pointerEvents: 'none' // No interferir con eventos del mouse
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
+            {puntoHover.hito_nombre}
+          </p>
+          <div style={{ fontSize: '0.9em', color: '#555' }}>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Dominio:</strong> <span style={{ color: coloresDominios[puntoHover.dominio_id], fontWeight: 'bold' }}>{puntoHover.dominio_nombre}</span>
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad cronológica:</strong> {puntoHover.edad_cronologica?.toFixed(1)} meses
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad de desarrollo:</strong> {puntoHover.edad_desarrollo?.toFixed(1)} meses
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Cociente de Desarrollo:</strong> {puntoHover.edad_cronologica > 0 ? ((puntoHover.edad_desarrollo / puntoHover.edad_cronologica) * 100).toFixed(1) : 'N/A'}
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Puntuación Z:</strong> {(() => {
+                const sd = Math.max(puntoHover.edad_cronologica * 0.15, 2);
+                const zscore = (puntoHover.edad_desarrollo - puntoHover.edad_cronologica) / sd;
+                return zscore.toFixed(2);
+              })()}
+            </p>
+            {puntoHover.tiene_perdida && (
+              <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontWeight: 'bold' }}>
+                ⚠️ Hito perdido en regresión
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div className="header-con-boton">
         <h2>Gráficas del Desarrollo</h2>
         <button 
@@ -1445,7 +1493,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
               domain={[0, 'dataMax + 6']}
             />
             {/* Tooltip habilitado - muestra info en hover */}
-            <Tooltip content={<ScatterTooltip />} cursor={false} />
+            <Tooltip content={() => null} cursor={false} />
             <Legend />
             
             {/* Línea de desarrollo típico (45 grados) */}
@@ -1516,9 +1564,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                         <g 
                           className="scatter-point"
                           onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                           style={{ cursor: 'pointer' }}
                         >
@@ -1543,9 +1591,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
-                        onMouseEnter={() => setPuntoHover(payload)}
+                        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                         onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -1637,7 +1685,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                             <g 
                               className="scatter-point"
                               onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                               style={{ cursor: 'pointer' }}
                             >
@@ -1662,7 +1710,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
@@ -1750,7 +1798,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
               label={{ value: 'Puntuación Z', angle: -90, position: 'insideLeft' }}
             />
             {/* Tooltip habilitado - muestra info en hover (usa ZScoreTooltip) */}
-            <Tooltip content={<ZScoreTooltip />} cursor={false} />
+            <Tooltip content={() => null} cursor={false} />
             <Legend />
             
             {/* Bandas de referencia */}
@@ -1793,7 +1841,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -1853,7 +1901,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -1913,7 +1961,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={() => setPuntoHover(payload)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
                           onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
