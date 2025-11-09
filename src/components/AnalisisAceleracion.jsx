@@ -731,35 +731,37 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
                 Rango: {velocidadMin.toFixed(3)} - {velocidadMax.toFixed(3)} | Promedio: {velocidadPromedio.toFixed(3)} | Variación: {variacionVelocidad.toFixed(4)}
               </span>
             </p>
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={datosVelocidad}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="edad_meses"
-                  type="number"
-                  label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis 
-                  label={{ value: 'Velocidad (ED/EC)', angle: -90, position: 'insideLeft' }}
-                  domain={[0, 2]}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                
-                {/* Línea de referencia en 1.0 (desarrollo típico) */}
-                <ReferenceLine y={1.0} stroke="#999" strokeDasharray="5 5" label="Desarrollo Típico (1.0)" />
-                
-                {/* Velocidad */}
-                <Line 
-                  type="monotone" 
-                  dataKey="velocidad" 
-                  stroke="#4CAF50" 
-                  strokeWidth={3}
-                  name="Velocidad de Desarrollo" 
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <div id="grafica-velocidad-desarrollo">
+              <ResponsiveContainer width="100%" height={350}>
+                <ComposedChart data={datosVelocidad}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="edad_meses"
+                    type="number"
+                    label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    label={{ value: 'Velocidad (ED/EC)', angle: -90, position: 'insideLeft' }}
+                    domain={[0, 2]}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  
+                  {/* Línea de referencia en 1.0 (desarrollo típico) */}
+                  <ReferenceLine y={1.0} stroke="#999" strokeDasharray="5 5" label="Desarrollo Típico (1.0)" />
+                  
+                  {/* Velocidad */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="velocidad" 
+                    stroke="#4CAF50" 
+                    strokeWidth={3}
+                    name="Velocidad de Desarrollo" 
+                    dot={false}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         );
       })()}
@@ -838,34 +840,36 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
                 Rango: {aceleracionMin.toFixed(6)} - {aceleracionMax.toFixed(6)} | Promedio: {aceleracionPromedio.toFixed(6)}
               </span>
             </p>
-            <ResponsiveContainer width="100%" height={350}>
-              <ComposedChart data={datosAceleracion}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="edad_meses"
-                  type="number"
-                  label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis 
-                  label={{ value: 'Aceleración ((ED/EC)/mes)', angle: -90, position: 'insideLeft' }}
-                  domain={[-0.05, 0.05]}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                
-                <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Aceleración = 0" />
-                
-                {/* Aceleración */}
-                <Line 
-                  type="monotone" 
-                  dataKey="aceleracion" 
-                  stroke="#FF5722" 
-                  strokeWidth={3}
-                  name="Aceleración de Desarrollo" 
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <div id="grafica-aceleracion-desarrollo">
+              <ResponsiveContainer width="100%" height={350}>
+                <ComposedChart data={datosAceleracion}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="edad_meses"
+                    type="number"
+                    label={{ value: 'Edad Cronológica (meses)', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    label={{ value: 'Aceleración ((ED/EC)/mes)', angle: -90, position: 'insideLeft' }}
+                    domain={[-0.05, 0.05]}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  
+                  <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" label="Aceleración = 0" />
+                  
+                  {/* Aceleración */}
+                  <Line 
+                    type="monotone" 
+                    dataKey="aceleracion" 
+                    stroke="#FF5722" 
+                    strokeWidth={3}
+                    name="Aceleración de Desarrollo" 
+                    dot={false}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         );
       })()}

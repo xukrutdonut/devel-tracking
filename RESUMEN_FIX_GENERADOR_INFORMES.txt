@@ -1,0 +1,142 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║             FIX: GENERADOR DE INFORMES - RECUPERACIÓN DE DATOS             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+PROBLEMA DETECTADO:
+───────────────────
+El generador de informes no recuperaba correctamente las puntuaciones ni
+generaba gráficos ASCII. El informe mostraba:
+- "No hay datos suficientes para generar gráfica"
+- Todos los valores como "N/A"
+- Sin gráficos ASCII
+- Sin datos de dominios
+
+CAUSA RAÍZ:
+───────────
+El código solo buscaba datos en analisisData.hitos_conseguidos, pero la
+estructura real puede ser:
+1. analisisData.hitos_conseguidos (array) - Modo invitado
+2. analisisData.estadisticas_por_dominio (objeto) - API servidor
+
+SOLUCIÓN IMPLEMENTADA:
+──────────────────────
+
+1. DETECCIÓN FLEXIBLE DE FUENTES DE DATOS
+   ✓ Intenta primero: analisisData.hitos_conseguidos
+   ✓ Si no existe, convierte: analisisData.estadisticas_por_dominio
+   ✓ Funciona con ambas estructuras automáticamente
+
+2. LOGGING DE DEBUG
+   ✓ Console.log al inicio de generarInformeTexto()
+   ✓ Muestra qué estructura de datos se recibió
+   ✓ Indica cuántos hitos se procesaron
+   ✓ Lista qué dominios se encontraron
+   ✓ Facilita diagnóstico de problemas
+
+3. APLICADO EN AMBAS FUNCIONES
+   ✓ generarInformeTexto() - Para informes TXT
+   ✓ generarPDF() - Para informes PDF
+
+CÓDIGO CLAVE:
+─────────────
+```javascript
+// Intentar obtener hitos desde diferentes fuentes
+let hitos_conseguidos = [];
+
+if (analisisData) {
+  // Opción 1: hitos_conseguidos directamente
+  if (analisisData.hitos_conseguidos && Array.isArray(analisisData.hitos_conseguidos)) {
+    hitos_conseguidos = analisisData.hitos_conseguidos;
+  }
+  // Opción 2: estadisticas_por_dominio (estructura alternativa)
+  else if (analisisData.estadisticas_por_dominio) {
+    Object.entries(analisisData.estadisticas_por_dominio).forEach(([dominioId, hitos]) => {
+      if (Array.isArray(hitos)) {
+        hitos_conseguidos.push(...hitos);
+      }
+    });
+  }
+}
+```
+
+CÓMO VERIFICAR EL FIX:
+──────────────────────
+1. Abrir consola del navegador (F12)
+2. Generar un informe
+3. Revisar mensajes de consola:
+
+   📄 [GeneradorInforme] Generando informe...
+      - analisisData: {...}
+      - analisisData.hitos_conseguidos: undefined
+      - analisisData.estadisticas_por_dominio: ["1", "2", "3", ...]
+      → Convirtiendo estadisticas_por_dominio a hitos...
+      ✓ Hitos extraídos: 42
+      - Total hitos a procesar: 42
+      - Dominios encontrados: ["1", "2", "3", "4", "5", "6", "7"]
+      ✓ Datos de dominios calculados: 7
+
+4. Verificar informe generado:
+   ✓ Métricas globales completas (EC, ED, CD, Z)
+   ✓ Gráfico ASCII 1: Barras de ED por dominio
+   ✓ Gráfico ASCII 2: Z-scores por dominio
+   ✓ Tabla detallada con métricas de cada dominio
+
+RESULTADO ESPERADO:
+───────────────────
+El informe ahora debe mostrar:
+
+GRÁFICA 1: EDAD DE DESARROLLO POR DOMINIO
+═══════════════════════════════════════════════════════════
+Motor Grueso      │███████████████████████████ 18.2m -5.8m
+Motor Fino        │████████████████████████████ 19.0m -5.0m
+Lenguaje Receptivo│███████████████████████████ 18.5m -5.5m
+...
+
+GRÁFICA 2: PUNTUACIÓN Z POR DOMINIO
+═══════════════════════════════════════════════════════════
+Motor Grueso      │              ◐          │              z=-1.45
+Motor Fino        │               ◐         │              z=-1.25
+...
+
+DATOS DETALLADOS POR DOMINIO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Motor Grueso (8 hitos evaluados):
+  ┌─────────────────────────────────────────────────────────┐
+  │ Edad de Desarrollo (ED):     18.2    meses    │
+  │ Edad Cronológica (EC):       24.0    meses    │
+  │ Diferencia (ED - EC):        -5.8    meses    │
+  │ Cociente Desarrollo (CD):    75.8    %         │
+  │ Puntuación Z:                -1.45   DE        │
+  │ Interpretación:              VIGILANCIA        │
+  └─────────────────────────────────────────────────────────┘
+
+TROUBLESHOOTING:
+────────────────
+Si aún no funciona:
+
+1. Revisar consola para ver estructura recibida
+2. Verificar que los hitos tengan edad_media_meses y desviacion_estandar
+3. Comprobar que el niño tenga hitos registrados
+4. Si analisisData es null, el problema está en el componente padre
+
+ARCHIVOS MODIFICADOS:
+────────────────────
+• src/components/GeneradorInforme.jsx
+  - generarInformeTexto(): Detección flexible + logging
+  - generarPDF(): Detección flexible
+
+DOCUMENTACIÓN CREADA:
+─────────────────────
+• FIX_GENERADOR_INFORMES_DATOS.md - Guía técnica detallada
+• RESUMEN_FIX_GENERADOR_INFORMES.txt - Este archivo
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              ✅ FIX COMPLETADO                             ║
+║                                                                            ║
+║  El generador de informes ahora:                                          ║
+║  • Recupera datos de ambas estructuras automáticamente                    ║
+║  • Genera gráficos ASCII correctamente                                    ║
+║  • Muestra todas las métricas por dominio                                 ║
+║  • Incluye logging para diagnóstico                                       ║
+╚════════════════════════════════════════════════════════════════════════════╝

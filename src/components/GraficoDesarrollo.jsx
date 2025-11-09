@@ -377,10 +377,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
         <g 
           className="scatter-point" 
           onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
-          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
           style={{ cursor: 'pointer' }}
         >
           {/* Círculo de resaltado cuando está activo o en hover */}
@@ -410,10 +410,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
       <g 
         className="scatter-point" 
         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
-        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-        onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
         style={{ cursor: 'pointer' }}
       >
         {/* Círculo de resaltado cuando está activo o en hover */}
@@ -1470,7 +1470,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
         </div>
       )}
 
-      <div className="chart-container">
+      <div className="chart-container" id="grafica-desarrollo-principal">
         <h3>Edad de Desarrollo vs Edad Cronológica</h3>
         <p className="chart-description">
           Compara la edad de desarrollo (basada en hitos alcanzados) con la edad cronológica del niño. 
@@ -1564,10 +1564,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                         <g 
                           className="scatter-point"
                           onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                           style={{ cursor: 'pointer' }}
                         >
                           <circle 
@@ -1591,10 +1591,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
-                        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                        onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1685,8 +1685,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                             <g 
                               className="scatter-point"
                               onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                               style={{ cursor: 'pointer' }}
                             >
                               <circle 
@@ -1710,8 +1710,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
                             <circle 
@@ -1777,7 +1777,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
 
 
       {/* Gráfico de Puntuaciones Z */}
-      <div className="chart-container">
+      <div className="chart-container" id="grafica-zscore">
         <h3>Puntuaciones Z (Desviaciones Estándar)</h3>
         <p className="chart-description">
           Puntuación Z normalizada que indica cuántas desviaciones estándar se encuentra 
@@ -1841,8 +1841,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1901,8 +1901,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1961,8 +1961,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                           <g 
                             className="scatter-point"
                             onClick={() => handlePuntoClick(payload)}
-                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-                          onMouseLeave={() => setPuntoHover(null)}
+onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+onMouseLeave={() => setPuntoHover(null)}
                             style={{ cursor: 'pointer' }}
                           >
                             <circle 

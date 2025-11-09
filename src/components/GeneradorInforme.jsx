@@ -18,13 +18,14 @@ function generarGraficaASCII(datosDominios, edadCronologica) {
 
   // Escala: cada carácter representa cierta cantidad de meses
   const escalaMax = Math.max(
-    edadCronologica * 1.2,
+    edadCronologica * 1.3,
     ...datosDominios.map(d => d.ed)
   );
   const escalaMin = 0;
-  const anchoGrafica = 60; // caracteres
+  const anchoGrafica = 50; // caracteres
   
-  let grafica = `\nGRÁFICA DE EDAD DE DESARROLLO POR DOMINIO
+  let grafica = `\nGRÁFICA 1: EDAD DE DESARROLLO POR DOMINIO
+═══════════════════════════════════════════════════════════
 (Cada █ representa ${(escalaMax / anchoGrafica).toFixed(1)} meses)\n\n`;
   
   // Línea de referencia para edad cronológica
@@ -33,13 +34,22 @@ function generarGraficaASCII(datosDominios, edadCronologica) {
   // Generar cada barra
   datosDominios.forEach(dom => {
     const longitudBarra = Math.round((dom.ed / escalaMax) * anchoGrafica);
-    const nombreAbreviado = dom.nombre.substring(0, 17).padEnd(17, ' ');
+    const nombreAbreviado = dom.nombre.substring(0, 18).padEnd(18, ' ');
     
-    // Crear la barra
-    let barra = '█'.repeat(Math.max(0, longitudBarra));
+    // Crear la barra con color según diferencia
+    const diferencia = dom.ed - edadCronologica;
+    let caracterBarra = '█';
+    if (Math.abs(diferencia) < 2) {
+      caracterBarra = '█'; // Normal
+    } else if (diferencia > 0) {
+      caracterBarra = '█'; // Adelantado
+    } else {
+      caracterBarra = '▓'; // Atrasado (trama más clara)
+    }
+    
+    let barra = caracterBarra.repeat(Math.max(0, longitudBarra));
     
     // Añadir indicador de diferencia con EC
-    const diferencia = dom.ed - edadCronologica;
     let indicador = '';
     if (Math.abs(diferencia) < 2) {
       indicador = ' ≈ EC';
@@ -49,11 +59,11 @@ function generarGraficaASCII(datosDominios, edadCronologica) {
       indicador = ` ${diferencia.toFixed(1)}m`;
     }
     
-    grafica += `${nombreAbreviado} │${barra} ${dom.ed.toFixed(1)}m${indicador}\n`;
+    grafica += `${nombreAbreviado}│${barra} ${dom.ed.toFixed(1)}m${indicador}\n`;
   });
   
   // Línea de escala
-  grafica += `${''.padEnd(17, ' ')} │${''.padEnd(anchoGrafica, '─')}\n`;
+  grafica += `${''.padEnd(18, ' ')}│${''.padEnd(anchoGrafica, '─')}\n`;
   
   // Marcas de escala
   const marcas = [];
@@ -64,7 +74,7 @@ function generarGraficaASCII(datosDominios, edadCronologica) {
   }
   
   // Línea con marcas
-  let lineaMarcas = ''.padEnd(17, ' ') + ' │';
+  let lineaMarcas = ''.padEnd(18, ' ') + '│';
   for (let i = 0; i < anchoGrafica; i++) {
     const marca = marcas.find(m => m.pos === i);
     if (marca) {
@@ -78,16 +88,119 @@ function generarGraficaASCII(datosDominios, edadCronologica) {
   grafica += lineaMarcas + '\n';
   
   // Valores de escala
-  let lineaValores = ''.padEnd(17, ' ') + '   ';
+  let lineaValores = ''.padEnd(18, ' ') + '  ';
   marcas.forEach(marca => {
     const valorStr = marca.valor.toFixed(0);
-    lineaValores += valorStr.padEnd(anchoGrafica / 4, ' ');
+    lineaValores += valorStr.padEnd(Math.floor(anchoGrafica / 4), ' ');
   });
   grafica += lineaValores + ' (meses)\n';
   
   // Leyenda
-  grafica += `\n  EC (Edad Cronológica): ${edadCronologica.toFixed(1)} meses ↓\n`;
-  grafica += `  ED (Edad de Desarrollo): Mostrada para cada dominio\n`;
+  grafica += `\n  ↓ EC (Edad Cronológica): ${edadCronologica.toFixed(1)} meses\n`;
+  grafica += `  █ ED por encima o similar a EC\n`;
+  grafica += `  ▓ ED por debajo de EC\n`;
+  
+  return grafica;
+}
+
+/**
+ * Genera una gráfica de Z-scores ASCII
+ */
+function generarGraficaZScoreASCII(datosDominios) {
+  if (!datosDominios || datosDominios.length === 0) {
+    return '';
+  }
+
+  const anchoGrafica = 50;
+  const zMax = 3; // -3 a +3 DE
+  const zMin = -3;
+  const rangoZ = zMax - zMin;
+  const posicionCero = Math.round((Math.abs(zMin) / rangoZ) * anchoGrafica);
+  
+  let grafica = `\n\nGRÁFICA 2: PUNTUACIÓN Z POR DOMINIO (DESVIACIONES ESTÁNDAR)
+═══════════════════════════════════════════════════════════
+(Rango normal: -1 a +1 DE | Vigilancia: -2 a -1 DE | Retraso: < -2 DE)\n\n`;
+  
+  // Zonas de referencia
+  const pos_menos2 = Math.round(((Math.abs(zMin) - 2) / rangoZ) * anchoGrafica);
+  const pos_menos1 = Math.round(((Math.abs(zMin) - 1) / rangoZ) * anchoGrafica);
+  const pos_mas1 = Math.round(((Math.abs(zMin) + 1) / rangoZ) * anchoGrafica);
+  const pos_mas2 = Math.round(((Math.abs(zMin) + 2) / rangoZ) * anchoGrafica);
+  
+  // Generar cada barra de Z-score
+  datosDominios.forEach(dom => {
+    const nombreAbreviado = dom.nombre.substring(0, 18).padEnd(18, ' ');
+    const zScore = Math.max(zMin, Math.min(zMax, dom.z)); // Limitar a rango
+    const posZ = Math.round(((zScore - zMin) / rangoZ) * anchoGrafica);
+    
+    // Construir la línea
+    let linea = '';
+    for (let i = 0; i < anchoGrafica; i++) {
+      if (i === posicionCero) {
+        linea += '│'; // Línea central (Z=0)
+      } else if (i === posZ) {
+        // Marcar la posición del Z-score con símbolo según zona
+        if (zScore < -2) {
+          linea += '●'; // Retraso severo
+        } else if (zScore < -1) {
+          linea += '◐'; // Vigilancia
+        } else if (zScore <= 1) {
+          linea += '○'; // Normal
+        } else {
+          linea += '◉'; // Adelantado
+        }
+      } else if ((i === pos_menos2 || i === pos_menos1 || i === pos_mas1 || i === pos_mas2)) {
+        linea += '┊'; // Líneas de zona
+      } else {
+        linea += ' ';
+      }
+    }
+    
+    grafica += `${nombreAbreviado}│${linea} z=${zScore.toFixed(2)}\n`;
+  });
+  
+  // Línea de escala
+  grafica += `${''.padEnd(18, ' ')}│${''.padEnd(anchoGrafica, '─')}\n`;
+  
+  // Marcas de escala
+  let lineaMarcas = ''.padEnd(18, ' ') + '│';
+  for (let i = 0; i < anchoGrafica; i++) {
+    if (i === posicionCero) {
+      lineaMarcas += '┼';
+    } else if (i === pos_menos2 || i === pos_mas2) {
+      lineaMarcas += '┴';
+    } else if (i === pos_menos1 || i === pos_mas1) {
+      lineaMarcas += '┴';
+    } else {
+      lineaMarcas += ' ';
+    }
+  }
+  grafica += lineaMarcas + '\n';
+  
+  // Valores de escala
+  let lineaValores = ''.padEnd(18, ' ') + '  ';
+  const posiciones = [
+    { pos: 0, valor: '-3' },
+    { pos: pos_menos2, valor: '-2' },
+    { pos: pos_menos1, valor: '-1' },
+    { pos: posicionCero, valor: '0' },
+    { pos: pos_mas1, valor: '+1' },
+    { pos: pos_mas2, valor: '+2' },
+    { pos: anchoGrafica - 1, valor: '+3' }
+  ];
+  
+  let ultPos = 0;
+  posiciones.forEach(p => {
+    const espacios = p.pos - ultPos;
+    lineaValores += ''.padEnd(Math.max(0, espacios), ' ') + p.valor;
+    ultPos = p.pos + p.valor.length;
+  });
+  grafica += lineaValores + ' DE\n';
+  
+  // Leyenda
+  grafica += `\n  ● Retraso severo (< -2 DE) | ◐ Vigilancia (-2 a -1 DE)\n`;
+  grafica += `  ○ Normal (-1 a +1 DE) | ◉ Adelantado (> +1 DE)\n`;
+  grafica += `  │ Línea de referencia (Z=0, desarrollo esperado)\n`;
   
   return grafica;
 }
@@ -120,6 +233,31 @@ export default function GeneradorInforme({ ninoId, ninoData, analisisData, redFl
   const [formato, setFormato] = useState('pdf'); // 'pdf' o 'texto'
 
   const generarInformeTexto = () => {
+    // Debug: verificar qué datos estamos recibiendo
+    console.log('📄 [GeneradorInforme] Generando informe...');
+    console.log('   - ninoData:', ninoData);
+    console.log('   - analisisData:', analisisData);
+    
+    if (analisisData) {
+      console.log('   - analisisData.hitos_conseguidos:', analisisData.hitos_conseguidos);
+      console.log('   - analisisData.hitos_conseguidos.length:', analisisData.hitos_conseguidos?.length);
+      console.log('   - analisisData.estadisticas_por_dominio:', analisisData.estadisticas_por_dominio);
+      
+      if (analisisData.hitos_conseguidos && analisisData.hitos_conseguidos.length > 0) {
+        console.log('   - Primer hito:', analisisData.hitos_conseguidos[0]);
+      }
+      
+      if (analisisData.estadisticas_por_dominio) {
+        console.log('   - Dominios en estadisticas:', Object.keys(analisisData.estadisticas_por_dominio));
+        const primerDominio = Object.keys(analisisData.estadisticas_por_dominio)[0];
+        if (primerDominio) {
+          console.log('   - Contenido primer dominio:', analisisData.estadisticas_por_dominio[primerDominio]);
+        }
+      }
+    } else {
+      console.error('   ⚠️ analisisData es null o undefined');
+    }
+    
     const fecha = new Date().toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
@@ -129,7 +267,10 @@ export default function GeneradorInforme({ ninoId, ninoData, analisisData, redFl
     // Calcular edad cronológica en meses
     const fechaNac = new Date(ninoData.fecha_nacimiento);
     const hoy = new Date();
-    const edadCronologicaMeses = Math.round((hoy - fechaNac) / (1000 * 60 * 60 * 24 * 30.44));
+    const edadCronologicaMeses = calcularEdadCorregidaMeses(
+      ninoData.fecha_nacimiento, 
+      ninoData.semanas_gestacion || 40
+    );
 
     let informe = `═══════════════════════════════════════════════════════════
 INFORME DE EVALUACIÓN DEL NEURODESARROLLO
@@ -145,9 +286,9 @@ Institución: Neuropedia Lab
 
 Nombre: ${ninoData.nombre}
 Fecha de nacimiento: ${new Date(ninoData.fecha_nacimiento).toLocaleDateString('es-ES')}
-Edad cronológica: ${calcularEdadTexto(ninoData.fecha_nacimiento)} (${edadCronologicaMeses} meses)
+Edad cronológica: ${calcularEdadTexto(ninoData.fecha_nacimiento)} (${edadCronologicaMeses.toFixed(1)} meses)
 Sexo: ${ninoData.sexo === 'M' ? 'Masculino' : 'Femenino'}
-${ninoData.prematuridad ? `Prematuridad: Sí (${ninoData.semanas_gestacion} semanas)\nEdad corregida: ${calcularEdadCorregidaMeses(ninoData.fecha_nacimiento, ninoData.semanas_gestacion)} meses` : ''}
+${ninoData.prematuridad ? `Prematuridad: Sí (${ninoData.semanas_gestacion} semanas)\nEdad corregida: ${edadCronologicaMeses.toFixed(1)} meses` : ''}
 ${ninoData.factores_riesgo ? `Factores de riesgo: ${ninoData.factores_riesgo}` : ''}
 
 ───────────────────────────────────────────────────────────
@@ -155,25 +296,134 @@ ${ninoData.factores_riesgo ? `Factores de riesgo: ${ninoData.factores_riesgo}` :
 ───────────────────────────────────────────────────────────
 `;
 
-    // Extraer datos del análisis
-    const edadDesarrolloGlobal = analisisData?.edad_desarrollo_global;
-    const zScoreGlobal = analisisData?.z_score_global;
+    // Recopilar datos de dominios primero
+    const nombresDominios = {
+      1: 'Motor Grueso',
+      2: 'Motor Fino',
+      3: 'Lenguaje Receptivo',
+      4: 'Lenguaje Expresivo',
+      5: 'Social-Emocional',
+      6: 'Cognitivo',
+      7: 'Adaptativo'
+    };
+
+    const datosDominios = [];
     
-    // Calcular Z-score global si no existe (aproximación desde ED)
-    const zGlobalCalculado = zScoreGlobal !== null && zScoreGlobal !== undefined 
-      ? zScoreGlobal 
-      : edadDesarrolloGlobal 
-        ? (edadDesarrolloGlobal - edadCronologicaMeses) / Math.max(edadCronologicaMeses * 0.15, 2)
-        : null;
+    // Intentar obtener hitos desde diferentes fuentes
+    let hitos_conseguidos = [];
+    
+    if (analisisData) {
+      // Opción 1: hitos_conseguidos directamente
+      if (analisisData.hitos_conseguidos && Array.isArray(analisisData.hitos_conseguidos)) {
+        hitos_conseguidos = analisisData.hitos_conseguidos;
+        console.log('   ✓ Usando hitos_conseguidos:', hitos_conseguidos.length);
+      }
+      // Opción 2: estadisticas_por_dominio (estructura alternativa)
+      else if (analisisData.estadisticas_por_dominio) {
+        console.log('   → Convirtiendo estadisticas_por_dominio a hitos...');
+        // Convertir estadisticas_por_dominio a array de hitos
+        Object.entries(analisisData.estadisticas_por_dominio).forEach(([dominioId, hitos]) => {
+          if (Array.isArray(hitos)) {
+            hitos_conseguidos.push(...hitos);
+          }
+        });
+        console.log('   ✓ Hitos extraídos:', hitos_conseguidos.length);
+      } else {
+        console.warn('   ⚠️ No se encontraron hitos en ninguna estructura');
+      }
+    } else {
+      console.warn('   ⚠️ analisisData es null o undefined');
+    }
+    
+    console.log('   - Total hitos a procesar:', hitos_conseguidos.length);
+    
+    if (hitos_conseguidos.length > 0) {
+      // Verificar que los hitos tengan los campos necesarios
+      const primerHito = hitos_conseguidos[0];
+      console.log('   - Campos del primer hito:', Object.keys(primerHito));
+      console.log('   - edad_media_meses:', primerHito.edad_media_meses);
+      console.log('   - desviacion_estandar:', primerHito.desviacion_estandar);
+      console.log('   - dominio_id:', primerHito.dominio_id);
+      
+      // Agrupar hitos por dominio y calcular ED promedio
+      const hitosPorDominio = {};
+      
+      hitos_conseguidos.forEach(hito => {
+        const dominioId = hito.dominio_id;
+        if (!hitosPorDominio[dominioId]) {
+          hitosPorDominio[dominioId] = [];
+        }
+        hitosPorDominio[dominioId].push(hito);
+      });
+      
+      console.log('   - Dominios encontrados:', Object.keys(hitosPorDominio));
+      console.log('   - Hitos por dominio:', Object.entries(hitosPorDominio).map(([id, h]) => `${id}:${h.length}`).join(', '));
+      
+      // Calcular métricas para cada dominio
+      Object.entries(hitosPorDominio).forEach(([dominioId, hitos]) => {
+        if (hitos.length > 0) {
+          // Calcular edad de desarrollo del dominio (promedio de edades medias de los hitos)
+          const sumaEdades = hitos.reduce((sum, h) => sum + (h.edad_media_meses || 0), 0);
+          const edadDesarrollo = sumaEdades / hitos.length;
+          
+          // Calcular desviación estándar promedio del dominio
+          const sumaDE = hitos.reduce((sum, h) => sum + (h.desviacion_estandar || 0), 0);
+          const dePromedio = sumaDE / hitos.length || Math.max(edadCronologicaMeses * 0.15, 2);
+          
+          // Calcular Z-score para este dominio: (ED - EC) / DE
+          const zScore = (edadDesarrollo - edadCronologicaMeses) / dePromedio;
+          
+          // Calcular cociente de desarrollo: (ED / EC) * 100
+          const cd = (edadDesarrollo / edadCronologicaMeses) * 100;
+          
+          console.log(`   - Dominio ${dominioId}: ED=${edadDesarrollo.toFixed(1)}, Z=${zScore.toFixed(2)}, CD=${cd.toFixed(1)}%`);
+          
+          datosDominios.push({
+            id: parseInt(dominioId),
+            nombre: nombresDominios[dominioId] || `Dominio ${dominioId}`,
+            ed: edadDesarrollo,
+            z: zScore,
+            cd: cd,
+            numHitos: hitos.length
+          });
+        }
+      });
+      
+      console.log('   ✓ Datos de dominios calculados:', datosDominios.length);
+    } else {
+      console.warn('   ⚠️ No hay hitos para procesar - El informe estará vacío');
+    }
+
+    // Ordenar por ID de dominio
+    datosDominios.sort((a, b) => a.id - b.id);
+    
+    // Calcular métricas globales
+    let edadDesarrolloGlobal = null;
+    let zScoreGlobal = null;
+    let cdGlobal = null;
+    
+    if (datosDominios.length > 0) {
+      // ED global = promedio de las ED de todos los dominios
+      const sumaED = datosDominios.reduce((sum, d) => sum + d.ed, 0);
+      edadDesarrolloGlobal = sumaED / datosDominios.length;
+      
+      // Z-score global = promedio de z-scores de dominios
+      const sumaZ = datosDominios.reduce((sum, d) => sum + d.z, 0);
+      zScoreGlobal = sumaZ / datosDominios.length;
+      
+      // CD global = (ED global / EC) * 100
+      cdGlobal = (edadDesarrolloGlobal / edadCronologicaMeses) * 100;
+    }
 
     informe += `
-Edad Cronológica (EC): ${edadCronologicaMeses.toFixed(1)} meses
-Edad de Desarrollo Global (ED): ${edadDesarrolloGlobal ? edadDesarrolloGlobal.toFixed(1) : 'N/A'} meses
-Diferencia (ED - EC): ${edadDesarrolloGlobal ? (edadDesarrolloGlobal - edadCronologicaMeses > 0 ? '+' : '') + (edadDesarrolloGlobal - edadCronologicaMeses).toFixed(1) : 'N/A'} meses
-Puntuación Z Global: ${zGlobalCalculado !== null ? zGlobalCalculado.toFixed(2) : 'N/A'} DE
-Cociente Desarrollo (CD): ${edadDesarrolloGlobal ? ((edadDesarrolloGlobal / edadCronologicaMeses) * 100).toFixed(1) : 'N/A'}%
+PUNTUACIÓN GLOBAL:
+  Edad Cronológica (EC):         ${edadCronologicaMeses.toFixed(1)} meses
+  Edad de Desarrollo (ED):       ${edadDesarrolloGlobal ? edadDesarrolloGlobal.toFixed(1) : 'N/A'} meses
+  Diferencia (ED - EC):          ${edadDesarrolloGlobal ? (edadDesarrolloGlobal - edadCronologicaMeses > 0 ? '+' : '') + (edadDesarrolloGlobal - edadCronologicaMeses).toFixed(1) : 'N/A'} meses
+  Cociente de Desarrollo (CD):   ${cdGlobal ? cdGlobal.toFixed(1) : 'N/A'}%
+  Puntuación Z Global:           ${zScoreGlobal !== null ? zScoreGlobal.toFixed(2) : 'N/A'} DE
 
-Interpretación Global: ${interpretarZScore(zGlobalCalculado)}
+Interpretación Global: ${interpretarZScore(zScoreGlobal)}
 
 `;
 
@@ -184,60 +434,27 @@ Interpretación Global: ${interpretarZScore(zGlobalCalculado)}
 
 `;
 
-    // Recopilar datos de dominios para la gráfica
-    const nombresDominios = {
-      1: 'Motor Grueso',
-      2: 'Motor Fino',
-      3: 'Lenguaje Recep.',
-      4: 'Lenguaje Expr.',
-      5: 'Social-Emocional',
-      6: 'Cognitivo',
-      7: 'Adaptativo'
-    };
-
-    const datosDominios = [];
-    
-    if (analisisData && analisisData.estadisticas_por_dominio) {
-      Object.entries(analisisData.estadisticas_por_dominio).forEach(([id, hitos]) => {
-        if (hitos && hitos.length > 0) {
-          // Calcular edad de desarrollo promedio para este dominio
-          const sumaEdades = hitos.reduce((sum, h) => sum + (h.edad_media_meses || 0), 0);
-          const edadDesarrollo = sumaEdades / hitos.length;
-          
-          // Calcular Z-score para este dominio
-          const zScore = (edadDesarrollo - edadCronologicaMeses) / Math.max(edadCronologicaMeses * 0.15, 2);
-          
-          datosDominios.push({
-            id: parseInt(id),
-            nombre: nombresDominios[id] || `Dominio ${id}`,
-            ed: edadDesarrollo,
-            z: zScore,
-            cd: (edadDesarrollo / edadCronologicaMeses) * 100
-          });
-        }
-      });
-    }
-
-    // Ordenar por ID de dominio
-    datosDominios.sort((a, b) => a.id - b.id);
-
-    // Crear gráfica ASCII
+    // Crear gráficas ASCII
     informe += generarGraficaASCII(datosDominios, edadCronologicaMeses);
+    informe += generarGraficaZScoreASCII(datosDominios);
 
     informe += `\n
 DATOS DETALLADOS POR DOMINIO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
     // Tabla detallada de dominios
     datosDominios.forEach(dom => {
       informe += `
-${dom.nombre}:
-  Edad de Desarrollo: ${dom.ed.toFixed(1)} meses
-  Edad Cronológica:   ${edadCronologicaMeses.toFixed(1)} meses
-  Diferencia:         ${(dom.ed - edadCronologicaMeses > 0 ? '+' : '')}${(dom.ed - edadCronologicaMeses).toFixed(1)} meses
-  Puntuación Z:       ${dom.z.toFixed(2)} DE
-  CD:                 ${dom.cd.toFixed(1)}%
-  Interpretación:     ${interpretarZScore(dom.z)}
+${dom.nombre} (${dom.numHitos} hitos evaluados):
+  ┌─────────────────────────────────────────────────────────┐
+  │ Edad de Desarrollo (ED):     ${dom.ed.toFixed(1).padEnd(7)} meses    │
+  │ Edad Cronológica (EC):       ${edadCronologicaMeses.toFixed(1).padEnd(7)} meses    │
+  │ Diferencia (ED - EC):        ${((dom.ed - edadCronologicaMeses > 0 ? '+' : '') + (dom.ed - edadCronologicaMeses).toFixed(1)).padEnd(7)} meses    │
+  │ Cociente Desarrollo (CD):    ${dom.cd.toFixed(1).padEnd(7)}%         │
+  │ Puntuación Z:                ${dom.z.toFixed(2).padEnd(7)} DE        │
+  │ Interpretación:              ${interpretarZScore(dom.z).substring(0, 30).padEnd(30)} │
+  └─────────────────────────────────────────────────────────┘
 `;
     });
 
@@ -400,7 +617,129 @@ Fecha de generación: ${fecha}
 
       yPosition += 5;
 
-      // Resultados por dominios
+      // Resumen ejecutivo con métricas globales
+      if (yPosition > pageHeight - 60) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('RESUMEN EJECUTIVO', margin, yPosition);
+      yPosition += 7;
+
+      // Calcular métricas globales (similar a la función de texto)
+      const edadCronologicaMeses = calcularEdadCorregidaMeses(
+        ninoData.fecha_nacimiento, 
+        ninoData.semanas_gestacion || 40
+      );
+
+      const nombresDominios = {
+        1: 'Motor Grueso',
+        2: 'Motor Fino',
+        3: 'Lenguaje Receptivo',
+        4: 'Lenguaje Expresivo',
+        5: 'Social-Emocional',
+        6: 'Cognitivo',
+        7: 'Adaptativo'
+      };
+
+      const datosDominios = [];
+      
+      // Intentar obtener hitos desde diferentes fuentes
+      let hitos_conseguidos = [];
+      
+      if (analisisData) {
+        // Opción 1: hitos_conseguidos directamente
+        if (analisisData.hitos_conseguidos && Array.isArray(analisisData.hitos_conseguidos)) {
+          hitos_conseguidos = analisisData.hitos_conseguidos;
+        }
+        // Opción 2: estadisticas_por_dominio (estructura alternativa)
+        else if (analisisData.estadisticas_por_dominio) {
+          // Convertir estadisticas_por_dominio a array de hitos
+          Object.entries(analisisData.estadisticas_por_dominio).forEach(([dominioId, hitos]) => {
+            if (Array.isArray(hitos)) {
+              hitos_conseguidos.push(...hitos);
+            }
+          });
+        }
+      }
+      
+      if (hitos_conseguidos.length > 0) {
+        const hitosPorDominio = {};
+        
+        hitos_conseguidos.forEach(hito => {
+          const dominioId = hito.dominio_id;
+          if (!hitosPorDominio[dominioId]) {
+            hitosPorDominio[dominioId] = [];
+          }
+          hitosPorDominio[dominioId].push(hito);
+        });
+        
+        Object.entries(hitosPorDominio).forEach(([dominioId, hitos]) => {
+          if (hitos.length > 0) {
+            const sumaEdades = hitos.reduce((sum, h) => sum + (h.edad_media_meses || 0), 0);
+            const edadDesarrollo = sumaEdades / hitos.length;
+            
+            const sumaDE = hitos.reduce((sum, h) => sum + (h.desviacion_estandar || 0), 0);
+            const dePromedio = sumaDE / hitos.length || Math.max(edadCronologicaMeses * 0.15, 2);
+            
+            const zScore = (edadDesarrollo - edadCronologicaMeses) / dePromedio;
+            const cd = (edadDesarrollo / edadCronologicaMeses) * 100;
+            
+            datosDominios.push({
+              id: parseInt(dominioId),
+              nombre: nombresDominios[dominioId] || `Dominio ${dominioId}`,
+              ed: edadDesarrollo,
+              z: zScore,
+              cd: cd,
+              numHitos: hitos.length
+            });
+          }
+        });
+      }
+
+      datosDominios.sort((a, b) => a.id - b.id);
+      
+      let edadDesarrolloGlobal = null;
+      let zScoreGlobal = null;
+      let cdGlobal = null;
+      
+      if (datosDominios.length > 0) {
+        const sumaED = datosDominios.reduce((sum, d) => sum + d.ed, 0);
+        edadDesarrolloGlobal = sumaED / datosDominios.length;
+        
+        const sumaZ = datosDominios.reduce((sum, d) => sum + d.z, 0);
+        zScoreGlobal = sumaZ / datosDominios.length;
+        
+        cdGlobal = (edadDesarrolloGlobal / edadCronologicaMeses) * 100;
+      }
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      const resumenTexto = [
+        `Edad Cronológica (EC): ${edadCronologicaMeses.toFixed(1)} meses`,
+        `Edad de Desarrollo (ED): ${edadDesarrolloGlobal ? edadDesarrolloGlobal.toFixed(1) : 'N/A'} meses`,
+        `Diferencia (ED - EC): ${edadDesarrolloGlobal ? (edadDesarrolloGlobal - edadCronologicaMeses > 0 ? '+' : '') + (edadDesarrolloGlobal - edadCronologicaMeses).toFixed(1) : 'N/A'} meses`,
+        `Cociente de Desarrollo (CD): ${cdGlobal ? cdGlobal.toFixed(1) : 'N/A'}%`,
+        `Puntuación Z Global: ${zScoreGlobal !== null ? zScoreGlobal.toFixed(2) : 'N/A'} DE`,
+        ``,
+        `Interpretación: ${interpretarZScore(zScoreGlobal)}`
+      ];
+
+      resumenTexto.forEach(texto => {
+        if (yPosition > pageHeight - 15) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        const lineas = pdf.splitTextToSize(texto, maxWidth);
+        pdf.text(lineas, margin, yPosition);
+        yPosition += lineas.length * 5;
+      });
+
+      yPosition += 5;
+
+      // Resultados detallados por dominios
       if (yPosition > pageHeight - 40) {
         pdf.addPage();
         yPosition = margin;
@@ -408,29 +747,139 @@ Fecha de generación: ${fecha}
 
       pdf.setFontSize(12);
       pdf.setFont(undefined, 'bold');
-      pdf.text('RESULTADOS POR DOMINIOS', margin, yPosition);
+      pdf.text('RESULTADOS DETALLADOS POR DOMINIOS', margin, yPosition);
       yPosition += 7;
 
-      // Capturar gráficos si están disponibles
-      const graficosElements = document.querySelectorAll('.recharts-wrapper');
-      for (let i = 0; i < Math.min(graficosElements.length, 2); i++) {
-        if (yPosition > pageHeight - 100) {
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'normal');
+
+      datosDominios.forEach(dom => {
+        if (yPosition > pageHeight - 35) {
           pdf.addPage();
           yPosition = margin;
         }
 
-        try {
-          const canvas = await html2canvas(graficosElements[i]);
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = maxWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
-          yPosition += imgHeight + 10;
-        } catch (error) {
-          console.error('Error al capturar gráfico:', error);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(`${dom.nombre} (${dom.numHitos} hitos)`, margin, yPosition);
+        yPosition += 5;
+
+        pdf.setFont(undefined, 'normal');
+        const detallesDominio = [
+          `  ED: ${dom.ed.toFixed(1)} meses | EC: ${edadCronologicaMeses.toFixed(1)} meses | Dif: ${(dom.ed - edadCronologicaMeses > 0 ? '+' : '')}${(dom.ed - edadCronologicaMeses).toFixed(1)} meses`,
+          `  CD: ${dom.cd.toFixed(1)}% | Z-score: ${dom.z.toFixed(2)} DE`,
+          `  ${interpretarZScore(dom.z)}`
+        ];
+
+        detallesDominio.forEach(texto => {
+          if (yPosition > pageHeight - 15) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          const lineas = pdf.splitTextToSize(texto, maxWidth);
+          pdf.text(lineas, margin, yPosition);
+          yPosition += lineas.length * 4;
+        });
+
+        yPosition += 3;
+      });
+
+      yPosition += 5;
+
+      // Capturar gráficos específicos si están disponibles
+      const graficosParaCapturar = [
+        { id: 'grafica-desarrollo-principal', titulo: 'Edad de Desarrollo vs Edad Cronológica' },
+        { id: 'grafica-zscore', titulo: 'Puntuaciones Z (Desviaciones Estándar)' },
+        { id: 'grafica-velocidad-desarrollo', titulo: 'Velocidad del Desarrollo' },
+        { id: 'grafica-aceleracion-desarrollo', titulo: 'Aceleración del Desarrollo' }
+      ];
+
+      let graficosCapturados = 0;
+      
+      for (const grafico of graficosParaCapturar) {
+        const elemento = document.getElementById(grafico.id);
+        
+        if (elemento) {
+          // Agregar nueva página si no hay espacio
+          if (yPosition > pageHeight - 100 || graficosCapturados > 0) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          // Título de la sección en la primera gráfica
+          if (graficosCapturados === 0) {
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('GRÁFICOS DEL DESARROLLO', margin, yPosition);
+            yPosition += 10;
+          }
+
+          try {
+            // Título del gráfico
+            pdf.setFontSize(10);
+            pdf.setFont(undefined, 'bold');
+            pdf.text(grafico.titulo, margin, yPosition);
+            yPosition += 7;
+
+            const canvas = await html2canvas(elemento, {
+              scale: 2, // Mejor calidad
+              logging: false,
+              useCORS: true
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = maxWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            // Limitar altura de imagen si es muy grande
+            const maxImgHeight = pageHeight - yPosition - margin;
+            const finalImgHeight = Math.min(imgHeight, maxImgHeight);
+            const finalImgWidth = (finalImgHeight / imgHeight) * imgWidth;
+            
+            pdf.addImage(imgData, 'PNG', margin, yPosition, finalImgWidth, finalImgHeight);
+            yPosition += finalImgHeight + 10;
+            graficosCapturados++;
+          } catch (error) {
+            console.error(`Error al capturar gráfico ${grafico.id}:`, error);
+          }
+        } else {
+          console.warn(`No se encontró el elemento con id: ${grafico.id}`);
         }
       }
+
+      // Si no se capturaron gráficos específicos, intentar con las gráficas generales
+      if (graficosCapturados === 0) {
+        const graficosElements = document.querySelectorAll('.recharts-wrapper');
+        if (graficosElements.length > 0) {
+          if (yPosition > pageHeight - 40) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          pdf.setFontSize(12);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('GRÁFICOS DEL DESARROLLO', margin, yPosition);
+          yPosition += 7;
+
+          for (let i = 0; i < Math.min(graficosElements.length, 4); i++) {
+            if (yPosition > pageHeight - 100) {
+              pdf.addPage();
+              yPosition = margin;
+            }
+
+            try {
+              const canvas = await html2canvas(graficosElements[i]);
+              const imgData = canvas.toDataURL('image/png');
+              const imgWidth = maxWidth;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              
+              pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
+              yPosition += imgHeight + 10;
+            } catch (error) {
+              console.error('Error al capturar gráfico:', error);
+            }
+          }
+        }
+      }
+
 
       // Red flags
       if (redFlags && redFlags.length > 0) {
