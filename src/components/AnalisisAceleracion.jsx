@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
-import { fetchConAuth } from '../utils/authService';
+import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import { construirPuntosEvaluacion, interpretarTrayectoria, determinarTipoDatos } from '../utils/trayectoriasUtils';
 import { API_URL } from '../config';
 
@@ -78,6 +78,45 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
   const cargarDatos = async () => {
     setLoading(true);
     try {
+      // En modo invitado, verificar si hay datos en sessionStorage
+      if (esModoInvitado() && ninoId.startsWith('invitado_')) {
+        console.log('📊 [AnalisisAceleracion] Modo invitado detectado, cargando desde sessionStorage');
+        
+        const hitosKey = `invitado_hitos_${ninoId}`;
+        const hitosGuardados = sessionStorage.getItem(hitosKey);
+        
+        if (!hitosGuardados) {
+          console.log('⚠️ [AnalisisAceleracion] No hay hitos guardados para este ejemplo');
+          setDatos(null);
+          setLoading(false);
+          return;
+        }
+        
+        const hitos = JSON.parse(hitosGuardados);
+        console.log('📊 [AnalisisAceleracion] Hitos cargados de sessionStorage:', hitos?.length);
+        
+        // Obtener datos del niño
+        const ninosGuardados = sessionStorage.getItem('invitado_ninos');
+        const ninos = ninosGuardados ? JSON.parse(ninosGuardados) : [];
+        const ninoData = ninos.find(n => n.id === ninoId);
+        
+        if (!ninoData) {
+          console.log('⚠️ [AnalisisAceleracion] No se encontró el niño en sessionStorage');
+          setDatos(null);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('📊 [AnalisisAceleracion] Datos del niño (sessionStorage):', ninoData);
+        setNino(ninoData);
+        
+        // Construir análisis desde datos del sessionStorage
+        await construirDatosRetrospectivosDesdeSessionStorage(ninoData, hitos);
+        setLoading(false);
+        return;
+      }
+      
+      // Usuario autenticado: cargar desde servidor
       // Cargar datos del niño PRIMERO
       const ninoResponse = await fetchConAuth(`${API_URL}/ninos/${ninoId}`);
       const ninoData = await ninoResponse.json();
@@ -190,9 +229,15 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       const datosCalculados = calcularAceleracionesDesdePuntos(puntosEvaluacion);
       console.log('📊 [AnalisisAceleracion] Datos calculados:', datosCalculados?.length);
       
+      // Construir línea de tendencia para datos retrospectivos
+      // (necesaria para gráficas de velocidad y aceleración)
+      const lineaTendenciaRetrospectiva = construirLineaTendenciaRetrospectiva(puntosEvaluacion);
+      console.log('📊 [AnalisisAceleracion] Línea de tendencia retrospectiva:', lineaTendenciaRetrospectiva?.length);
+      
       setDatos({
         evaluaciones: puntosEvaluacion,
-        datosAceleracion: datosCalculados
+        datosAceleracion: datosCalculados,
+        lineaTendencia: lineaTendenciaRetrospectiva // Agregar línea de tendencia
       });
       setTipoDatos('retrospectivo');
       console.log('✅ [AnalisisAceleracion] Datos retrospectivos cargados correctamente');
@@ -201,6 +246,117 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       console.error('❌ [AnalisisAceleracion] Error construyendo datos retrospectivos:', error);
       setDatos(null);
     }
+  };
+
+  /**
+   * Construye datos retrospectivos desde sessionStorage (modo invitado)
+   */
+  const construirDatosRetrospectivosDesdeSessionStorage = async (ninoData, hitosConseguidos) => {
+    try {
+      console.log('🔄 [AnalisisAceleracion] Construyendo datos retrospectivos desde sessionStorage');
+      console.log('   - Hitos recibidos:', hitosConseguidos?.length);
+      
+      if (!hitosConseguidos || hitosConseguidos.length < 2) {
+        console.log('⚠️ [AnalisisAceleracion] Insuficientes hitos conseguidos:', hitosConseguidos?.length);
+        setDatos(null);
+        return;
+      }
+
+      // Cargar hitos normativos (estos sí están en el servidor)
+      const normativosResponse = await fetch(`${API_URL}/hitos-normativos?fuente=${fuenteSeleccionada || 1}`);
+      const hitosNormativos = await normativosResponse.json();
+      console.log('📊 [AnalisisAceleracion] Hitos normativos cargados:', hitosNormativos?.length);
+      
+      // Filtrar por fuente
+      const hitosNormativosFuente = hitosNormativos.filter(h => h.fuente_normativa_id === (fuenteSeleccionada || 1));
+      console.log('📊 [AnalisisAceleracion] Hitos normativos filtrados:', hitosNormativosFuente?.length);
+      
+      // Cargar dominios si no están cargados aún
+      let dominiosParaUsar = dominios;
+      if (!dominiosParaUsar || dominiosParaUsar.length === 0) {
+        const dominiosResponse = await fetch(`${API_URL}/dominios`);
+        dominiosParaUsar = await dominiosResponse.json();
+        setDominios(dominiosParaUsar);
+      }
+      console.log('📊 [AnalisisAceleracion] Dominios cargados:', dominiosParaUsar?.length);
+      
+      // Calcular edad actual del niño
+      const fechaNac = new Date(ninoData.fecha_nacimiento);
+      const hoy = new Date();
+      const diffTime = Math.abs(hoy - fechaNac);
+      const edadActualMeses = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+      console.log('📊 [AnalisisAceleracion] Edad actual:', edadActualMeses, 'meses');
+      
+      // Construir puntos de evaluación desde datos longitudinales
+      const puntosEvaluacion = construirPuntosEvaluacion(
+        hitosConseguidos,
+        hitosNormativosFuente,
+        dominiosParaUsar,
+        edadActualMeses
+      );
+      
+      console.log('📊 [AnalisisAceleracion] Puntos de evaluación construidos:', puntosEvaluacion?.length);
+      
+      if (puntosEvaluacion.length < 2) {
+        console.log('⚠️ [AnalisisAceleracion] Insuficientes puntos de evaluación:', puntosEvaluacion.length);
+        setDatos(null);
+        return;
+      }
+
+      // Calcular métricas de trayectoria
+      const datosCalculados = calcularAceleracionesDesdePuntos(puntosEvaluacion);
+      console.log('📊 [AnalisisAceleracion] Datos calculados:', datosCalculados?.length);
+      
+      // Construir línea de tendencia para datos retrospectivos
+      const lineaTendenciaRetrospectiva = construirLineaTendenciaRetrospectiva(puntosEvaluacion);
+      console.log('📊 [AnalisisAceleracion] Línea de tendencia retrospectiva:', lineaTendenciaRetrospectiva?.length);
+      
+      setDatos({
+        evaluaciones: puntosEvaluacion,
+        datosAceleracion: datosCalculados,
+        lineaTendencia: lineaTendenciaRetrospectiva
+      });
+      setTipoDatos('retrospectivo');
+      console.log('✅ [AnalisisAceleracion] Datos retrospectivos cargados correctamente desde sessionStorage');
+      
+    } catch (error) {
+      console.error('❌ [AnalisisAceleracion] Error construyendo datos retrospectivos desde sessionStorage:', error);
+      setDatos(null);
+    }
+  };
+
+  /**
+   * Construye línea de tendencia desde puntos de evaluación retrospectivos
+   * para usar en gráficas de velocidad y aceleración
+   */
+  const construirLineaTendenciaRetrospectiva = (puntosEvaluacion) => {
+    if (!puntosEvaluacion || puntosEvaluacion.length < 2) return [];
+    
+    // Convertir puntos de evaluación a formato compatible con gráficas
+    // Mapear edad_desarrollo desde CD global
+    const lineaTendencia = puntosEvaluacion.map(punto => {
+      let cd_valor;
+      
+      if (dominioSeleccionado === 'global') {
+        cd_valor = punto.cd_global;
+      } else {
+        const dominio = punto.dominios?.find(d => d.dominio_id === parseInt(dominioSeleccionado));
+        cd_valor = dominio?.cd;
+      }
+      
+      if (cd_valor === null || cd_valor === undefined) return null;
+      
+      // CD = (ED / EC) * 100
+      // Por lo tanto: ED = (CD * EC) / 100
+      const edad_desarrollo = (cd_valor * punto.edad_meses) / 100;
+      
+      return {
+        edad_cronologica: punto.edad_meses,
+        edad_desarrollo: edad_desarrollo
+      };
+    }).filter(p => p !== null);
+    
+    return lineaTendencia;
   };
 
   /**
@@ -515,18 +671,27 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       {(() => {
         // Calcular velocidad desde la línea de tendencia (derivada primera)
         console.log('🔍 [AnalisisAceleracion] Verificando datos de regresión:', {
-          existe: !!datosRegresionGraficoDesarrollo,
-          tieneLineaTendencia: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
-          longitudLineaTendencia: datosRegresionGraficoDesarrollo?.lineaTendencia?.length,
+          existeRegresion: !!datosRegresionGraficoDesarrollo,
+          tieneLineaTendenciaRegresion: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
+          longitudLineaTendenciaRegresion: datosRegresionGraficoDesarrollo?.lineaTendencia?.length,
+          tieneLineaTendenciaRetrospectiva: !!datos?.lineaTendencia,
+          longitudLineaTendenciaRetrospectiva: datos?.lineaTendencia?.length,
           tipoDatos
         });
         
-        if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
-          console.log('⚠️ [AnalisisAceleracion] No hay datos de regresión, ocultando gráficas de velocidad/aceleración');
+        // Usar línea de tendencia de regresión (GraficoDesarrollo) si está disponible,
+        // o la línea de tendencia retrospectiva construida localmente
+        const lineaTendencia = datosRegresionGraficoDesarrollo?.lineaTendencia || datos?.lineaTendencia;
+        
+        if (!lineaTendencia || lineaTendencia.length < 2) {
+          console.log('⚠️ [AnalisisAceleracion] No hay datos de tendencia disponibles');
           return null;
         }
 
-        const lineaTendencia = datosRegresionGraficoDesarrollo.lineaTendencia;
+        console.log('✅ [AnalisisAceleracion] Usando línea de tendencia:', {
+          fuente: datosRegresionGraficoDesarrollo?.lineaTendencia ? 'regresión GraficoDesarrollo' : 'retrospectiva local',
+          longitud: lineaTendencia.length
+        });
         const datosVelocidad = lineaTendencia.map((punto, idx) => {
           if (idx === 0) {
             return {
@@ -603,17 +768,21 @@ export default function AnalisisAceleracion({ ninoId, datosRegresionGraficoDesar
       {(() => {
         // Calcular aceleración desde la velocidad (derivada segunda)
         console.log('🔍 [AnalisisAceleracion] Verificando datos para aceleración:', {
-          existe: !!datosRegresionGraficoDesarrollo,
-          tieneLineaTendencia: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
-          longitudLineaTendencia: datosRegresionGraficoDesarrollo?.lineaTendencia?.length
+          existeRegresion: !!datosRegresionGraficoDesarrollo,
+          tieneLineaTendenciaRegresion: !!datosRegresionGraficoDesarrollo?.lineaTendencia,
+          longitudLineaTendenciaRegresion: datosRegresionGraficoDesarrollo?.lineaTendencia?.length,
+          tieneLineaTendenciaRetrospectiva: !!datos?.lineaTendencia,
+          longitudLineaTendenciaRetrospectiva: datos?.lineaTendencia?.length
         });
         
-        if (!datosRegresionGraficoDesarrollo || !datosRegresionGraficoDesarrollo.lineaTendencia) {
-          console.log('⚠️ [AnalisisAceleracion] No hay datos de regresión, ocultando gráfica de aceleración');
+        // Usar línea de tendencia de regresión (GraficoDesarrollo) si está disponible,
+        // o la línea de tendencia retrospectiva construida localmente
+        const lineaTendencia = datosRegresionGraficoDesarrollo?.lineaTendencia || datos?.lineaTendencia;
+        
+        if (!lineaTendencia || lineaTendencia.length < 3) {
+          console.log('⚠️ [AnalisisAceleracion] No hay suficientes datos de tendencia para aceleración (se necesitan al menos 3 puntos)');
           return null;
         }
-
-        const lineaTendencia = datosRegresionGraficoDesarrollo.lineaTendencia;
         
         // Primero calcular velocidad
         const datosVelocidad = lineaTendencia.map((punto, idx) => {
