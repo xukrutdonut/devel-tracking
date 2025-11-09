@@ -1520,6 +1520,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                 name="Desarrollo típico"
                 connectNulls
                 isAnimationActive={false}
+                  activeShape={false}
               />
             )}
             
@@ -1554,6 +1555,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       activeDot={false}
                       name={`${dominio.nombre} (tendencia)`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )
                 ))}
@@ -1612,6 +1614,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                   }}
                   name="Hitos por dominio"
                   isAnimationActive={false}
+                  activeShape={false}
                 />
               </>
             )}
@@ -1631,6 +1634,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                     activeDot={false}
                     name="Tendencia Global"
                     isAnimationActive={false}
+                  activeShape={false}
                   />
                 )}
                 {/* Scatter para capturar tooltips de cada hito individual - DESPUÉS (encima) */}
@@ -1641,6 +1645,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                   shape={renderizarPuntoPersonalizado}
                   name="Hitos individuales"
                   isAnimationActive={false}
+                  activeShape={false}
                 />
               </>
             )}
@@ -1662,6 +1667,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       activeDot={false}
                       name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )}
                   {/* Scatter para hitos individuales del dominio - DESPUÉS (encima) */}
@@ -1720,6 +1726,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       }}
                       name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre}`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )}
                 </>
@@ -1813,6 +1820,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                     activeDot={false}
                     name="Tendencia Z-Score Global"
                     isAnimationActive={false}
+                  activeShape={false}
                   />
                 )}
                 {/* Scatter para hitos individuales con Z-Score - DESPUÉS (encima) */}
@@ -1846,6 +1854,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                   }}
                   name="Z-Score de hitos"
                   isAnimationActive={false}
+                  activeShape={false}
                 />
               </>
             )}
@@ -1867,6 +1876,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       activeDot={false}
                       name={`${dominio.nombre} (tendencia)`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )
                 ))}
@@ -1901,6 +1911,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                   }}
                   name="Z-Score por dominio"
                   isAnimationActive={false}
+                  activeShape={false}
                 />
               </>
             )}
@@ -1922,6 +1933,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       activeDot={false}
                       name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre} (tendencia)`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )}
                   {/* Scatter para hitos individuales del dominio - DESPUÉS (encima) */}
@@ -1956,6 +1968,7 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
                       }}
                       name={`${edadDesarrolloPorDominio[dominioSeleccionado]?.dominio_nombre}`}
                       isAnimationActive={false}
+                  activeShape={false}
                     />
                   )}
                 </>
