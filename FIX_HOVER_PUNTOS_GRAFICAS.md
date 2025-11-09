@@ -1,21 +1,61 @@
 # Fix: Prevenir movimiento de puntos al hacer hover en gráficas
 
+## ACTUALIZACIÓN: Causa Raíz Identificada
+
+**La verdadera causa del problema era CSS, no configuración de Recharts.**
+
+### Causa Raíz (identificada en commit 1e1e0e7)
+
+El archivo `src/App.css` contenía:
+
+```css
+.scatter-point:hover {
+  transform: scale(1.1);  /* ← ESTO causaba el movimiento */
+}
+```
+
+Esta regla CSS aplicaba un escalado del 110% a los puntos al hacer hover, causando que se movieran visualmente.
+
+### Solución Definitiva
+
+**Eliminado de `src/App.css`:**
+```css
+.scatter-point {
+  cursor: pointer;
+  transition: transform 0.2s ease;  /* ← Removido */
+}
+
+.scatter-point:hover {
+  transform: scale(1.1);  /* ← Removido */
+}
+```
+
+**Ahora:**
+```css
+.scatter-point {
+  cursor: pointer;
+  /* Removido: transition y transform que causaban movimiento al hover */
+}
+```
+
+---
+
+## Contexto Original (commit 7cb15e9)
+
+El primer intento de solución fue agregar `activeShape={false}` a los componentes Recharts, lo cual es correcto pero no resolvía el problema porque la causa era CSS.
+
 ## Problema Identificado
 
 Al pasar el ratón sobre los puntos que representan hitos del desarrollo en las gráficas, los puntos se movían o cambiaban su comportamiento gráfico en lugar de simplemente mostrar un borde negro de resaltado.
 
-## Causa del Problema
+## Solución Completa (2 commits)
 
-Los componentes `Scatter` de Recharts tienen un comportamiento por defecto donde al hacer hover:
-- Aumentan el tamaño del punto (activeShape)
-- Aplican animaciones
-- Cambian la posición visual del punto
+### 1. Commit 7cb15e9: Configuración de Recharts
+- Agregado `activeShape={false}` a todos los Scatter (prevención en librería)
 
-Este comportamiento interfería con nuestro sistema personalizado de resaltado que usa un círculo con borde negro alrededor del punto activo.
-
-## Solución Implementada
-
-Se agregó la propiedad `activeShape={false}` a todos los componentes `<Scatter>` en `GraficoDesarrollo.jsx` para deshabilitar completamente el comportamiento de hover por defecto de Recharts.
+### 2. Commit 1e1e0e7: Eliminación de CSS problemático ✅ **SOLUCIÓN REAL**
+- Eliminado `transform: scale(1.1)` en hover (causa raíz)
+- Eliminado `transition: transform` (efecto asociado)
 
 ### Propiedades agregadas a cada Scatter:
 
