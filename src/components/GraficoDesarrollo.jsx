@@ -897,101 +897,64 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
     hito => hito.edad_conseguido_meses > edadActualMeses
   ).length;
 
-  // Custom tooltip para los puntos del scatter plot
+  // Custom tooltip para los puntos del scatter plot - Muestra info en hover
   const ScatterTooltip = ({ active, payload, coordinate }) => {
-    if (!active || !payload || !payload.length || !coordinate) {
-      return null;
-    }
-
-    // Filtrar solo los payloads que tienen hito_nombre (puntos reales, no líneas de tendencia)
-    const puntosReales = payload.filter(p => p.payload && p.payload.hito_nombre);
-    
-    if (puntosReales.length === 0) {
-      return null;
-    }
-
-    // Si hay múltiples puntos, buscar todos los puntos cercanos en la misma posición
-    // Obtener la posición del hover
-    const edadCronologica = puntosReales[0].payload.edad_cronologica;
-    const edadDesarrollo = puntosReales[0].payload.edad_desarrollo;
-    
-    // Buscar todos los hitos en la misma posición (tolerancia de 0.5 meses)
-    const tolerancia = 0.5;
-    let hitosEnPosicion = datosGraficoGlobal.filter(punto => 
-      punto.hito_nombre &&
-      Math.abs(punto.edad_cronologica - edadCronologica) < tolerancia &&
-      Math.abs(punto.edad_desarrollo - edadDesarrollo) < tolerancia
-    );
-
-    // Si estamos en vista de dominio específico, filtrar solo hitos de ese dominio
-    if (dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos') {
-      hitosEnPosicion = hitosEnPosicion.filter(punto => punto.dominio_id === parseInt(dominioSeleccionado));
-    }
-
-    // Organizar en grid (2 columnas)
-    const columnas = 2;
-
-    return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${Math.min(hitosEnPosicion.length, columnas)}, 1fr)`,
-        gap: '10px',
-        maxWidth: '800px'
-      }}>
-        {hitosEnPosicion.map((punto, index) => {
-          // Calcular Cociente de Desarrollo (CD)
-          // CD = (Edad de Desarrollo / Edad Cronológica) × 100
-          const cocienteDesarrollo = punto.edad_cronologica > 0 
-            ? (punto.edad_desarrollo / punto.edad_cronologica) * 100 
-            : null;
-          
-          // Calcular Z-score
-          // Z = (Edad de Desarrollo - Edad Cronológica) / SD
-          const sd = Math.max(punto.edad_cronologica * 0.15, 2);
-          const zscore = (punto.edad_desarrollo - punto.edad_cronologica) / sd;
-          
-          return (
-            <div key={index} className="custom-tooltip" style={{
-              backgroundColor: 'white',
-              padding: '10px 15px',
-              border: '2px solid #333',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              minWidth: '280px'
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
-                {punto.hito_nombre}
+    // Si hay un punto en hover, mostrar su información
+    if (puntoHover) {
+      // Calcular Cociente de Desarrollo (CD)
+      const cocienteDesarrollo = puntoHover.edad_cronologica > 0 
+        ? (puntoHover.edad_desarrollo / puntoHover.edad_cronologica) * 100 
+        : null;
+      
+      // Calcular Z-score
+      const sd = Math.max(puntoHover.edad_cronologica * 0.15, 2);
+      const zscore = (puntoHover.edad_desarrollo - puntoHover.edad_cronologica) / sd;
+      
+      return (
+        <div className="custom-tooltip" style={{
+          backgroundColor: 'white',
+          padding: '10px 15px',
+          border: '2px solid #333',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          minWidth: '280px',
+          zIndex: 10000
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
+            {puntoHover.hito_nombre}
+          </p>
+          <div style={{ fontSize: '0.9em', color: '#555' }}>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Dominio:</strong> <span style={{ color: coloresDominios[puntoHover.dominio_id], fontWeight: 'bold' }}>{puntoHover.dominio_nombre}</span>
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad cronológica:</strong> {puntoHover.edad_cronologica?.toFixed(1)} meses
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad de desarrollo:</strong> {puntoHover.edad_desarrollo?.toFixed(1)} meses
+            </p>
+            {cocienteDesarrollo !== null && (
+              <p style={{ margin: '4px 0' }}>
+                <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
               </p>
-              <div style={{ fontSize: '0.9em', color: '#555' }}>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Dominio:</strong> <span style={{ color: coloresDominios[punto.dominio_id], fontWeight: 'bold' }}>{punto.dominio_nombre}</span>
-                </p>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Edad cronológica:</strong> {punto.edad_cronologica?.toFixed(1)} meses
-                </p>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Edad de desarrollo:</strong> {punto.edad_desarrollo?.toFixed(1)} meses
-                </p>
-                {cocienteDesarrollo !== null && (
-                  <p style={{ margin: '4px 0' }}>
-                    <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
-                  </p>
-                )}
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Puntuación Z:</strong> {zscore.toFixed(2)}
-                </p>
-                {punto.tiene_perdida && (
-                  <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontWeight: 'bold' }}>
-                    ⚠️ Hito perdido en regresión
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+            )}
+            <p style={{ margin: '4px 0' }}>
+              <strong>Puntuación Z:</strong> {zscore.toFixed(2)}
+            </p>
+            {puntoHover.tiene_perdida && (
+              <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontWeight: 'bold' }}>
+                ⚠️ Hito perdido en regresión
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
+
+  // Contar hitos descartados
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -1133,96 +1096,64 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
   };
 
   // Custom tooltip para Z-scores con información de hitos individuales
+  // Custom tooltip para Z-Scores - Muestra info en hover
   const ZScoreTooltip = ({ active, payload, coordinate }) => {
-    if (!active || !payload || !payload.length || !coordinate) {
-      return null;
-    }
-
-    // Filtrar solo los payloads que tienen hito_nombre (puntos reales, no líneas de tendencia)
-    const puntosReales = payload.filter(p => p.payload && p.payload.hito_nombre);
-    
-    if (puntosReales.length === 0) {
-      return null;
-    }
-
-    // Obtener la posición del hover
-    const edadCronologica = puntosReales[0].payload.edad_cronologica;
-    const zscore = puntosReales[0].payload.zscore;
-    
-    // Buscar todos los hitos en la misma posición (tolerancia)
-    const tolerancia = 0.5;
-    const toleranciaZ = 0.2;
-    let hitosEnPosicion = datosZScoreIndividuales.filter(punto => 
-      punto.hito_nombre &&
-      Math.abs(punto.edad_cronologica - edadCronologica) < tolerancia &&
-      Math.abs(punto.zscore - zscore) < toleranciaZ
-    );
-
-    // Si estamos en vista de dominio específico, filtrar solo hitos de ese dominio
-    if (dominioSeleccionado !== 'global' && dominioSeleccionado !== 'todos') {
-      hitosEnPosicion = hitosEnPosicion.filter(punto => punto.dominio_id === parseInt(dominioSeleccionado));
-    }
-
-    // Organizar en grid (2 columnas)
-    const columnas = 2;
-
-    return (
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${Math.min(hitosEnPosicion.length, columnas)}, 1fr)`,
-        gap: '10px',
-        maxWidth: '800px'
-      }}>
-        {hitosEnPosicion.map((punto, index) => {
-          // Calcular Cociente de Desarrollo (CD)
-          const cocienteDesarrollo = punto.edad_cronologica > 0 
-            ? (punto.edad_desarrollo / punto.edad_cronologica) * 100 
-            : null;
-          
-          return (
-            <div key={index} className="custom-tooltip" style={{
-              backgroundColor: 'white',
-              padding: '10px 15px',
-              border: '2px solid #333',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              minWidth: '280px'
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
-                {punto.hito_nombre}
+    // Si hay un punto en hover, mostrar su información
+    if (puntoHover) {
+      // Calcular Cociente de Desarrollo (CD)
+      const cocienteDesarrollo = puntoHover.edad_cronologica > 0 
+        ? (puntoHover.edad_desarrollo / puntoHover.edad_cronologica) * 100 
+        : null;
+      
+      // Calcular Z-score
+      const sd = Math.max(puntoHover.edad_cronologica * 0.15, 2);
+      const zscore = (puntoHover.edad_desarrollo - puntoHover.edad_cronologica) / sd;
+      
+      return (
+        <div className="custom-tooltip" style={{
+          backgroundColor: 'white',
+          padding: '10px 15px',
+          border: '2px solid #333',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          minWidth: '280px',
+          zIndex: 10000
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', fontSize: '1em', color: '#2c3e50' }}>
+            {puntoHover.hito_nombre}
+          </p>
+          <div style={{ fontSize: '0.9em', color: '#555' }}>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Dominio:</strong> <span style={{ color: coloresDominios[puntoHover.dominio_id], fontWeight: 'bold' }}>{puntoHover.dominio_nombre}</span>
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad cronológica:</strong> {puntoHover.edad_cronologica?.toFixed(1)} meses
+            </p>
+            <p style={{ margin: '4px 0' }}>
+              <strong>Edad de desarrollo:</strong> {puntoHover.edad_desarrollo?.toFixed(1)} meses
+            </p>
+            {cocienteDesarrollo !== null && (
+              <p style={{ margin: '4px 0' }}>
+                <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
               </p>
-              <div style={{ fontSize: '0.9em', color: '#555' }}>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Dominio:</strong> <span style={{ color: coloresDominios[punto.dominio_id], fontWeight: 'bold' }}>{punto.dominio_nombre}</span>
-                </p>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Edad cronológica:</strong> {punto.edad_cronologica?.toFixed(1)} meses
-                </p>
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Edad de desarrollo:</strong> {punto.edad_desarrollo?.toFixed(1)} meses
-                </p>
-                {cocienteDesarrollo !== null && (
-                  <p style={{ margin: '4px 0' }}>
-                    <strong>Cociente de Desarrollo:</strong> {cocienteDesarrollo.toFixed(1)}
-                  </p>
-                )}
-                <p style={{ margin: '4px 0' }}>
-                  <strong>Puntuación Z:</strong> {punto.zscore?.toFixed(2)}
-                </p>
-                <p style={{ 
-                  margin: '6px 0 0 0', 
-                  color: punto.zscore < -1 ? '#e74c3c' : punto.zscore > 1 ? '#27ae60' : '#666',
-                  fontWeight: 'bold',
-                  fontSize: '0.85em'
-                }}>
-                  {interpretarZScore(punto.zscore)}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+            )}
+            <p style={{ margin: '4px 0' }}>
+              <strong>Puntuación Z:</strong> {zscore.toFixed(2)}
+            </p>
+            <p style={{ 
+              margin: '6px 0 0 0', 
+              color: zscore < -1 ? '#e74c3c' : zscore > 1 ? '#27ae60' : '#666',
+              fontWeight: 'bold',
+              fontSize: '0.85em'
+            }}>
+              {interpretarZScore(zscore)}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -1513,8 +1444,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
               label={{ value: 'Edad de Desarrollo (meses)', angle: -90, position: 'insideLeft' }}
               domain={[0, 'dataMax + 6']}
             />
-            {/* Tooltip deshabilitado - usamos modal con click */}
-            <Tooltip content={() => null} cursor={false} />
+            {/* Tooltip habilitado - muestra info en hover */}
+            <Tooltip content={<ScatterTooltip />} cursor={false} />
             <Legend />
             
             {/* Línea de desarrollo típico (45 grados) */}
@@ -1818,8 +1749,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
             <YAxis 
               label={{ value: 'Puntuación Z', angle: -90, position: 'insideLeft' }}
             />
-            {/* Tooltip deshabilitado - usamos modal con click */}
-            <Tooltip content={() => null} cursor={false} />
+            {/* Tooltip habilitado - muestra info en hover (usa ZScoreTooltip) */}
+            <Tooltip content={<ZScoreTooltip />} cursor={false} />
             <Legend />
             
             {/* Bandas de referencia */}
