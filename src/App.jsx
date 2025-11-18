@@ -167,25 +167,27 @@ function App() {
         >
           👶 Niños
         </button>
-        <button 
-          className={vistaActual === 'bibliografia' ? 'active' : ''}
-          onClick={() => {
-            setVistaActual('bibliografia');
-            setNinoSeleccionado(null);
-          }}
-        >
-          📖 Fundamentos Científicos
-        </button>
         {!modoAvanzado && (
-          <button 
-            className={vistaActual === 'ejemplos' ? 'active' : ''}
-            onClick={() => {
-              setVistaActual('ejemplos');
-              setNinoSeleccionado(null);
-            }}
-          >
-            📚 Ejemplos Prácticos
-          </button>
+          <>
+            <button 
+              className={vistaActual === 'bibliografia' ? 'active' : ''}
+              onClick={() => {
+                setVistaActual('bibliografia');
+                setNinoSeleccionado(null);
+              }}
+            >
+              📖 Fundamentos Científicos
+            </button>
+            <button 
+              className={vistaActual === 'ejemplos' ? 'active' : ''}
+              onClick={() => {
+                setVistaActual('ejemplos');
+                setNinoSeleccionado(null);
+              }}
+            >
+              📚 Ejemplos Prácticos
+            </button>
+          </>
         )}
         {modoAvanzado && (
           <button 
