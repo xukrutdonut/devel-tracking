@@ -32,6 +32,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:3002',
   'http://127.0.0.1:5173',
+  'http://neurodesarrollo-backend:8001', // Contenedor Docker interno
+  'http://172.18.0.2:3000', // Red Docker
   'https://dev.neuropedialab.org',
   'https://devel-tracking.neuropedialab.org'
 ];
@@ -41,10 +43,16 @@ app.use(cors({
     // Permitir requests sin origin (como mobile apps o curl requests)
     if (!origin) return callback(null, true);
     
+    // Log para debug
+    console.log('🔍 Intento de conexión desde origen:', origin);
+    
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'La política CORS de este sitio no permite el acceso desde el origen especificado.';
+      console.error('❌ Origen rechazado:', origin);
+      console.error('✅ Orígenes permitidos:', allowedOrigins);
       return callback(new Error(msg), false);
     }
+    console.log('✅ Origen aceptado:', origin);
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
