@@ -22,7 +22,7 @@ import AnalisisAceleracion from './AnalisisAceleracion';
  * - Lajiness-O'Neill et al. (2018). Infant Behav Dev, 50:224-37.
  *   Sistema de vigilancia continua tipo PediaTrac con múltiples fuentes normativas
  */
-function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados }) {
+function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = false }) {
   const [analisis, setAnalisis] = useState(null);
   const [redFlags, setRedFlags] = useState([]);
   const [dominioSeleccionado, setDominioSeleccionado] = useState('global');
@@ -2029,27 +2029,31 @@ onMouseLeave={() => setPuntoHover(null)}
       )}
       </>
 
-      {/* Sección de Análisis Matemático */}
-      <div style={{ 
-        marginTop: '40px',
-        marginBottom: '20px', 
-        padding: '15px', 
-        backgroundColor: '#FFF3E0', 
-        borderRadius: '8px',
-        borderLeft: '4px solid #FF9800'
-      }}>
-        <h2 style={{ margin: 0, color: '#F57C00', fontSize: '24px' }}>
-          📐 Análisis Matemático: Velocidad y Aceleración
-        </h2>
-        <p style={{ margin: '5px 0 0 0', color: '#555', fontSize: '14px' }}>
-          Análisis de derivadas para evaluar ritmo de cambio y dinámica del desarrollo
-        </p>
-      </div>
+      {/* Sección de Análisis Matemático - Solo en modo avanzado */}
+      {modoAvanzado && (
+        <>
+          <div style={{ 
+            marginTop: '40px',
+            marginBottom: '20px', 
+            padding: '15px', 
+            backgroundColor: '#FFF3E0', 
+            borderRadius: '8px',
+            borderLeft: '4px solid #FF9800'
+          }}>
+            <h2 style={{ margin: 0, color: '#F57C00', fontSize: '24px' }}>
+              📐 Análisis Matemático: Velocidad y Aceleración
+            </h2>
+            <p style={{ margin: '5px 0 0 0', color: '#555', fontSize: '14px' }}>
+              Análisis de derivadas para evaluar ritmo de cambio y dinámica del desarrollo
+            </p>
+          </div>
 
-      <AnalisisAceleracion 
-        ninoId={ninoId} 
-        datosRegresionGraficoDesarrollo={datosRegresion}
-      />
+          <AnalisisAceleracion 
+            ninoId={ninoId} 
+            datosRegresionGraficoDesarrollo={datosRegresion}
+          />
+        </>
+      )}
     </div>
   );
 }

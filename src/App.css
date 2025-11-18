@@ -1881,6 +1881,41 @@ body {
   gap: 10px;
 }
 
+.mode-toggle {
+  background: white;
+  color: #0073AA;
+  border: 2px solid #0073AA;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mode-toggle:hover {
+  background: #0073AA;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 115, 170, 0.3);
+}
+
+.mode-toggle.advanced {
+  background: #0073AA;
+  color: white;
+  border-color: #0073AA;
+}
+
+.mode-toggle.advanced:hover {
+  background: #005a87;
+  border-color: #005a87;
+}
+
 .user-name {
   color: #111;
   font-weight: 700;

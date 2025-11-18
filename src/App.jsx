@@ -25,6 +25,7 @@ function App() {
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
   const [vistaActual, setVistaActual] = useState('lista'); // lista, introduccion, grafico, ejemplos, bibliografia, investigacion
   const [datosRegresion, setDatosRegresion] = useState(null); // Compartir datos de regresión entre gráficas
+  const [modoAvanzado, setModoAvanzado] = useState(false); // false = modo básico, true = modo avanzado
 
   useEffect(() => {
     if (autenticado) {
@@ -137,6 +138,13 @@ function App() {
             <p className="subtitle">Sistema de evaluación del desarrollo 0-6 años</p>
           </div>
           <div className="user-info">
+            <button 
+              className={`mode-toggle ${modoAvanzado ? 'advanced' : 'basic'}`}
+              onClick={() => setModoAvanzado(!modoAvanzado)}
+              title={modoAvanzado ? 'Cambiar a modo básico' : 'Cambiar a modo avanzado'}
+            >
+              {modoAvanzado ? '🔬 Avanzado' : '📖 Básico'}
+            </button>
             <span className="user-name">👤 {usuario.nombre}</span>
             {esAdmin() && <span className="admin-badge">ADMIN</span>}
             {esModoInvitado() && <span className="invitado-badge">INVITADO</span>}
@@ -163,24 +171,28 @@ function App() {
         >
           📖 Fundamentos Científicos
         </button>
-        <button 
-          className={vistaActual === 'ejemplos' ? 'active' : ''}
-          onClick={() => {
-            setVistaActual('ejemplos');
-            setNinoSeleccionado(null);
-          }}
-        >
-          📚 Ejemplos Prácticos
-        </button>
-        <button 
-          className={vistaActual === 'investigacion' ? 'active' : ''}
-          onClick={() => {
-            setVistaActual('investigacion');
-            setNinoSeleccionado(null);
-          }}
-        >
-          🔬 Investigación
-        </button>
+        {!modoAvanzado && (
+          <button 
+            className={vistaActual === 'ejemplos' ? 'active' : ''}
+            onClick={() => {
+              setVistaActual('ejemplos');
+              setNinoSeleccionado(null);
+            }}
+          >
+            📚 Ejemplos Prácticos
+          </button>
+        )}
+        {modoAvanzado && (
+          <button 
+            className={vistaActual === 'investigacion' ? 'active' : ''}
+            onClick={() => {
+              setVistaActual('investigacion');
+              setNinoSeleccionado(null);
+            }}
+          >
+            🔬 Investigación
+          </button>
+        )}
         {ninoSeleccionado && (
           <>
             <button 
@@ -237,6 +249,7 @@ function App() {
           <GraficoDesarrollo 
             ninoId={ninoSeleccionado.id} 
             onDatosRegresionCalculados={setDatosRegresion}
+            modoAvanzado={modoAvanzado}
           />
         )}
 
