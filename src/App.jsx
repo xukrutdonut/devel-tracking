@@ -138,13 +138,18 @@ function App() {
             <p className="subtitle">Sistema de evaluación del desarrollo 0-6 años</p>
           </div>
           <div className="user-info">
-            <button 
-              className={`mode-toggle ${modoAvanzado ? 'advanced' : 'basic'}`}
-              onClick={() => setModoAvanzado(!modoAvanzado)}
-              title={modoAvanzado ? 'Cambiar a modo básico' : 'Cambiar a modo avanzado'}
-            >
-              {modoAvanzado ? '🔬 Avanzado' : '📖 Básico'}
-            </button>
+            <div className="mode-switch-container">
+              <span className="mode-label">📖 Básico</span>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={modoAvanzado}
+                  onChange={() => setModoAvanzado(!modoAvanzado)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="mode-label">🔬 Avanzado</span>
+            </div>
             <span className="user-name">👤 {usuario.nombre}</span>
             {esAdmin() && <span className="admin-badge">ADMIN</span>}
             {esModoInvitado() && <span className="invitado-badge">INVITADO</span>}
