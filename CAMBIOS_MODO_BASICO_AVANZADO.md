@@ -30,8 +30,8 @@ Se ha implementado un interruptor tipo toggle switch en la esquina superior dere
   - ❌ Oculta: Investigación
   
 - **Modo Avanzado** (modoAvanzado = true):
-  - ✅ Muestra: Niños, Fundamentos Científicos, Investigación
-  - ❌ Oculta: Ejemplos Prácticos
+  - ✅ Muestra: Niños, Investigación
+  - ❌ Oculta: Fundamentos Científicos, Ejemplos Prácticos
 
 ### 3. GraficoDesarrollo.jsx
 - **Prop nuevo**: `modoAvanzado` recibido desde App.jsx
@@ -54,16 +54,16 @@ Se ha implementado un interruptor tipo toggle switch en la esquina superior dere
 ## Comportamiento del Usuario
 
 ### Al cambiar a Modo Básico:
-1. El usuario ve una interfaz simplificada
+1. El usuario ve una interfaz simplificada y educativa
 2. La pestaña de "Investigación" desaparece del menú
-3. Si estaba en la vista de gráficas, no verá las secciones de velocidad y aceleración
-4. La pestaña de "Ejemplos Prácticos" está disponible para aprender
+3. Las pestañas de "Fundamentos Científicos" y "Ejemplos Prácticos" están disponibles para aprender
+4. Si estaba en la vista de gráficas, no verá las secciones de velocidad y aceleración
 
 ### Al cambiar a Modo Avanzado:
-1. El usuario ve todas las funcionalidades
-2. La pestaña de "Investigación" aparece en el menú
-3. En las gráficas, se muestran las secciones de velocidad y aceleración del desarrollo
-4. La pestaña de "Ejemplos Prácticos" desaparece (se asume conocimiento previo)
+1. El usuario ve una interfaz profesional y técnica
+2. La pestaña de "Investigación" aparece en el menú (con teoría avanzada)
+3. Las pestañas de "Fundamentos Científicos" y "Ejemplos Prácticos" desaparecen (se asume conocimiento previo)
+4. En las gráficas, se muestran las secciones de velocidad y aceleración del desarrollo
 
 ## Ubicación Visual
 El interruptor de modo está ubicado en:
