@@ -7,6 +7,7 @@ import './EscalasRegistro.css';
 const ESCALAS_DESARROLLO = {
   battelle: {
     nombre: 'Battelle (Inventario de Desarrollo)',
+    url_tea: 'https://web.teaediciones.com/BATTELLE-2-INVENTARIO-DE-DESARROLLO.aspx',
     rango_edad: '0-95 meses',
     puntuacion_tipificada: 'Puntuación típica (Media=100, DE=15)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 15 },
@@ -21,6 +22,7 @@ const ESCALAS_DESARROLLO = {
   },
   brunet_lezine: {
     nombre: 'Brunet-Lézine Revisado',
+    url_tea: 'https://web.teaediciones.com/BL-R-ESCALA-DE-DESARROLLO-PSICOMOTOR-DE-LA-PRIMERA-INFANCIA-BRUNET-LEZINE-REVISADO.aspx',
     rango_edad: '0-30 meses',
     puntuacion_tipificada: 'Cociente de Desarrollo (Media=100, DE=15)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 15 },
@@ -34,6 +36,7 @@ const ESCALAS_DESARROLLO = {
   },
   bayley_iii: {
     nombre: 'Bayley-III (Escalas Bayley de Desarrollo Infantil)',
+    url_tea: 'https://web.teaediciones.com/BAYLEY-III-ESCALAS-BAYLEY-DE-DESARROLLO-INFANTIL-III.aspx',
     rango_edad: '1-42 meses',
     puntuacion_tipificada: 'Puntuación compuesta (Media=100, DE=15)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 15 },
@@ -48,6 +51,7 @@ const ESCALAS_DESARROLLO = {
   },
   mccarthy: {
     nombre: 'McCarthy (MSCA)',
+    url_tea: 'https://web.teaediciones.com/MSCA-ESCALAS-McCARTHY-DE-APTITUDES-Y-PSICOMOTRICIDAD-PARA-NINOS.aspx',
     rango_edad: '30-102 meses',
     puntuacion_tipificada: 'Índice General Cognitivo (Media=100, DE=16)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 16 },
@@ -62,6 +66,7 @@ const ESCALAS_DESARROLLO = {
   },
   wppsi_iv: {
     nombre: 'WPPSI-IV (Escala Wechsler Preescolar)',
+    url_tea: 'https://web.teaediciones.com/WPPSI-IV-ESCALA-DE-INTELIGENCIA-DE-WECHSLER-PARA-PREESCOLAR-Y-PRIMARIA-IV.aspx',
     rango_edad: '30-90 meses',
     puntuacion_tipificada: 'CI Total (Media=100, DE=15)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 15 },
@@ -76,6 +81,7 @@ const ESCALAS_DESARROLLO = {
   },
   merrill_palmer_r: {
     nombre: 'Merrill-Palmer-R',
+    url_tea: 'https://web.teaediciones.com/MP-R-ESCALAS-DE-DESARROLLO-MERRILL-PALMER-REVISADAS.aspx',
     rango_edad: '1-78 meses',
     puntuacion_tipificada: 'Índice de Desarrollo (Media=100, DE=15)',
     rango_puntuacion: { min: 40, max: 160, media: 100, de: 15 },
@@ -325,7 +331,25 @@ function EscalasRegistro({ ninoId }) {
           {escalaActual && (
             <>
               <div className="info-escala">
-                <h4>{escalaActual.nombre}</h4>
+                <h4>
+                  <a 
+                    href={escalaActual.url_tea}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#2196F3',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    {escalaActual.nombre}
+                    <i className="fas fa-external-link-alt" style={{ fontSize: '0.8em' }}></i>
+                  </a>
+                </h4>
                 <p><strong>Rango de edad:</strong> {escalaActual.rango_edad}</p>
                 <p><strong>Puntuación tipificada:</strong> {escalaActual.puntuacion_tipificada}</p>
                 <p><strong>Rango válido:</strong> {escalaActual.rango_puntuacion.min} - {escalaActual.rango_puntuacion.max}</p>
@@ -466,7 +490,31 @@ function EscalasRegistro({ ninoId }) {
               return (
                 <div key={evaluacion.id} className="evaluacion-card">
                   <div className="evaluacion-header">
-                    <h4>{escala.nombre}</h4>
+                    <h4>
+                      <a 
+                        href={escala.url_tea}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: '#333',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.color = '#2196F3';
+                          e.currentTarget.style.textDecoration = 'underline';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.color = '#333';
+                          e.currentTarget.style.textDecoration = 'none';
+                        }}
+                      >
+                        {escala.nombre}
+                        <i className="fas fa-external-link-alt" style={{ fontSize: '0.7em' }}></i>
+                      </a>
+                    </h4>
                     <button 
                       className="btn-eliminar-small"
                       onClick={() => eliminarEvaluacion(evaluacion.id)}
@@ -532,7 +580,26 @@ function EscalasRegistro({ ninoId }) {
         <div className="info-cards">
           {Object.entries(ESCALAS_DESARROLLO).map(([key, escala]) => (
             <div key={key} className="info-card">
-              <h4>{escala.nombre}</h4>
+              <h4>
+                <a 
+                  href={escala.url_tea}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: '#2196F3',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '1em'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+                >
+                  {escala.nombre}
+                  <i className="fas fa-external-link-alt" style={{ fontSize: '0.75em' }}></i>
+                </a>
+              </h4>
               <p><strong>Edad:</strong> {escala.rango_edad}</p>
               <p><strong>Puntuación:</strong> {escala.puntuacion_tipificada}</p>
               <p><strong>Dominios evaluados:</strong> {escala.dominios.length}</p>

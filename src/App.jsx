@@ -8,6 +8,7 @@ import GraficoDesarrollo from './components/GraficoDesarrollo';
 import EjemplosPracticos from './components/EjemplosPracticos';
 import Bibliografia from './components/Bibliografia';
 import Investigacion from './components/Investigacion';
+import BibliotecaMedios from './components/BibliotecaMedios';
 import { API_URL } from './config';
 import { 
   estaAutenticado, 
@@ -23,7 +24,7 @@ function App() {
   const [usuario, setUsuario] = useState(getUsuario());
   const [ninos, setNinos] = useState([]);
   const [ninoSeleccionado, setNinoSeleccionado] = useState(null);
-  const [vistaActual, setVistaActual] = useState('lista'); // lista, introduccion, grafico, ejemplos, bibliografia, investigacion
+  const [vistaActual, setVistaActual] = useState('lista'); // lista, introduccion, grafico, ejemplos, bibliografia, investigacion, medios
   const [datosRegresion, setDatosRegresion] = useState(null); // Compartir datos de regresión entre gráficas
   const [modoAvanzado, setModoAvanzado] = useState(false); // false = modo básico, true = modo avanzado
 
@@ -200,6 +201,17 @@ function App() {
             🔬 Investigación
           </button>
         )}
+        {esAdmin() && (
+          <button 
+            className={vistaActual === 'medios' ? 'active' : ''}
+            onClick={() => {
+              setVistaActual('medios');
+              setNinoSeleccionado(null);
+            }}
+          >
+            🎬 Biblioteca de Medios
+          </button>
+        )}
         {ninoSeleccionado && (
           <>
             <button 
@@ -266,6 +278,11 @@ function App() {
 
         {vistaActual === 'investigacion' && (
           <Investigacion />
+        )}
+        
+        {vistaActual === 'medios' && esAdmin() && (
+          <BibliotecaMedios />
+        )}
         )}
       </main>
     </div>

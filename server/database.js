@@ -132,6 +132,19 @@ db.serialize(() => {
     }
   });
 
+  // Migración: agregar columnas para videos educativos
+  db.run(`ALTER TABLE hitos_normativos ADD COLUMN video_url_cdc TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding video_url_cdc column:', err);
+    }
+  });
+  
+  db.run(`ALTER TABLE hitos_normativos ADD COLUMN video_url_pathways TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding video_url_pathways column:', err);
+    }
+  });
+
   // Tabla de hitos no alcanzados (para seguimiento)
   db.run(`CREATE TABLE IF NOT EXISTS hitos_no_alcanzados (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

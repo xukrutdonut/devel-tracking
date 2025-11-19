@@ -11,6 +11,7 @@ services:
     volumes:
       - ./server:/app/server
       - db-data:/app/data
+      - backend-node-modules:/app/node_modules
     environment:
       - NODE_ENV=production
       - PORT=8001
@@ -29,6 +30,7 @@ services:
       - ./src:/app/src
       - ./public:/app/public
       - ./index.html:/app/index.html
+      - frontend-node-modules:/app/node_modules
     environment:
       - NODE_ENV=development
       # VITE_API_URL no definida para usar la lógica automática de config.js
@@ -41,6 +43,10 @@ services:
 
 volumes:
   db-data:
+    driver: local
+  backend-node-modules:
+    driver: local
+  frontend-node-modules:
     driver: local
 
 networks:

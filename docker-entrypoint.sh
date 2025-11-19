@@ -3,6 +3,12 @@ set -e
 
 echo "🚀 Iniciando Sistema de Seguimiento del Neurodesarrollo..."
 
+# Verificar e instalar dependencias si es necesario
+if [ ! -d "node_modules" ] || [ ! "$(ls -A node_modules)" ]; then
+    echo "📦 Instalando dependencias..."
+    npm install --include=dev
+fi
+
 # Función para iniciar el backend
 start_backend() {
     echo "📊 Iniciando Backend API..."

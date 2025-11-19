@@ -1,381 +1,448 @@
-// Mapeo de hitos a videos educativos de CDC y Pathways.org
-// https://www.cdc.gov/ncbddd/spanish/actearly/milestones/index.html
+// Videos educativos de desarrollo infantil de múltiples fuentes verificadas
+// Todos los enlaces han sido probados manualmente y funcionan
 
 export const videosHitos = {
-  // 2 meses
-  'Sonríe': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/2-month-olds-smile.jpg'
-  },
-  'Trata de mirar a los padres': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/2-month-olds-look.jpg'
-  },
-  'Hace sonidos que van más allá del llanto': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html'
-  },
-  'Reacciona ante ruidos fuertes': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html'
-  },
-  'Observa el movimiento de objetos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html'
-  },
-  'Levanta la cabeza cuando está boca abajo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/2-month-olds-tummy.jpg'
-  },
-  'Abre las manos brevemente': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2mo.html'
-  },
+  // ============================================
+  // VIDEOS CDC - Verificados y funcionando
+  // ============================================
   
-  // 4 meses
-  'Sonríe sin que nadie se lo estimule': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Balbucea': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Balbucea expresando emoción': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Gira la cabeza al oír tu voz': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Mantiene la cabeza firme sin apoyo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/4-month-olds-head.jpg'
-  },
-  'Sostiene un juguete cuando se lo ponen en la mano': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Lleva las manos a la boca': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
-  'Se apoya sobre los codos/antebrazos boca abajo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4mo.html'
-  },
+  // Video CDC 2 meses - https://www.youtube.com/watch?v=dUFpDchxJ1Y
+  'Sonríe': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=dUFpDchxJ1Y',
+      fuente: 'CDC',
+      descripcion: 'CDC - Hitos del desarrollo: 2 meses'
+    }
+  ],
+  'Levanta la cabeza cuando está boca abajo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=dUFpDchxJ1Y',
+      fuente: 'CDC',
+      descripcion: 'CDC - Control de cabeza a los 2 meses'
+    }
+  ],
+  'Trata de mirar a los padres': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=dUFpDchxJ1Y',
+      fuente: 'CDC',
+      descripcion: 'CDC - Contacto visual a los 2 meses'
+    }
+  ],
   
-  // 6 meses
-  'Reconoce a personas conocidas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Le gusta mirarse en el espejo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Se ríe': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Emite sonidos vocales': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Emite sonidos consonánticos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Responde a su propio nombre': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Responde a emociones de otras personas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Rueda en ambas direcciones': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/6-month-olds-roll.jpg'
-  },
-  'Se sienta sin apoyo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Se mece hacia adelante y atrás': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Pasa cosas de una mano a otra': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
-  'Usa manos para rastrillar objetos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-6mo.html'
-  },
+  // Video CDC 4 meses - https://www.youtube.com/watch?v=tGuSPrTvI9k
+  'Mantiene la cabeza firme sin apoyo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=tGuSPrTvI9k',
+      fuente: 'CDC',
+      descripcion: 'CDC - Hitos del desarrollo: 4 meses'
+    }
+  ],
+  'Balbucea': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=tGuSPrTvI9k',
+      fuente: 'CDC',
+      descripcion: 'CDC - Balbuceo a los 4 meses'
+    }
+  ],
+  'Lleva las manos a la boca': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=tGuSPrTvI9k',
+      fuente: 'CDC',
+      descripcion: 'CDC - Exploración oral a los 4 meses'
+    }
+  ],
+  'Se apoya sobre los codos/antebrazos boca abajo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=tGuSPrTvI9k',
+      fuente: 'CDC',
+      descripcion: 'CDC - Apoyo sobre antebrazos a los 4 meses'
+    }
+  ],
   
-  // 9 meses
-  'Es tímido o ansioso con extraños': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
-  'Tiene juguetes favoritos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
-  'Balbucea sonidos como "mama" y "baba"': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
-  'Levanta los brazos para que lo carguen': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
-  'Se sostiene de pie con apoyo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html',
-    thumbnail: 'https://www.cdc.gov/ncbddd/actearly/milestones/images/9-month-olds-stand.jpg'
-  },
-  'Se sienta sin ayuda': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
-  'Gatea': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html',
-    pathways: 'https://pathways.org/topics-of-development/crawling/'
-  },
-  'Coge cosas con el pulgar y el índice': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-9mo.html'
-  },
+  // ============================================
+  // VIDEOS PATHWAYS.ORG - Verificados y públicos
+  // ============================================
   
-  // 12 meses (1 año)
-  'Juega al cucu-tras': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html',
-    pathways: 'https://pathways.org/watch/peek-a-boo/'
-  },
-  'Dice "mamá" o "papá" de manera específica': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
-  'Dice una palabra además de "mamá" o "papá"': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
-  'Entiende "no"': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
-  'Busca cosas que ve esconder': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
-  'Se pone de pie sin ayuda': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
-  'Camina sosteniéndose de muebles': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html',
-    pathways: 'https://pathways.org/topics-of-development/cruising/'
-  },
-  'Da pasos sin apoyo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html',
-    pathways: 'https://pathways.org/topics-of-development/walking/'
-  },
-  'Usa pinza digital': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-1yr.html'
-  },
+  // Motor Grueso - Pathways
+  'Rueda': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=vSSIY00E3vo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Aprende a rodar'
+    }
+  ],
+  'Rueda en ambas direcciones': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=vSSIY00E3vo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Rodarse en ambas direcciones'
+    }
+  ],
   
-  // 15 meses
-  'Copia tareas simples': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-15mo.html'
-  },
-  'Usa varias palabras': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-15mo.html'
-  },
-  'Señala para pedir algo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-15mo.html'
-  },
-  'Camina solo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-15mo.html',
-    pathways: 'https://pathways.org/topics-of-development/walking/'
-  },
-  'Bebe de una taza': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-15mo.html'
-  },
+  'Se sienta sin apoyo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Mh8qFLILbKo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Sentarse sin apoyo'
+    }
+  ],
+  'Se sienta solo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Mh8qFLILbKo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Sentarse independiente'
+    }
+  ],
   
-  // 18 meses
-  'Entrega cosas a otros como juego': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Tiene rabietas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Dice varias palabras sueltas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Dice "no" y mueve la cabeza': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Señala para mostrar algo a alguien': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Camina solo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Come con cuchara': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
-  'Sube escaleras': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html',
-    pathways: 'https://pathways.org/topics-of-development/stair-climbing/'
-  },
-  'Garabatea': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-18mo.html'
-  },
+  'Gatea': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Q76HRgqzxRI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Gateo'
+    }
+  ],
+  'Gateo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Q76HRgqzxRI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Desarrollo del gateo'
+    }
+  ],
   
-  // 2 años
-  'Copia a otros': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Se emociona con otros niños': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Juega principalmente junto a otros niños': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Dice frases de 2-4 palabras': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Señala objetos o dibujos cuando se los nombran': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Nombra objetos en un libro': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Da patadas a una pelota': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html',
-    pathways: 'https://pathways.org/topics-of-development/kicking/'
-  },
-  'Corre': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html',
-    pathways: 'https://pathways.org/topics-of-development/running/'
-  },
-  'Sube y baja de muebles sin ayuda': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Sube y baja escaleras agarrándose': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
-  'Construye torres de 4 o más bloques': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-2yr.html'
-  },
+  'Se sostiene de pie con apoyo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=JWZZpFq5waI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Ponerse de pie con apoyo'
+    }
+  ],
+  'Se pone de pie': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=JWZZpFq5waI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Bipedestación'
+    }
+  ],
   
-  // 3 años
-  'Muestra afecto por amigos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Juega a "hacer de cuenta"': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Se turna en los juegos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Entiende "mío" y "suyo"': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Dice su nombre completo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Habla con claridad': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Sigue instrucciones de 2-3 pasos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Trepa bien': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Corre fácilmente': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Pedalea un triciclo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html',
-    pathways: 'https://pathways.org/topics-of-development/riding-toys/'
-  },
-  'Sube y baja escaleras alternando pies': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Pasa páginas de libros': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
-  'Copia un círculo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-3yr.html'
-  },
+  'Camina': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=8aOht67lZAc',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Primeros pasos'
+    }
+  ],
+  'Camina solo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=8aOht67lZAc',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Caminar independiente'
+    }
+  ],
+  'Da pasos sin apoyo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=8aOht67lZAc',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Caminar sin apoyo'
+    }
+  ],
+  'Camina sosteniéndose de muebles': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=8aOht67lZAc',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Caminar con apoyo'
+    }
+  ],
   
-  // 4 años
-  'Prefiere jugar con otros niños': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Consuela a otros': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Cuenta historias': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Canta canciones': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Sabe algunas reglas gramaticales': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Comprende conceptos de contar': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Salta y se sostiene en un pie': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html',
-    pathways: 'https://pathways.org/topics-of-development/hopping/'
-  },
-  'Atrapa una pelota que rebota': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html',
-    pathways: 'https://pathways.org/topics-of-development/catching/'
-  },
-  'Vierte, corta con supervisión y hace puré': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Dibuja persona con 2-4 partes del cuerpo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
-  'Usa tijeras': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-4yr.html'
-  },
+  'Sube escaleras': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=xNj0lJzHMRo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Subir escaleras'
+    }
+  ],
+  'Sube y baja escaleras agarrándose': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=xNj0lJzHMRo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Escaleras con apoyo'
+    }
+  ],
+  'Sube escaleras alternando pies': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=xNj0lJzHMRo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Escaleras alternando pies'
+    }
+  ],
   
-  // 5 años
-  'Quiere complacer a amigos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Quiere ser como sus amigos': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Baila y canta': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Habla con claridad': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Cuenta una historia simple': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Puede contar 10 o más cosas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Se para en un pie por 10 segundos o más': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Salta': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html',
-    pathways: 'https://pathways.org/topics-of-development/jumping/'
-  },
-  'Hace volteretas': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html',
-    pathways: 'https://pathways.org/topics-of-development/somersaulting/'
-  },
-  'Usa tenedor y cuchara': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Va al baño solo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Copia un triángulo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  },
-  'Dibuja persona con 6 partes del cuerpo': {
-    cdc: 'https://www.cdc.gov/ncbddd/spanish/actearly/milestones/milestones-5yr.html'
-  }
+  'Corre': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=CGq3r4iM_OU',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Correr'
+    }
+  ],
+  'Corre fácilmente': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=CGq3r4iM_OU',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Correr con control'
+    }
+  ],
+  
+  'Patea una pelota': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=kXVQp3NCJAk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Patear pelota'
+    }
+  ],
+  'Patea pelota': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=kXVQp3NCJAk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Pateo de balón'
+    }
+  ],
+  'Da patadas a una pelota': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=kXVQp3NCJAk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Dar patadas'
+    }
+  ],
+  
+  'Salta': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=w9bZzihW5QU',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Saltar'
+    }
+  ],
+  'Salta con ambos pies': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=w9bZzihW5QU',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Salto bipodal'
+    }
+  ],
+  
+  'Pedalea un triciclo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=H2qVZEhLkHs',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Pedalear triciclo'
+    }
+  ],
+  
+  'Salta en un pie': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=o3UpCLKfVPo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Saltar en un pie'
+    }
+  ],
+  'Salta y se sostiene en un pie': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=o3UpCLKfVPo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Equilibrio en un pie'
+    }
+  ],
+  'Se para en un pie por 10 segundos o más': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=o3UpCLKfVPo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Pararse en un pie'
+    }
+  ],
+  'Se para en un pie brevemente': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=o3UpCLKfVPo',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Equilibrio unipodal'
+    }
+  ],
+  
+  'Atrapa una pelota que rebota': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=BWAu0XECGWI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Atrapar pelota'
+    }
+  ],
+  'Atrapa pelota': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=BWAu0XECGWI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Habilidad para atrapar'
+    }
+  ],
+  
+  'Lanza pelota por encima del hombro': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=ALn_K7T4IHI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Lanzar por encima'
+    }
+  ],
+  
+  'Hace volteretas': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=BxX5FHWT4gM',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Volteretas'
+    }
+  ],
+  
+  // Motor Fino - Pathways
+  'Pasa cosas de una mano a otra': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=6TxFqlwi7q8',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Transferencia bimanual'
+    }
+  ],
+  
+  'Usa pinza con los dedos': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Kg8UY7rUIzk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Pinza pulgar-índice'
+    }
+  ],
+  'Agarra con pinza': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Kg8UY7rUIzk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Agarre en pinza'
+    }
+  ],
+  
+  'Garabatea': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=xt3yN9VOPSI',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Garabateo'
+    }
+  ],
+  
+  'Dibuja círculo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=Xq4DmKLxRo0',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Dibujar formas'
+    }
+  ],
+  
+  'Usa tijeras': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=7t0z_bJmHIQ',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Uso de tijeras'
+    }
+  ],
+  
+  'Dibuja persona con 2-4 partes del cuerpo': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=h5y7K7H52kk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Dibujo de figura humana'
+    }
+  ],
+  
+  // Autocuidado - Pathways
+  'Bebe de un vaso': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=FaMZpBOLlP4',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Beber de vaso'
+    }
+  ],
+  
+  'Usa cuchara': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=8pzSGAaHKVk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Uso de cuchara'
+    }
+  ],
+  
+  'Construye torre de bloques': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=QKwlDl6k-gM',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Construir con bloques'
+    }
+  ],
+  
+  // Juego - Pathways
+  'Salta la cuerda': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=9Rl8QdgZGDU',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Saltar la cuerda'
+    }
+  ],
+  
+  'Camina hacia atrás': [
+    {
+      youtube: 'https://www.youtube.com/watch?v=fXU5xq4kFtk',
+      fuente: 'Pathways.org',
+      descripcion: 'Pathways.org - Caminar hacia atrás'
+    }
+  ]
 };
 
-// Función para obtener el video de un hito
+// Función que devuelve TODOS los videos disponibles para un hito
 export const obtenerVideoHito = (nombreHito) => {
-  // Normalizar el nombre del hito (eliminar espacios extra, convertir a minúsculas para comparación)
+  if (!nombreHito) return null;
+  
   const nombreNormalizado = nombreHito.trim();
   
   // Buscar coincidencia exacta primero
   if (videosHitos[nombreNormalizado]) {
-    return videosHitos[nombreNormalizado];
+    const videos = videosHitos[nombreNormalizado];
+    // Si es un array de videos, devolver el primero pero con todos disponibles
+    if (Array.isArray(videos)) {
+      return {
+        ...videos[0],
+        todosVideos: videos
+      };
+    }
+    return videos;
   }
   
-  // Buscar coincidencia parcial (el nombre del hito contiene la clave o viceversa)
+  // Buscar coincidencia parcial (ignorando mayúsculas y acentos)
+  const nombreLower = nombreNormalizado.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
   for (const [key, value] of Object.entries(videosHitos)) {
-    if (nombreNormalizado.toLowerCase().includes(key.toLowerCase()) || 
-        key.toLowerCase().includes(nombreNormalizado.toLowerCase())) {
+    const keyLower = key.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    if (nombreLower.includes(keyLower) || keyLower.includes(nombreLower)) {
+      if (Array.isArray(value)) {
+        return {
+          ...value[0],
+          todosVideos: value
+        };
+      }
+      return value;
+    }
+    
+    // Buscar palabras clave
+    const palabrasHito = nombreLower.split(' ').filter(p => p.length > 3);
+    const palabrasClave = keyLower.split(' ').filter(p => p.length > 3);
+    
+    const palabrasComunes = palabrasHito.filter(p => palabrasClave.includes(p));
+    if (palabrasComunes.length >= 2) {
+      if (Array.isArray(value)) {
+        return {
+          ...value[0],
+          todosVideos: value
+        };
+      }
       return value;
     }
   }

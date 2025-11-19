@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { calcularEdadCronologicaMeses, calcularEdadCorregidaMeses, formatearEdades } from '../utils/ageCalculations';
 import { API_URL } from '../config';
 import { fetchConAuth } from '../utils/authService';
-import { obtenerVideoHito } from '../utils/videosHitos';
 
 function HitosRegistro({ ninoId }) {
   const [dominios, setDominios] = useState([]);
@@ -577,84 +576,98 @@ function HitosRegistro({ ninoId }) {
               
               <p className="hito-descripcion">{hito.descripcion}</p>
               
-              {/* Enlaces a videos educativos */}
-              {(() => {
-                const video = obtenerVideoHito(hito.nombre);
-                if (video) {
-                  return (
-                    <div className="hito-videos" style={{ 
-                      display: 'flex', 
-                      gap: '10px', 
-                      marginTop: '8px',
-                      marginBottom: '8px'
-                    }}>
-                      {video.cdc && (
-                        <a 
-                          href={video.cdc} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '4px 8px',
-                            backgroundColor: '#f0f8ff',
-                            border: '1px solid #4A90E2',
-                            borderRadius: '4px',
-                            textDecoration: 'none',
-                            color: '#4A90E2',
-                            fontSize: '0.85em',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#4A90E2';
-                            e.currentTarget.style.color = 'white';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f0f8ff';
-                            e.currentTarget.style.color = '#4A90E2';
-                          }}
-                        >
-                          <span>🎥</span>
-                          <span>Video CDC</span>
-                        </a>
-                      )}
-                      {video.pathways && (
-                        <a 
-                          href={video.pathways} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '4px 8px',
-                            backgroundColor: '#f0fff4',
-                            border: '1px solid #50C878',
-                            borderRadius: '4px',
-                            textDecoration: 'none',
-                            color: '#50C878',
-                            fontSize: '0.85em',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#50C878';
-                            e.currentTarget.style.color = 'white';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f0fff4';
-                            e.currentTarget.style.color = '#50C878';
-                          }}
-                        >
-                          <span>🎥</span>
-                          <span>Video Pathways</span>
-                        </a>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+              {/* Enlaces a videos educativos desde la base de datos */}
+              {(hito.video_url_cdc || hito.video_url_pathways) && (
+                <div className="hito-videos" style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  marginTop: '8px',
+                  marginBottom: '8px',
+                  flexWrap: 'wrap'
+                }}>
+                  {hito.video_url_cdc && (
+                    <a 
+                      href={hito.video_url_cdc}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '6px 12px',
+                        backgroundColor: '#e8f5e9',
+                        border: '2px solid #4caf50',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        color: '#2e7d32',
+                        fontSize: '0.85em',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        textDecoration: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#4caf50';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(76,175,80,0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = '#e8f5e9';
+                        e.currentTarget.style.color = '#2e7d32';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                      }}
+                      title={`Ver video CDC de ${hito.nombre}`}
+                    >
+                      <i className="fab fa-youtube" style={{ fontSize: '1.1em' }}></i>
+                      <span>🏛️ CDC</span>
+                      <i className="fas fa-external-link-alt" style={{ fontSize: '0.8em', opacity: 0.7 }}></i>
+                    </a>
+                  )}
+                  
+                  {hito.video_url_pathways && (
+                    <a 
+                      href={hito.video_url_pathways}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '6px 12px',
+                        backgroundColor: '#e3f2fd',
+                        border: '2px solid #2196f3',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        color: '#1976d2',
+                        fontSize: '0.85em',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        textDecoration: 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#2196f3';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(33,150,243,0.3)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = '#e3f2fd';
+                        e.currentTarget.style.color = '#1976d2';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                      }}
+                      title={`Ver video Pathways de ${hito.nombre}`}
+                    >
+                      <i className="fab fa-youtube" style={{ fontSize: '1.1em' }}></i>
+                      <span>🎯 Pathways</span>
+                      <i className="fas fa-external-link-alt" style={{ fontSize: '0.8em', opacity: 0.7 }}></i>
+                    </a>
+                  )}
+                </div>
+              )}
               
               <div className="hito-info">
                 <span>Edad esperada: {hito.edad_media_meses} meses (± {hito.desviacion_estandar})</span>
@@ -840,84 +853,98 @@ function HitosRegistro({ ninoId }) {
                   
                   <p className="hito-descripcion">{hito.descripcion}</p>
                   
-                  {/* Enlaces a videos educativos */}
-                  {(() => {
-                    const video = obtenerVideoHito(hito.nombre);
-                    if (video) {
-                      return (
-                        <div className="hito-videos" style={{ 
-                          display: 'flex', 
-                          gap: '10px', 
-                          marginTop: '8px',
-                          marginBottom: '8px'
-                        }}>
-                          {video.cdc && (
-                            <a 
-                              href={video.cdc} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: '4px 8px',
-                                backgroundColor: '#f0f8ff',
-                                border: '1px solid #4A90E2',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                color: '#4A90E2',
-                                fontSize: '0.85em',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = '#4A90E2';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f0f8ff';
-                                e.currentTarget.style.color = '#4A90E2';
-                              }}
-                            >
-                              <span>🎥</span>
-                              <span>Video CDC</span>
-                            </a>
-                          )}
-                          {video.pathways && (
-                            <a 
-                              href={video.pathways} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: '4px 8px',
-                                backgroundColor: '#f0fff4',
-                                border: '1px solid #50C878',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                color: '#50C878',
-                                fontSize: '0.85em',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = '#50C878';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = '#f0fff4';
-                                e.currentTarget.style.color = '#50C878';
-                              }}
-                            >
-                              <span>🎥</span>
-                              <span>Video Pathways</span>
-                            </a>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {/* Enlaces a videos educativos desde la base de datos */}
+                  {(hito.video_url_cdc || hito.video_url_pathways) && (
+                    <div className="hito-videos" style={{ 
+                      display: 'flex', 
+                      gap: '8px', 
+                      marginTop: '8px',
+                      marginBottom: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {hito.video_url_cdc && (
+                        <a 
+                          href={hito.video_url_cdc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            backgroundColor: '#e8f5e9',
+                            border: '2px solid #4caf50',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            color: '#2e7d32',
+                            fontSize: '0.85em',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            textDecoration: 'none'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#4caf50';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(76,175,80,0.3)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e8f5e9';
+                            e.currentTarget.style.color = '#2e7d32';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                          }}
+                          title={`Ver video CDC de ${hito.nombre}`}
+                        >
+                          <i className="fab fa-youtube" style={{ fontSize: '1.1em' }}></i>
+                          <span>🏛️ CDC</span>
+                          <i className="fas fa-external-link-alt" style={{ fontSize: '0.8em', opacity: 0.7 }}></i>
+                        </a>
+                      )}
+                      
+                      {hito.video_url_pathways && (
+                        <a 
+                          href={hito.video_url_pathways}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 12px',
+                            backgroundColor: '#e3f2fd',
+                            border: '2px solid #2196f3',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            color: '#1976d2',
+                            fontSize: '0.85em',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            textDecoration: 'none'
+                          }}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#2196f3';
+                            e.currentTarget.style.color = 'white';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(33,150,243,0.3)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e3f2fd';
+                            e.currentTarget.style.color = '#1976d2';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                          }}
+                          title={`Ver video Pathways de ${hito.nombre}`}
+                        >
+                          <i className="fab fa-youtube" style={{ fontSize: '1.1em' }}></i>
+                          <span>🎯 Pathways</span>
+                          <i className="fas fa-external-link-alt" style={{ fontSize: '0.8em', opacity: 0.7 }}></i>
+                        </a>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="hito-info">
                     <span>Edad esperada: {hito.edad_media_meses} meses (± {hito.desviacion_estandar})</span>
@@ -951,7 +978,7 @@ function HitosRegistro({ ninoId }) {
                   </div>
                 </div>
               );
-            })}
+                    })}
           </div>
         </>
       )}

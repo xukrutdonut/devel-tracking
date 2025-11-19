@@ -1075,6 +1075,118 @@ app.get('/api/itinerario/:ninoId', verificarToken, (req, res) => {
   });
 });
 
+// ==================== RUTAS DE BIBLIOTECA DE MEDIOS ====================
+
+// Obtener todos los videos
+app.get('/api/videos', verificarToken, (req, res) => {
+  const query = `
+    SELECT v.*, 
+           GROUP_CONCAT(vh.hito_id) as hitosAsociados
+    FROM videos v
+    LEFT JOIN videos_hitos vh ON v.id = vh.video_id
+    GROUP BY v.id
+    ORDER BY v.fuente, v.titulo
+  `;
+  
+  db.all(query, [], (err, videos) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // Procesar los hitos asociados
+    const videosConHitos = videos.map(video => ({
+      ...video,
+      _id: video.id,
+      hitosAsociados: video.hitosAsociados ? video.hitosAsociados.split(',').map(id => parseInt(id)) : []
+    }));
+    
+    res.json(videosConHitos);
+  });
+});
+
+// Obtener todos los hitos completos del sistema
+app.get('/api/hitos-completos', verificarToken, (req, res) => {
+  const query = `
+    SELECT h.id, h.nombre as descripcion, h.edad_media_meses as edad, d.nombre as area,
+           h.video_url, h.video_fuente, h.video_url_cdc, h.video_url_pathways
+    FROM hitos_normativos h
+    LEFT JOIN dominios d ON h.dominio_id = d.id
+    ORDER BY h.edad_media_meses, d.nombre, h.nombre
+  `;
+  
+  db.all(query, [], (err, hitos) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const hitosConId = hitos.map(hito => ({
+      ...hito,
+      _id: hito.id
+    }));
+    
+    res.json(hitosConId);
+  });
+});
+
+// Asociar video a hito
+app.post('/api/videos/asociar', verificarToken, verificarAdmin, (req, res) => {
+  const { videoId, hitoId } = req.body;
+  
+  if (!videoId || !hitoId) {
+    return res.status(400).json({ error: 'videoId y hitoId son requeridos' });
+  }
+  
+  // Verificar si ya existe la asociación
+  db.get(
+    'SELECT id FROM videos_hitos WHERE video_id = ? AND hito_id = ?',
+    [videoId, hitoId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (row) return res.status(400).json({ error: 'Esta asociación ya existe' });
+      
+      // Crear la asociación
+      db.run(
+        'INSERT INTO videos_hitos (video_id, hito_id) VALUES (?, ?)',
+        [videoId, hitoId],
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ message: 'Video asociado correctamente', id: this.lastID });
+        }
+      );
+    }
+  );
+});
+
+// Desasociar video de hito
+app.post('/api/videos/desasociar', verificarToken, verificarAdmin, (req, res) => {
+  const { videoId, hitoId } = req.body;
+  
+  if (!videoId || !hitoId) {
+    return res.status(400).json({ error: 'videoId y hitoId son requeridos' });
+  }
+  
+  db.run(
+    'DELETE FROM videos_hitos WHERE video_id = ? AND hito_id = ?',
+    [videoId, hitoId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Video desasociado correctamente', cambios: this.changes });
+    }
+  );
+});
+
+// Eliminar video
+app.delete('/api/videos/:id', verificarToken, verificarAdmin, (req, res) => {
+  const videoId = req.params.id;
+  
+  // Primero eliminar todas las asociaciones
+  db.run('DELETE FROM videos_hitos WHERE video_id = ?', [videoId], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // Luego eliminar el video
+    db.run('DELETE FROM videos WHERE id = ?', [videoId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Video eliminado correctamente', cambios: this.changes });
+    });
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor ejecutándose en http://0.0.0.0:${PORT}`);
 });

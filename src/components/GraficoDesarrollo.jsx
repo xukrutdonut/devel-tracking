@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 import { fetchConAuth, esModoInvitado } from '../utils/authService';
 import GeneradorInforme from './GeneradorInforme';
 import AnalisisAceleracion from './AnalisisAceleracion';
+import VideoModal from './VideoModal';
+import { obtenerVideoHito } from '../utils/videosHitos';
 
 /**
  * Componente de Gráfico del Desarrollo
@@ -35,6 +37,9 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = 
   const [datosRegresion, setDatosRegresion] = useState(null); // Estado para datos de regresión
   const [puntoHover, setPuntoHover] = useState(null); // Punto en hover (para mostrar borde)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 }); // Posición del mouse
+  const [videoModalOpen, setVideoModalOpen] = useState(false); // Estado del modal de video
+  const [videoSeleccionado, setVideoSeleccionado] = useState(null); // Video actualmente seleccionado
+  const [hitoVideoNombre, setHitoVideoNombre] = useState(''); // Nombre del hito para el video
   
   // Ref para guardar datos de regresión calculados (para comparación)
   const datosRegresionRef = useRef(null);
@@ -147,7 +152,10 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = 
         // Asegurar que edad_conseguido_meses existe
         edad_conseguido_meses: hito.edad_conseguido_meses || hito.edad_meses,
         // Información de pérdida si existe
-        edad_perdido_meses: hito.edad_perdido_meses || null
+        edad_perdido_meses: hito.edad_perdido_meses || null,
+        // Videos educativos
+        video_url_cdc: hitoNormativo.video_url_cdc || null,
+        video_url_pathways: hitoNormativo.video_url_pathways || null
       };
     });
     
@@ -353,16 +361,52 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = 
   const handlePuntoClick = (payload) => {
     if (!payload || !payload.hito_nombre) return;
     
-    // Si ya está activo este punto, desactivar
-    if (tooltipActivo && tooltipActivo.hito_id === payload.hito_id) {
-      setTooltipActivo(null);
+    // Verificar si hay video disponible para este hito (primero desde BD, luego estático)
+    let videoData = null;
+    
+    // Prioridad 1: Videos desde la base de datos
+    if (payload.video_url_cdc || payload.video_url_pathways) {
+      const videos = [];
+      
+      if (payload.video_url_cdc) {
+        videos.push({
+          youtube: payload.video_url_cdc,
+          fuente: 'CDC',
+          descripcion: `CDC - ${payload.hito_nombre}`
+        });
+      }
+      
+      if (payload.video_url_pathways) {
+        videos.push({
+          youtube: payload.video_url_pathways,
+          fuente: 'Pathways.org',
+          descripcion: `Pathways.org - ${payload.hito_nombre}`
+        });
+      }
+      
+      videoData = {
+        ...videos[0],
+        todosVideos: videos
+      };
     } else {
-      // Activar este punto
-      setTooltipActivo(payload);
+      // Prioridad 2: Videos del archivo estático (fallback)
+      videoData = obtenerVideoHito(payload.hito_nombre);
+    }
+    
+    if (videoData) {
+      // Abrir el video directamente en YouTube en una nueva pestaña
+      window.open(videoData.youtube, '_blank', 'noopener,noreferrer');
+    } else {
+      // Si no hay video, mostrar/ocultar tooltip como antes
+      if (tooltipActivo && tooltipActivo.hito_id === payload.hito_id) {
+        setTooltipActivo(null);
+      } else {
+        setTooltipActivo(payload);
+      }
     }
   };
 
-  // Función para renderizar puntos personalizados (marca pérdidas)
+  // Función para renderizar puntos personalizados (marca pérdidas y videos disponibles)
   const renderizarPuntoPersonalizado = (props) => {
     const { cx, cy, payload, fill } = props;
     // Solo renderizar si tiene datos de hito real
@@ -370,6 +414,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = 
     
     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
     const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
+    // Verificar videos desde BD o archivo estático
+    const tieneVideo = !!(payload.video_url_cdc || payload.video_url_pathways || obtenerVideoHito(payload.hito_nombre));
     
     // Si el punto tiene pérdida, usar un símbolo diferente (cruz o X)
     if (payload.tiene_perdida) {
@@ -377,10 +423,8 @@ function GraficoDesarrollo({ ninoId, onDatosRegresionCalculados, modoAvanzado = 
         <g 
           className="scatter-point" 
           onClick={() => handlePuntoClick(payload)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
+          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+          onMouseLeave={() => setPuntoHover(null)}
           style={{ cursor: 'pointer' }}
         >
           {/* Círculo de resaltado cuando está activo o en hover */}
@@ -400,6 +444,18 @@ onMouseLeave={() => setPuntoHover(null)}
                 fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
             ×
           </text>
+          {/* Indicador de video disponible */}
+          {tieneVideo && (
+            <circle 
+              cx={cx + 8} 
+              cy={cy - 8} 
+              r={4} 
+              fill="#3498db" 
+              stroke="#fff" 
+              strokeWidth={1}
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
         </g>
       );
     }
@@ -410,10 +466,8 @@ onMouseLeave={() => setPuntoHover(null)}
       <g 
         className="scatter-point" 
         onClick={() => handlePuntoClick(payload)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
+        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+        onMouseLeave={() => setPuntoHover(null)}
         style={{ cursor: 'pointer' }}
       >
         {/* Círculo de resaltado cuando está activo o en hover */}
@@ -428,6 +482,18 @@ onMouseLeave={() => setPuntoHover(null)}
         />
         {/* Punto visible */}
         <circle cx={cx} cy={cy} r={6} fill={colorPunto} stroke="#fff" strokeWidth={2} />
+        {/* Indicador de video disponible - pequeño círculo azul en la esquina superior derecha */}
+        {tieneVideo && (
+          <circle 
+            cx={cx + 6} 
+            cy={cy - 6} 
+            r={3} 
+            fill="#3498db" 
+            stroke="#fff" 
+            strokeWidth={1}
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
       </g>
     );
   };
@@ -911,6 +977,9 @@ onMouseLeave={() => setPuntoHover(null)}
       const sd = Math.max(puntoHover.edad_cronologica * 0.15, 2);
       const zscore = (puntoHover.edad_desarrollo - puntoHover.edad_cronologica) / sd;
       
+      // Verificar si hay video disponible
+      const tieneVideo = !!(puntoHover.video_url_cdc || puntoHover.video_url_pathways || obtenerVideoHito(puntoHover.hito_nombre));
+      
       return (
         <div className="custom-tooltip" style={{
           backgroundColor: 'white',
@@ -945,6 +1014,20 @@ onMouseLeave={() => setPuntoHover(null)}
             {puntoHover.tiene_perdida && (
               <p style={{ margin: '6px 0 0 0', color: '#e74c3c', fontWeight: 'bold' }}>
                 ⚠️ Hito perdido en regresión
+              </p>
+            )}
+            {tieneVideo && (
+              <p style={{ 
+                margin: '8px 0 0 0', 
+                padding: '6px 10px',
+                backgroundColor: '#e3f2fd',
+                borderRadius: '4px',
+                color: '#1976d2', 
+                fontWeight: 'bold',
+                fontSize: '0.95em',
+                textAlign: 'center'
+              }}>
+                🎥 Click para ver video educativo
               </p>
             )}
           </div>
@@ -1110,6 +1193,9 @@ onMouseLeave={() => setPuntoHover(null)}
       const sd = Math.max(puntoHover.edad_cronologica * 0.15, 2);
       const zscore = (puntoHover.edad_desarrollo - puntoHover.edad_cronologica) / sd;
       
+      // Verificar si hay video disponible
+      const tieneVideo = !!(puntoHover.video_url_cdc || puntoHover.video_url_pathways || obtenerVideoHito(puntoHover.hito_nombre));
+      
       return (
         <div className="custom-tooltip" style={{
           backgroundColor: 'white',
@@ -1149,6 +1235,20 @@ onMouseLeave={() => setPuntoHover(null)}
             }}>
               {interpretarZScore(zscore)}
             </p>
+            {tieneVideo && (
+              <p style={{ 
+                margin: '8px 0 0 0', 
+                padding: '6px 10px',
+                backgroundColor: '#e3f2fd',
+                borderRadius: '4px',
+                color: '#1976d2', 
+                fontWeight: 'bold',
+                fontSize: '0.95em',
+                textAlign: 'center'
+              }}>
+                🎥 Click para ver video educativo
+              </p>
+            )}
           </div>
         </div>
       );
@@ -1558,16 +1658,15 @@ onMouseLeave={() => setPuntoHover(null)}
                     const color = coloresDominios[payload.dominio_id] || '#2c3e50';
                     const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
                     const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
+                    const tieneVideo = !!(payload.video_url_cdc || payload.video_url_pathways || obtenerVideoHito(payload.hito_nombre));
                     
                     if (payload.tiene_perdida) {
                       return (
                         <g 
                           className="scatter-point"
                           onClick={() => handlePuntoClick(payload)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
+                          onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+                          onMouseLeave={() => setPuntoHover(null)}
                           style={{ cursor: 'pointer' }}
                         >
                           <circle 
@@ -1584,6 +1683,17 @@ onMouseLeave={() => setPuntoHover(null)}
                                 fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
                             ×
                           </text>
+                          {tieneVideo && (
+                            <circle 
+                              cx={cx + 8} 
+                              cy={cy - 8} 
+                              r={4} 
+                              fill="#3498db" 
+                              stroke="#fff" 
+                              strokeWidth={1}
+                              style={{ pointerEvents: 'none' }}
+                            />
+                          )}
                         </g>
                       );
                     }
@@ -1591,10 +1701,8 @@ onMouseLeave={() => setPuntoHover(null)}
                       <g 
                         className="scatter-point"
                         onClick={() => handlePuntoClick(payload)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
-onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
-onMouseLeave={() => setPuntoHover(null)}
+                        onMouseEnter={(e) => { setPuntoHover(payload); setMousePosition({ x: e.clientX, y: e.clientY }); }}
+                        onMouseLeave={() => setPuntoHover(null)}
                         style={{ cursor: 'pointer' }}
                       >
                         <circle 
@@ -1607,6 +1715,17 @@ onMouseLeave={() => setPuntoHover(null)}
                           style={{ pointerEvents: 'none' }} 
                         />
                         <circle cx={cx} cy={cy} r={5} fill={color} stroke="#fff" strokeWidth={2} />
+                        {tieneVideo && (
+                          <circle 
+                            cx={cx + 6} 
+                            cy={cy - 6} 
+                            r={3} 
+                            fill="#3498db" 
+                            stroke="#fff" 
+                            strokeWidth={1}
+                            style={{ pointerEvents: 'none' }}
+                          />
+                        )}
                       </g>
                     );
                   }}
@@ -1679,6 +1798,7 @@ onMouseLeave={() => setPuntoHover(null)}
                         if (!payload || !payload.hito_nombre) return null;
                         const isActivo = tooltipActivo && tooltipActivo.hito_id === payload.hito_id;
                     const isHover = puntoHover && puntoHover.hito_id === payload.hito_id;
+                        const tieneVideo = !!(payload.video_url_cdc || payload.video_url_pathways || obtenerVideoHito(payload.hito_nombre));
                         
                         if (payload.tiene_perdida) {
                           return (
@@ -1703,6 +1823,17 @@ onMouseLeave={() => setPuntoHover(null)}
                                     fill="#fff" fontSize="12" fontWeight="bold" style={{ pointerEvents: 'none' }}>
                                 ×
                               </text>
+                              {tieneVideo && (
+                                <circle 
+                                  cx={cx + 8} 
+                                  cy={cy - 8} 
+                                  r={4} 
+                                  fill="#3498db" 
+                                  stroke="#fff" 
+                                  strokeWidth={1}
+                                  style={{ pointerEvents: 'none' }}
+                                />
+                              )}
                             </g>
                           );
                         }
@@ -1724,6 +1855,17 @@ onMouseLeave={() => setPuntoHover(null)}
                               style={{ pointerEvents: 'none' }} 
                             />
                             <circle cx={cx} cy={cy} r={6} fill={coloresDominios[dominioSeleccionado]} stroke="#fff" strokeWidth={2} />
+                            {tieneVideo && (
+                              <circle 
+                                cx={cx + 6} 
+                                cy={cy - 6} 
+                                r={3} 
+                                fill="#3498db" 
+                                stroke="#fff" 
+                                strokeWidth={1}
+                                style={{ pointerEvents: 'none' }}
+                              />
+                            )}
                           </g>
                         );
                       }}
@@ -2054,6 +2196,14 @@ onMouseLeave={() => setPuntoHover(null)}
           />
         </>
       )}
+      
+      {/* Modal de Video */}
+      <VideoModal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoData={videoSeleccionado}
+        hitoNombre={hitoVideoNombre}
+      />
     </div>
   );
 }
